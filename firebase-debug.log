@@ -30,3 +30,10 @@
 [debug] [2026-03-26T14:43:24.964Z] Checked if tokens are valid: true, expires at: 1774537656293
 [debug] [2026-03-26T14:43:24.964Z] Checked if tokens are valid: true, expires at: 1774537656293
 [debug] [2026-03-26T14:43:24.964Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/my-money-2c1e3/databases/(default) [none]
+[debug] [2026-03-26T14:43:26.676Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/my-money-2c1e3/databases/(default) 200
+[debug] [2026-03-26T14:43:26.676Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/my-money-2c1e3/databases/(default) {"name":"projects/my-money-2c1e3/databases/(default)","uid":"1c165f1d-0d10-4892-8e77-73db9d898190","createTime":"2026-03-26T11:43:38.855109Z","updateTime":"2026-03-26T11:43:38.855109Z","locationId":"nam5","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-03-26T13:43:26.548005Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"s","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"INjw7cHmvZMDMKmMrvC/vZMD"}
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2026-03-26T14:43:26.679Z] Checked if tokens are valid: true, expires at: 1774537656293
+[debug] [2026-03-26T14:43:26.679Z] Checked if tokens are valid: true, expires at: 1774537656293
+[debug] [2026-03-26T14:43:26.680Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3:test [none]
+[debug] [2026-03-26T14:43:26.680Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3:test [omitted]
