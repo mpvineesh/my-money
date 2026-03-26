@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { loadInvestments, saveInvestments, loadGoals, saveGoals, loadLoans, saveLoans, loadCash, saveCash } from '../utils/storage';
-import { getDemoInvestments, getDemoGoals, getDemoLoans, getDemoCash } from '../utils/constants';
+import { loadInvestments, saveInvestments, loadGoals, saveGoals, loadLoans, saveLoans, loadCash, saveCash, loadExpenses, saveExpenses } from '../utils/storage';
+import { getDemoInvestments, getDemoGoals, getDemoLoans, getDemoCash, getDemoExpenses } from '../utils/constants';
 import { AppContext } from './AppContextDef';
 import { useAuth } from './AuthContext';
 import { db } from '../firebase';
@@ -42,6 +42,13 @@ export function AppProvider({ children }) {
     saveCash(demo);
     return demo;
   });
+  const [expenses, setExpenses] = useState(() => {
+    const stored = loadExpenses();
+    if (stored.length > 0) return stored;
+    const demo = getDemoExpenses();
+    saveExpenses(demo);
+    return demo;
+  });
 
   useEffect(() => {
     // If user is signed in, listen to their Firestore collections and sync locally
@@ -70,10 +77,18 @@ export function AppProvider({ children }) {
       saveLoans(items);
     });
 
+    const expensesCol = collection(db, 'users', user.uid, 'expenses');
+    const unsubExpenses = onSnapshot(expensesCol, (snap) => {
+      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setExpenses(items);
+      saveExpenses(items);
+    });
+
     return () => {
       unsubInv();
       unsubGoals();
       unsubLoans();
+      unsubExpenses();
     };
   }, [user]);
 
@@ -127,6 +142,46 @@ export function AppProvider({ children }) {
     setLoans((prev) => {
       const updated = prev.filter((l) => l.id !== id);
       saveLoans(updated);
+      return updated;
+    });
+  }, [user]);
+
+  const addExpense = useCallback((expense) => {
+    const newItem = { ...expense, id: uuidv4() };
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'expenses', newItem.id);
+      setDoc(ref, newItem);
+      return;
+    }
+    setExpenses((prev) => {
+      const updated = [...prev, newItem];
+      saveExpenses(updated);
+      return updated;
+    });
+  }, [user]);
+
+  const updateExpense = useCallback((id, expense) => {
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'expenses', id);
+      updateDoc(ref, { ...expense });
+      return;
+    }
+    setExpenses((prev) => {
+      const updated = prev.map((e) => (e.id === id ? { ...e, ...expense } : e));
+      saveExpenses(updated);
+      return updated;
+    });
+  }, [user]);
+
+  const deleteExpense = useCallback((id) => {
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'expenses', id);
+      deleteDoc(ref);
+      return;
+    }
+    setExpenses((prev) => {
+      const updated = prev.filter((e) => e.id !== id);
+      saveExpenses(updated);
       return updated;
     });
   }, [user]);
@@ -208,14 +263,17 @@ export function AppProvider({ children }) {
     const demoGoals = getDemoGoals();
     const demoLoans = getDemoLoans();
     const demoCash = getDemoCash();
+    const demoExpenses = getDemoExpenses();
     setInvestments(demoInv);
     setGoals(demoGoals);
     setLoans(demoLoans);
     setCashState(demoCash);
+    setExpenses(demoExpenses);
     saveInvestments(demoInv);
     saveGoals(demoGoals);
     saveLoans(demoLoans);
     saveCash(demoCash);
+    saveExpenses(demoExpenses);
   }, []);
 
   const value = {
@@ -223,6 +281,7 @@ export function AppProvider({ children }) {
     goals,
     loans,
     cash,
+    expenses,
     addInvestment,
     updateInvestment,
     deleteInvestment,
@@ -233,6 +292,9 @@ export function AppProvider({ children }) {
     updateLoan,
     deleteLoan,
     setCash,
+    addExpense,
+    updateExpense,
+    deleteExpense,
     resetToDemo,
   };
 

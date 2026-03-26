@@ -28,5 +28,7 @@
 .profile-info { display:flex; gap:10px; align-items:center; padding-bottom:8px; border-bottom:1px solid rgba(2,6,23,0.04); margin-bottom:8px; }
 .profile-meta .name { font-weight:700; color:#0f172a; }
 .profile-meta .email { font-size:13px; color:#64748b; }
-.menu-item { width:100%; text-align:left; background:transparent; border:0; padding:8px 6px; border-radius:8px; cursor:pointer; font-weight:600; color:#ef4444; }
-.menu-item:hover { background:rgba(239,68,68,0.06); }
+.menu-item { width:100%; text-align:left; background:transparent; border:0; padding:8px 6px; border-radius:8px; cursor:pointer; font-weight:600; color:#0f172a; }
+.menu-item:hover { background:rgba(2,6,23,0.03); }
+.menu-item-danger { color: #ef4444; }
+.menu-item-danger:hover { background: rgba(239,68,68,0.06); }

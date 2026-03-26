@@ -1,12 +1,15 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard,
   Briefcase,
   Target,
   PlusCircle,
+  Menu,
+  CreditCard,
+  Wallet,
 } from 'lucide-react';
-import { CreditCard } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import './BottomNav.css';
 
 export default function BottomNav() {
@@ -22,10 +25,6 @@ export default function BottomNav() {
         <Briefcase size={20} />
         <span>Investments</span>
       </NavLink>
-      <NavLink to="/loans" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-        <CreditCard size={20} />
-        <span>Loans</span>
-      </NavLink>
       <NavLink to="/add" className={({ isActive }) => `nav-item nav-item-add ${isActive ? 'active' : ''}`}>
         <PlusCircle size={24} />
         <span>Add</span>
@@ -34,6 +33,40 @@ export default function BottomNav() {
         <Target size={20} />
         <span>Goals</span>
       </NavLink>
+      <MoreMenu />
     </nav>
+  );
+}
+
+function MoreMenu() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    function onDoc(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('click', onDoc);
+    return () => document.removeEventListener('click', onDoc);
+  }, []);
+
+  return (
+    <div className="nav-more" ref={ref}>
+      <button className={`nav-item ${open ? 'active' : ''}`} onClick={() => setOpen((v) => !v)}>
+        <Menu size={20} />
+        <span>More</span>
+      </button>
+      {open && (
+        <div className="more-menu">
+          <button className="more-item" onClick={() => { setOpen(false); navigate('/loans'); }}>
+            <CreditCard size={16} style={{ marginRight: 8 }} /> Loans
+          </button>
+          <button className="more-item" onClick={() => { setOpen(false); navigate('/expenses'); }}>
+            <Wallet size={16} style={{ marginRight: 8 }} /> Expenses
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

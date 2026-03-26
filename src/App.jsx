@@ -14,6 +14,8 @@ import LoanForm from './pages/LoanForm';
 import AddPage from './pages/AddPage';
 import Login from './pages/Login';
 import RequireAuth from './components/RequireAuth';
+import Expenses from './pages/Expenses';
+import ExpenseForm from './pages/ExpenseForm';
 import './App.css';
 
 export default function App() {
@@ -37,6 +39,9 @@ export default function App() {
                 <Route path="/goals" element={<RequireAuth><Goals /></RequireAuth>} />
                 <Route path="/goals/add" element={<RequireAuth><GoalForm /></RequireAuth>} />
                 <Route path="/goals/edit/:id" element={<RequireAuth><GoalForm /></RequireAuth>} />
+                <Route path="/expenses" element={<RequireAuth><Expenses /></RequireAuth>} />
+                <Route path="/expenses/new" element={<RequireAuth><ExpenseForm /></RequireAuth>} />
+                <Route path="/expenses/edit/:id" element={<RequireAuth><ExpenseForm /></RequireAuth>} />
               </Routes>
             </main>
             <BottomNav />

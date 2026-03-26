@@ -225,3 +225,24 @@ export function getDemoLoans() {
 export function getDemoCash() {
   return 50000; // sample cash balance for demo
 }
+
+export function getDemoExpenses() {
+  return [
+    {
+      id: 'e1',
+      name: 'Grocery Shopping',
+      amount: 4200,
+      date: '2026-03-15',
+      category: 'Groceries',
+      notes: 'Weekly essentials',
+    },
+    {
+      id: 'e2',
+      name: 'Electricity Bill',
+      amount: 3200,
+      date: '2026-03-10',
+      category: 'Utilities',
+      notes: '',
+    },
+  ];
+}

@@ -52,7 +52,7 @@ export default function Header() {
                   <div className="email">{user.email}</div>
                 </div>
               </div>
-              <button className="menu-item" onClick={signOutUser}>Sign out</button>
+              <button className="menu-item menu-item-danger" onClick={signOutUser}>Sign out</button>
             </div>
           )}
         </div>

@@ -3,6 +3,7 @@ const STORAGE_KEYS = {
   GOALS: 'myMoney_goals',
   LOANS: 'myMoney_loans',
   CASH: 'myMoney_cash',
+  EXPENSES: 'myMoney_expenses',
 };
 
 export function loadInvestments() {
@@ -56,6 +57,23 @@ export function loadCash() {
 export function saveCash(amount) {
   try {
     localStorage.setItem(STORAGE_KEYS.CASH, JSON.stringify(Number(amount) || 0));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadExpenses() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.EXPENSES);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveExpenses(expenses) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
   } catch {
     // ignore
   }
