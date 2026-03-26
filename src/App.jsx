@@ -9,6 +9,8 @@ import Investments from './pages/Investments';
 import InvestmentForm from './pages/InvestmentForm';
 import Goals from './pages/Goals';
 import GoalForm from './pages/GoalForm';
+import Loans from './pages/Loans';
+import LoanForm from './pages/LoanForm';
 import AddPage from './pages/AddPage';
 import Login from './pages/Login';
 import RequireAuth from './components/RequireAuth';
@@ -29,6 +31,9 @@ export default function App() {
                 <Route path="/investments/new" element={<RequireAuth><InvestmentForm /></RequireAuth>} />
                 <Route path="/investments/edit/:id" element={<RequireAuth><InvestmentForm /></RequireAuth>} />
                 <Route path="/add" element={<RequireAuth><AddPage /></RequireAuth>} />
+                <Route path="/loans" element={<RequireAuth><Loans /></RequireAuth>} />
+                <Route path="/loans/new" element={<RequireAuth><LoanForm /></RequireAuth>} />
+                <Route path="/loans/edit/:id" element={<RequireAuth><LoanForm /></RequireAuth>} />
                 <Route path="/goals" element={<RequireAuth><Goals /></RequireAuth>} />
                 <Route path="/goals/add" element={<RequireAuth><GoalForm /></RequireAuth>} />
                 <Route path="/goals/edit/:id" element={<RequireAuth><GoalForm /></RequireAuth>} />

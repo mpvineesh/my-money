@@ -17,13 +17,13 @@ if (typeof window !== 'undefined') {
   // Show non-secret fields and presence of API key for debugging
   // (Do not commit API keys to public logs in production)
   // eslint-disable-next-line no-console
-  console.log('Firebase config:', {
-    apiKey: !!firebaseConfig.apiKey,
-    authDomain: firebaseConfig.authDomain,
-    projectId: firebaseConfig.projectId,
-    storageBucket: firebaseConfig.storageBucket,
-    appId: firebaseConfig.appId,
-  });
+//   console.log('Firebase config:', {
+//     apiKey: !!firebaseConfig.apiKey,
+//     authDomain: firebaseConfig.authDomain,
+//     projectId: firebaseConfig.projectId,
+//     storageBucket: firebaseConfig.storageBucket,
+//     appId: firebaseConfig.appId,
+//   });
 }
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();

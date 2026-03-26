@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { loadInvestments, saveInvestments, loadGoals, saveGoals } from '../utils/storage';
-import { getDemoInvestments, getDemoGoals } from '../utils/constants';
+import { loadInvestments, saveInvestments, loadGoals, saveGoals, loadLoans, saveLoans, loadCash, saveCash } from '../utils/storage';
+import { getDemoInvestments, getDemoGoals, getDemoLoans, getDemoCash } from '../utils/constants';
 import { AppContext } from './AppContextDef';
 import { useAuth } from './AuthContext';
 import { db } from '../firebase';
@@ -28,6 +28,20 @@ export function AppProvider({ children }) {
 
   const [investments, setInvestments] = useState(getInitialInvestments);
   const [goals, setGoals] = useState(getInitialGoals);
+  const [loans, setLoans] = useState(() => {
+    const stored = loadLoans();
+    if (stored.length > 0) return stored;
+    const demo = getDemoLoans();
+    saveLoans(demo);
+    return demo;
+  });
+  const [cash, setCashState] = useState(() => {
+    const stored = loadCash();
+    if (stored) return stored;
+    const demo = getDemoCash();
+    saveCash(demo);
+    return demo;
+  });
 
   useEffect(() => {
     // If user is signed in, listen to their Firestore collections and sync locally
@@ -35,6 +49,7 @@ export function AppProvider({ children }) {
 
     const invCol = collection(db, 'users', user.uid, 'investments');
     const goalsCol = collection(db, 'users', user.uid, 'goals');
+    const loansCol = collection(db, 'users', user.uid, 'loans');
 
     const unsubInv = onSnapshot(invCol, (snap) => {
       const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -49,9 +64,16 @@ export function AppProvider({ children }) {
       saveGoals(items);
     });
 
+    const unsubLoans = onSnapshot(loansCol, (snap) => {
+      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setLoans(items);
+      saveLoans(items);
+    });
+
     return () => {
       unsubInv();
       unsubGoals();
+      unsubLoans();
     };
   }, [user]);
 
@@ -68,6 +90,52 @@ export function AppProvider({ children }) {
       return updated;
     });
   }, [user]);
+
+  const addLoan = useCallback((loan) => {
+    const newItem = { ...loan, id: uuidv4() };
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'loans', newItem.id);
+      setDoc(ref, newItem);
+      return;
+    }
+    setLoans((prev) => {
+      const updated = [...prev, newItem];
+      saveLoans(updated);
+      return updated;
+    });
+  }, [user]);
+
+  const updateLoan = useCallback((id, loan) => {
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'loans', id);
+      updateDoc(ref, { ...loan });
+      return;
+    }
+    setLoans((prev) => {
+      const updated = prev.map((l) => (l.id === id ? { ...l, ...loan } : l));
+      saveLoans(updated);
+      return updated;
+    });
+  }, [user]);
+
+  const deleteLoan = useCallback((id) => {
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'loans', id);
+      deleteDoc(ref);
+      return;
+    }
+    setLoans((prev) => {
+      const updated = prev.filter((l) => l.id !== id);
+      saveLoans(updated);
+      return updated;
+    });
+  }, [user]);
+
+  const setCash = useCallback((amount) => {
+    const value = Number(amount) || 0;
+    setCashState(value);
+    saveCash(value);
+  }, []);
 
   const updateInvestment = useCallback((id, investment) => {
     if (user) {
@@ -138,21 +206,33 @@ export function AppProvider({ children }) {
   const resetToDemo = useCallback(() => {
     const demoInv = getDemoInvestments();
     const demoGoals = getDemoGoals();
+    const demoLoans = getDemoLoans();
+    const demoCash = getDemoCash();
     setInvestments(demoInv);
     setGoals(demoGoals);
+    setLoans(demoLoans);
+    setCashState(demoCash);
     saveInvestments(demoInv);
     saveGoals(demoGoals);
+    saveLoans(demoLoans);
+    saveCash(demoCash);
   }, []);
 
   const value = {
     investments,
     goals,
+    loans,
+    cash,
     addInvestment,
     updateInvestment,
     deleteInvestment,
     addGoal,
     updateGoal,
     deleteGoal,
+    addLoan,
+    updateLoan,
+    deleteLoan,
+    setCash,
     resetToDemo,
   };
 

@@ -6,6 +6,7 @@ import {
   Target,
   PlusCircle,
 } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 import './BottomNav.css';
 
 export default function BottomNav() {
@@ -20,6 +21,10 @@ export default function BottomNav() {
       <NavLink to="/investments" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <Briefcase size={20} />
         <span>Investments</span>
+      </NavLink>
+      <NavLink to="/loans" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+        <CreditCard size={20} />
+        <span>Loans</span>
       </NavLink>
       <NavLink to="/add" className={({ isActive }) => `nav-item nav-item-add ${isActive ? 'active' : ''}`}>
         <PlusCircle size={24} />

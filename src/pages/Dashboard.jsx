@@ -53,6 +53,8 @@ export default function Dashboard() {
     return { totalInvested, totalCurrent, totalGain, overallReturn, pieData, totalGoalTarget, totalGoalCurrent };
   }, [investments, goals]);
 
+  
+
   const topInvestments = useMemo(() => {
     return [...investments].sort((a, b) => (Number(b.currentValue) || 0) - (Number(a.currentValue) || 0)).slice(0, 3);
   }, [investments]);
@@ -89,6 +91,7 @@ export default function Dashboard() {
           <span className="stat-value">{isPositive ? '+' : ''}{formatCurrency(stats.totalGain)}</span>
           <span className="stat-sub">{isPositive ? '+' : ''}{stats.overallReturn}% overall</span>
         </div>
+        
       </div>
 
       {stats.pieData.length > 0 && (

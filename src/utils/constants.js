@@ -196,3 +196,32 @@ export function getDemoGoals() {
     },
   ];
 }
+
+export function getDemoLoans() {
+  return [
+    {
+      id: 'l1',
+      name: 'Car Loan - SBI',
+      principal: 600000,
+      annualRate: 8.5,
+      termMonths: 60,
+      startDate: '2023-07-01',
+      monthlyEMI: null,
+      notes: '5 year auto loan',
+    },
+    {
+      id: 'l2',
+      name: 'Personal Loan',
+      principal: 150000,
+      annualRate: 11.0,
+      termMonths: 36,
+      startDate: '2024-01-15',
+      monthlyEMI: null,
+      notes: 'Short term personal loan',
+    },
+  ];
+}
+
+export function getDemoCash() {
+  return 50000; // sample cash balance for demo
+}
