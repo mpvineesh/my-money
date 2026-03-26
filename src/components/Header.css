@@ -1,0 +1,25 @@
+.app-header {
+  width:100%;
+  background: transparent;
+  position:sticky;
+  top:0;
+  z-index:40;
+}
+.header-inner {
+  max-width:1100px;
+  margin:0 auto;
+  padding:12px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.profile { position:relative; }
+.profile-btn { background:transparent; border:0; cursor:pointer; padding:6px; }
+.avatar { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:999px; background:#eef2ff; color:#3730a3; font-weight:700; }
+.avatar-lg { width:56px; height:56px; font-size:18px; }
+.profile-menu { position:absolute; right:0; top:52px; width:220px; background:#ffffff; border-radius:10px; box-shadow:0 10px 30px rgba(2,6,23,0.08); padding:12px; border:1px solid rgba(2,6,23,0.04); }
+.profile-info { display:flex; gap:10px; align-items:center; padding-bottom:8px; border-bottom:1px solid rgba(2,6,23,0.04); margin-bottom:8px; }
+.profile-meta .name { font-weight:700; color:#0f172a; }
+.profile-meta .email { font-size:13px; color:#64748b; }
+.menu-item { width:100%; text-align:left; background:transparent; border:0; padding:8px 6px; border-radius:8px; cursor:pointer; font-weight:600; color:#ef4444; }
+.menu-item:hover { background:rgba(239,68,68,0.06); }
