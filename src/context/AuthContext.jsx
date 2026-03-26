@@ -11,6 +11,8 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [initializing, setInitializing] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -21,7 +23,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
-    await signInWithPopup(auth, googleProvider);
+    setLoading(true);
+    setError(null);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err) {
+      console.error('Google sign-in error', err);
+      setError(err?.message || 'Sign-in failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const signOutUser = useCallback(async () => {
@@ -31,6 +43,8 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     initializing,
+    loading,
+    error,
     signInWithGoogle,
     signOutUser,
   };
