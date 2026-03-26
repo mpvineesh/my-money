@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Header.css';
 
@@ -22,7 +23,7 @@ export default function Header() {
   return (
     <header className="app-header">
       <div className="header-inner">
-        <div />
+        <div className="brand"><Link to="/" className="brand-link">My Money</Link></div>
         <div className="profile" ref={ref}>
           <button className="profile-btn" onClick={() => setOpen(v => !v)} aria-haspopup>
             <span className="avatar">{initials}</span>

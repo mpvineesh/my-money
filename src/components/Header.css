@@ -13,6 +13,8 @@
   align-items:center;
   justify-content:space-between;
 }
+.brand { font-weight:800; color:#0f172a; font-size:18px; }
+.brand-link { color:inherit; text-decoration:none; }
 .profile { position:relative; }
 .profile-btn { background:transparent; border:0; cursor:pointer; padding:6px; }
 .avatar { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:999px; background:#eef2ff; color:#3730a3; font-weight:700; }
