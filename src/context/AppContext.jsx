@@ -67,7 +67,7 @@ export function AppProvider({ children }) {
       saveInvestments(updated);
       return updated;
     });
-  }, []);
+  }, [user]);
 
   const updateInvestment = useCallback((id, investment) => {
     if (user) {
@@ -80,7 +80,7 @@ export function AppProvider({ children }) {
       saveInvestments(updated);
       return updated;
     });
-  }, []);
+  }, [user]);
 
   const deleteInvestment = useCallback((id) => {
     if (user) {
@@ -93,7 +93,7 @@ export function AppProvider({ children }) {
       saveInvestments(updated);
       return updated;
     });
-  }, []);
+  }, [user]);
 
   const addGoal = useCallback((goal) => {
     const newItem = { ...goal, id: uuidv4() };
@@ -107,7 +107,7 @@ export function AppProvider({ children }) {
       saveGoals(updated);
       return updated;
     });
-  }, []);
+  }, [user]);
 
   const updateGoal = useCallback((id, goal) => {
     if (user) {
@@ -120,7 +120,7 @@ export function AppProvider({ children }) {
       saveGoals(updated);
       return updated;
     });
-  }, []);
+  }, [user]);
 
   const deleteGoal = useCallback((id) => {
     if (user) {
@@ -133,7 +133,7 @@ export function AppProvider({ children }) {
       saveGoals(updated);
       return updated;
     });
-  }, []);
+  }, [user]);
 
   const resetToDemo = useCallback(() => {
     const demoInv = getDemoInvestments();
