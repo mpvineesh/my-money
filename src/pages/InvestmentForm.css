@@ -86,6 +86,33 @@
   min-height: 80px;
 }
 
+.form-inline-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-inline-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1.5px solid #cbd5e1;
+  background: white;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.form-inline-btn:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+  background: #eef2ff;
+}
+
 .form-input-prefix {
   position: relative;
   display: flex;
@@ -257,6 +284,94 @@
 
 .btn-cancel:hover {
   border-color: #94a3b8;
+}
+
+.form-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 50;
+}
+
+.form-modal {
+  width: min(100%, 420px);
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
+}
+
+.form-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.form-modal-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6366f1;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.form-modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.form-modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.form-modal-close:hover {
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.form-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.form-modal-submit {
+  padding: 10px 18px;
+}
+
+@media (max-width: 520px) {
+  .form-inline-select,
+  .form-modal-actions,
+  .delete-confirm-actions {
+    flex-direction: column;
+  }
+
+  .form-inline-btn,
+  .form-modal-submit,
+  .btn-cancel,
+  .btn-danger {
+    width: 100%;
+  }
 }
 
 @media (max-width: 380px) {

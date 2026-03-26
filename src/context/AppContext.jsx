@@ -1,9 +1,31 @@
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { loadInvestments, saveInvestments, loadGoals, saveGoals, loadLoans, saveLoans, loadCash, saveCash, loadExpenses, saveExpenses } from '../utils/storage';
-import { getDemoInvestments, getDemoGoals, getDemoLoans, getDemoCash, getDemoExpenses } from '../utils/constants';
+import {
+  loadInvestments,
+  saveInvestments,
+  loadGoals,
+  saveGoals,
+  loadLoans,
+  saveLoans,
+  loadCash,
+  saveCash,
+  loadExpenses,
+  saveExpenses,
+  loadExpensePayers,
+  saveExpensePayers,
+} from '../utils/storage';
+import {
+  getDemoInvestments,
+  getDemoGoals,
+  getDemoLoans,
+  getDemoCash,
+  getDemoExpenses,
+  DEFAULT_EXPENSE_PAYER,
+  getExpenseCategoryInfo,
+  getPaymentMethodInfo,
+} from '../utils/constants';
 import { AppContext } from './AppContextDef';
-import { useAuth } from './AuthContext';
+import { useAuth } from './useAuth';
 import { db } from '../firebase';
 import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
@@ -21,6 +43,43 @@ function getInitialGoals() {
   const demo = getDemoGoals();
   saveGoals(demo);
   return demo;
+}
+
+function formatStoredExpenseDateTime(value) {
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${value}T09:00`;
+  return String(value).slice(0, 16);
+}
+
+function normalizeExpense(expense) {
+  const categoryInfo = getExpenseCategoryInfo(expense?.category);
+  const paymentMethodInfo = getPaymentMethodInfo(expense?.paymentMethod);
+  const dateTime = formatStoredExpenseDateTime(expense?.dateTime || expense?.date);
+  const paidByName = expense?.paidByName || expense?.paidBy || DEFAULT_EXPENSE_PAYER.name;
+  const fallbackPayerId = `payer:${paidByName.toLowerCase().replace(/\s+/g, '-')}`;
+
+  return {
+    ...expense,
+    amount: Number(expense?.amount) || 0,
+    category: categoryInfo.value,
+    paymentMethod: paymentMethodInfo.value,
+    paymentMethodOther:
+      paymentMethodInfo.value === 'other'
+        ? expense?.paymentMethodOther || expense?.paymentMethodLabel || expense?.paymentMethod || ''
+        : expense?.paymentMethodOther || '',
+    paidById: expense?.paidById || (paidByName === DEFAULT_EXPENSE_PAYER.name ? DEFAULT_EXPENSE_PAYER.id : fallbackPayerId),
+    paidByName,
+    dateTime,
+    date: dateTime ? dateTime.slice(0, 10) : '',
+    notes: expense?.notes || '',
+  };
+}
+
+function normalizeExpensePayers(payers) {
+  return payers
+    .filter((payer) => payer?.name && payer.id !== DEFAULT_EXPENSE_PAYER.id)
+    .map((payer) => ({ id: payer.id, name: payer.name.trim() }))
+    .sort((left, right) => left.name.localeCompare(right.name));
 }
 
 export function AppProvider({ children }) {
@@ -44,10 +103,14 @@ export function AppProvider({ children }) {
   });
   const [expenses, setExpenses] = useState(() => {
     const stored = loadExpenses();
-    if (stored.length > 0) return stored;
-    const demo = getDemoExpenses();
+    if (stored.length > 0) return stored.map(normalizeExpense);
+    const demo = getDemoExpenses().map(normalizeExpense);
     saveExpenses(demo);
     return demo;
+  });
+  const [expensePayers, setExpensePayers] = useState(() => {
+    const stored = loadExpensePayers();
+    return normalizeExpensePayers(stored);
   });
 
   useEffect(() => {
@@ -79,9 +142,16 @@ export function AppProvider({ children }) {
 
     const expensesCol = collection(db, 'users', user.uid, 'expenses');
     const unsubExpenses = onSnapshot(expensesCol, (snap) => {
-      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const items = snap.docs.map((d) => normalizeExpense({ id: d.id, ...d.data() }));
       setExpenses(items);
       saveExpenses(items);
+    });
+
+    const expensePayersCol = collection(db, 'users', user.uid, 'expensePayers');
+    const unsubExpensePayers = onSnapshot(expensePayersCol, (snap) => {
+      const items = normalizeExpensePayers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setExpensePayers(items);
+      saveExpensePayers(items);
     });
 
     return () => {
@@ -89,6 +159,7 @@ export function AppProvider({ children }) {
       unsubGoals();
       unsubLoans();
       unsubExpenses();
+      unsubExpensePayers();
     };
   }, [user]);
 
@@ -147,7 +218,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const addExpense = useCallback((expense) => {
-    const newItem = { ...expense, id: uuidv4() };
+    const newItem = normalizeExpense({ ...expense, id: uuidv4() });
     if (user) {
       const ref = doc(db, 'users', user.uid, 'expenses', newItem.id);
       setDoc(ref, newItem);
@@ -161,13 +232,14 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const updateExpense = useCallback((id, expense) => {
+    const normalizedExpense = normalizeExpense(expense);
     if (user) {
       const ref = doc(db, 'users', user.uid, 'expenses', id);
-      updateDoc(ref, { ...expense });
+      updateDoc(ref, { ...normalizedExpense });
       return;
     }
     setExpenses((prev) => {
-      const updated = prev.map((e) => (e.id === id ? { ...e, ...expense } : e));
+      const updated = prev.map((e) => (e.id === id ? { ...e, ...normalizedExpense } : e));
       saveExpenses(updated);
       return updated;
     });
@@ -184,6 +256,26 @@ export function AppProvider({ children }) {
       saveExpenses(updated);
       return updated;
     });
+  }, [user]);
+
+  const addExpensePayer = useCallback((payer) => {
+    const trimmedName = payer?.name?.trim();
+    if (!trimmedName) return null;
+
+    const newPayer = { id: uuidv4(), name: trimmedName };
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'expensePayers', newPayer.id);
+      setDoc(ref, newPayer);
+      return newPayer;
+    }
+
+    setExpensePayers((prev) => {
+      const updated = normalizeExpensePayers([...prev, newPayer]);
+      saveExpensePayers(updated);
+      return updated;
+    });
+
+    return newPayer;
   }, [user]);
 
   const setCash = useCallback((amount) => {
@@ -268,12 +360,14 @@ export function AppProvider({ children }) {
     setGoals(demoGoals);
     setLoans(demoLoans);
     setCashState(demoCash);
-    setExpenses(demoExpenses);
+    setExpenses(demoExpenses.map(normalizeExpense));
+    setExpensePayers([]);
     saveInvestments(demoInv);
     saveGoals(demoGoals);
     saveLoans(demoLoans);
     saveCash(demoCash);
-    saveExpenses(demoExpenses);
+    saveExpenses(demoExpenses.map(normalizeExpense));
+    saveExpensePayers([]);
   }, []);
 
   const value = {
@@ -282,6 +376,7 @@ export function AppProvider({ children }) {
     loans,
     cash,
     expenses,
+    expensePayers,
     addInvestment,
     updateInvestment,
     deleteInvestment,
@@ -295,6 +390,7 @@ export function AppProvider({ children }) {
     addExpense,
     updateExpense,
     deleteExpense,
+    addExpensePayer,
     resetToDemo,
   };
 

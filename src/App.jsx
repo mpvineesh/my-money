@@ -3,7 +3,6 @@ import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
-import { useAuth } from './context/AuthContext';
 import Dashboard from './pages/Dashboard';
 import Investments from './pages/Investments';
 import InvestmentForm from './pages/InvestmentForm';

@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   LOANS: 'myMoney_loans',
   CASH: 'myMoney_cash',
   EXPENSES: 'myMoney_expenses',
+  EXPENSE_PAYERS: 'myMoney_expense_payers',
 };
 
 export function loadInvestments() {
@@ -74,6 +75,23 @@ export function loadExpenses() {
 export function saveExpenses(expenses) {
   try {
     localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadExpensePayers() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.EXPENSE_PAYERS);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveExpensePayers(payers) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.EXPENSE_PAYERS, JSON.stringify(payers));
   } catch {
     // ignore
   }

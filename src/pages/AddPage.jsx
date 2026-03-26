@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Target, TrendingUp } from 'lucide-react';
+import { Briefcase, Target, TrendingUp, Wallet } from 'lucide-react';
 import './AddPage.css';
 
 export default function AddPage() {
@@ -33,6 +33,16 @@ export default function AddPage() {
           <div className="add-option-text">
             <h3>New Goal</h3>
             <p>Set financial goals like Emergency Fund, House, Retirement & more</p>
+          </div>
+        </button>
+
+        <button className="add-option-card" onClick={() => navigate('/expenses/new')}>
+          <div className="add-option-icon" style={{ background: '#ecfeff', color: '#0f766e' }}>
+            <Wallet size={28} />
+          </div>
+          <div className="add-option-text">
+            <h3>New Expense</h3>
+            <p>Record amount, date, paid by, payment method, and category allocation</p>
           </div>
         </button>
       </div>
