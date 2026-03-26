@@ -1,5 +1,13 @@
 import { getTypeInfo, formatCurrency, calculateReturns } from '../utils/constants';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import './InvestmentCard.css';
 
 export default function InvestmentCard({ investment, onClick }) {
@@ -8,6 +16,16 @@ export default function InvestmentCard({ investment, onClick }) {
   const gain = investment.currentValue - investment.investedAmount;
   const isPositive = gain > 0;
   const isNeutral = gain === 0;
+
+  // Projection: compute future values for next N years using interestRate (annual %)
+  const years = 5;
+  const rate = parseFloat(investment.interestRate) || 0;
+  const projection = [];
+  for (let i = 0; i <= years; i++) {
+    const value = investment.currentValue * Math.pow(1 + rate / 100, i);
+    projection.push({ year: i === 0 ? 'Now' : `+${i}y`, value: Math.round(value) });
+  }
+  const futureValue = projection[projection.length - 1].value;
 
   return (
     <div className="investment-card" onClick={onClick}>
@@ -35,6 +53,23 @@ export default function InvestmentCard({ investment, onClick }) {
         <span className={`gain-value ${isPositive ? 'positive' : isNeutral ? 'neutral' : 'negative'}`}>
           {isPositive ? '+' : ''}{formatCurrency(gain)}
         </span>
+      </div>
+
+      <div className="inv-card-projection">
+        <div className="projection-chart">
+          <ResponsiveContainer width="100%" height={60}>
+            <LineChart data={projection} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+              <XAxis dataKey="year" hide />
+              <YAxis hide domain={["dataMin", "dataMax"]} />
+              <Tooltip formatter={(val) => formatCurrency(val)} labelFormatter={() => ''} />
+              <Line type="monotone" dataKey="value" stroke={typeInfo.color} strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="projection-meta">
+          <span className="proj-label">{rate ? `${rate}% p.a.` : 'Rate N/A'}</span>
+          <span className="proj-value">{rate ? `~ ${formatCurrency(futureValue)} in ${years}y` : '—'}</span>
+        </div>
       </div>
     </div>
   );
