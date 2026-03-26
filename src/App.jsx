@@ -34,11 +34,7 @@ export default function App() {
                 <Route path="/goals/edit/:id" element={<RequireAuth><GoalForm /></RequireAuth>} />
               </Routes>
             </main>
-            {/** render bottom nav only when user is signed in */}
-            {(() => {
-              const { user } = useAuth();
-              return user ? <BottomNav /> : null;
-            })()}
+            <BottomNav />
           </div>
         </AppProvider>
       </AuthProvider>

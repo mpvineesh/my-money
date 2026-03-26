@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard,
   Briefcase,
@@ -8,6 +9,8 @@ import {
 import './BottomNav.css';
 
 export default function BottomNav() {
+  const { user } = useAuth();
+  if (!user) return null;
   return (
     <nav className="bottom-nav">
       <NavLink to="/" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
