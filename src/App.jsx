@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import BottomNav from './components/BottomNav';
+import { useAuth } from './context/AuthContext';
 import Dashboard from './pages/Dashboard';
 import Investments from './pages/Investments';
 import InvestmentForm from './pages/InvestmentForm';
@@ -31,7 +32,11 @@ export default function App() {
                 <Route path="/goals/edit/:id" element={<RequireAuth><GoalForm /></RequireAuth>} />
               </Routes>
             </main>
-            <BottomNav />
+            {/** render bottom nav only when user is signed in */}
+            {(() => {
+              const { user } = useAuth();
+              return user ? <BottomNav /> : null;
+            })()}
           </div>
         </AppProvider>
       </AuthProvider>
