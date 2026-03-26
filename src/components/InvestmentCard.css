@@ -1,0 +1,116 @@
+.investment-card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.investment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  border-color: #e2e8f0;
+}
+
+.investment-card:active {
+  transform: scale(0.98);
+}
+
+.inv-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.inv-type-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.inv-returns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.inv-returns.positive {
+  color: #16a34a;
+}
+
+.inv-returns.negative {
+  color: #dc2626;
+}
+
+.inv-returns.neutral {
+  color: #94a3b8;
+}
+
+.inv-card-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 12px;
+  line-height: 1.3;
+}
+
+.inv-card-amounts {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.inv-amount-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.inv-amount-label {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.inv-amount-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.inv-amount-invested {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.inv-card-gain {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.gain-value {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.gain-value.positive {
+  color: #16a34a;
+}
+
+.gain-value.negative {
+  color: #dc2626;
+}
+
+.gain-value.neutral {
+  color: #94a3b8;
+}

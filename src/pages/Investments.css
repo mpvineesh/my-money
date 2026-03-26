@@ -1,0 +1,216 @@
+.investments-page {
+  padding: 16px;
+  padding-bottom: 90px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.inv-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.inv-page-label {
+  font-size: 0.8rem;
+  color: #6366f1;
+  font-weight: 600;
+  margin: 0 0 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.inv-page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.inv-page-total {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.inv-total-label {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.inv-total-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.inv-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border-radius: 12px;
+  padding: 8px 14px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+}
+
+.inv-search-bar:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.inv-search-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.inv-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  color: #1e293b;
+  background: none;
+}
+
+.inv-search-input::placeholder {
+  color: #cbd5e1;
+}
+
+.inv-filter-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.inv-filter-toggle:hover,
+.inv-filter-toggle.active {
+  color: #6366f1;
+  background: #eef2ff;
+}
+
+.inv-filters {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid #f1f5f9;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.inv-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inv-filter-label {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.inv-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter-chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.filter-chip:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.filter-chip.active {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #6366f1;
+  font-weight: 600;
+}
+
+.inv-sort-select {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.8rem;
+  color: #1e293b;
+  background: white;
+  outline: none;
+  cursor: pointer;
+}
+
+.inv-sort-select:focus {
+  border-color: #6366f1;
+}
+
+.inv-count {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.inv-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inv-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: #94a3b8;
+}
+
+.inv-empty svg {
+  margin-bottom: 12px;
+}
+
+.inv-empty p {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  color: #64748b;
+}
