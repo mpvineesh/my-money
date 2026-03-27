@@ -14,7 +14,9 @@ import AddPage from './pages/AddPage';
 import Login from './pages/Login';
 import RequireAuth from './components/RequireAuth';
 import Expenses from './pages/Expenses';
+import ExpenseList from './pages/ExpenseList';
 import ExpenseForm from './pages/ExpenseForm';
+import AiInsights from './pages/AiInsights';
 import './App.css';
 
 export default function App() {
@@ -39,8 +41,10 @@ export default function App() {
                 <Route path="/goals/add" element={<RequireAuth><GoalForm /></RequireAuth>} />
                 <Route path="/goals/edit/:id" element={<RequireAuth><GoalForm /></RequireAuth>} />
                 <Route path="/expenses" element={<RequireAuth><Expenses /></RequireAuth>} />
+                <Route path="/expenses/list" element={<RequireAuth><ExpenseList /></RequireAuth>} />
                 <Route path="/expenses/new" element={<RequireAuth><ExpenseForm /></RequireAuth>} />
                 <Route path="/expenses/edit/:id" element={<RequireAuth><ExpenseForm /></RequireAuth>} />
+                <Route path="/ai-insights" element={<RequireAuth><AiInsights /></RequireAuth>} />
               </Routes>
             </main>
             <BottomNav />

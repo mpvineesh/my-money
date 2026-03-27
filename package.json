@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "npm --prefix server run dev",
+    "deploy:server": "gcloud run deploy my-money-ai-server --source server --region asia-south1 --allow-unauthenticated --set-env-vars OPENAI_MODEL=gpt-5-mini",
+    "deploy:hosting": "vite build && firebase deploy --only hosting",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",

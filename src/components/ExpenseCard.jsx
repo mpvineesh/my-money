@@ -1,20 +1,42 @@
 import { useNavigate } from 'react-router-dom';
+import { useApp } from '../context/useApp';
 import {
   formatCurrency,
   formatDateTime,
   getExpenseCategoryInfo,
+  getExpenseSubcategoryInfo,
+  getExpenseTypeInfo,
   getPaymentMethodInfo,
 } from '../utils/constants';
 import './ExpenseCard.css';
 
-export default function ExpenseCard({ expense }) {
+export default function ExpenseCard({ expense, returnTo = '' }) {
   const navigate = useNavigate();
-  const category = getExpenseCategoryInfo(expense.category);
+  const { expenseCategories, expenseSubcategories, expenseTypes } = useApp();
+  const category = getExpenseCategoryInfo(expense.category, expenseCategories, expense.categoryLabel);
+  const subcategory = getExpenseSubcategoryInfo(
+    category.value,
+    expense.subcategory,
+    expenseSubcategories,
+    expense.subcategoryLabel,
+  );
+  const expenseType = getExpenseTypeInfo(
+    category.value,
+    subcategory?.value || '',
+    expense.expenseType,
+    expenseTypes,
+    expense.expenseTypeLabel,
+  );
   const paymentMethod = getPaymentMethodInfo(expense.paymentMethod);
   const paidByName = expense.paidByName || 'Me';
+  const navigationState = returnTo ? { returnTo } : undefined;
 
   return (
-    <button type="button" className="expense-card" onClick={() => navigate(`/expenses/edit/${expense.id}`)}>
+    <button
+      type="button"
+      className="expense-card"
+      onClick={() => navigate(`/expenses/edit/${expense.id}`, navigationState ? { state: navigationState } : undefined)}
+    >
       <div className="expense-card-top">
         <div>
           <div className="expense-card-name">{expense.name}</div>
@@ -27,6 +49,8 @@ export default function ExpenseCard({ expense }) {
         <span className="expense-chip" style={{ backgroundColor: `${category.color}18`, color: category.color }}>
           {category.label}
         </span>
+        {subcategory ? <span className="expense-chip expense-chip-subtle">{subcategory.label}</span> : null}
+        {expenseType ? <span className="expense-chip expense-chip-outline">{expenseType.label}</span> : null}
         <span className="expense-chip">{paidByName}</span>
         <span className="expense-chip">
           {paymentMethod.value === 'other' && expense.paymentMethodOther

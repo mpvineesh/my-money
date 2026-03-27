@@ -8,6 +8,7 @@ import {
   Menu,
   CreditCard,
   Wallet,
+  Sparkles,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import './BottomNav.css';
@@ -64,6 +65,9 @@ function MoreMenu() {
           </button>
           <button className="more-item" onClick={() => { setOpen(false); navigate('/expenses'); }}>
             <Wallet size={16} style={{ marginRight: 8 }} /> Expenses
+          </button>
+          <button className="more-item" onClick={() => { setOpen(false); navigate('/ai-insights'); }}>
+            <Sparkles size={16} style={{ marginRight: 8 }} /> AI Insights
           </button>
         </div>
       )}

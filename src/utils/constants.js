@@ -38,6 +38,21 @@ export const EXPENSE_CATEGORIES = [
   { value: 'other', label: 'Other', color: '#64748b' },
 ];
 
+export const EXPENSE_COLOR_PALETTE = [
+  '#0f766e',
+  '#3b82f6',
+  '#f97316',
+  '#ec4899',
+  '#8b5cf6',
+  '#22c55e',
+  '#eab308',
+  '#ef4444',
+  '#14b8a6',
+  '#6366f1',
+  '#06b6d4',
+  '#f59e0b',
+];
+
 export const EXPENSE_PAYMENT_METHODS = [
   { value: 'upi', label: 'UPI' },
   { value: 'cash', label: 'Cash' },
@@ -48,6 +63,134 @@ export const EXPENSE_PAYMENT_METHODS = [
 
 export const DEFAULT_EXPENSE_PAYER = { id: 'me', name: 'Me' };
 
+function slugifyExpenseValue(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+export function getExpenseChartColor(index) {
+  return EXPENSE_COLOR_PALETTE[index % EXPENSE_COLOR_PALETTE.length];
+}
+
+export function normalizeExpenseCategoryOption(category, index = 0) {
+  const label = String(category?.label || category?.name || category?.value || '').trim();
+  const value = String(category?.value || slugifyExpenseValue(label) || `category_${index + 1}`).trim().toLowerCase();
+
+  return {
+    id: category?.id || value,
+    value,
+    label: label || value,
+    color: category?.color || getExpenseChartColor(index),
+  };
+}
+
+export function normalizeExpenseSubcategoryOption(subcategory, index = 0) {
+  const label = String(subcategory?.label || subcategory?.name || subcategory?.value || '').trim();
+  const value = String(subcategory?.value || slugifyExpenseValue(label) || `subcategory_${index + 1}`)
+    .trim()
+    .toLowerCase();
+  const categoryValue = String(subcategory?.categoryValue || subcategory?.category || '')
+    .trim()
+    .toLowerCase();
+
+  return {
+    id: subcategory?.id || `${categoryValue}:${value}`,
+    categoryValue,
+    value,
+    label: label || value,
+    color: subcategory?.color || getExpenseChartColor(index),
+  };
+}
+
+export function normalizeExpenseTypeOption(expenseType, index = 0) {
+  const label = String(expenseType?.label || expenseType?.name || expenseType?.value || '').trim();
+  const value = String(expenseType?.value || slugifyExpenseValue(label) || `expense_type_${index + 1}`)
+    .trim()
+    .toLowerCase();
+  const categoryValue = String(expenseType?.categoryValue || expenseType?.category || '')
+    .trim()
+    .toLowerCase();
+  const subcategoryValue = String(expenseType?.subcategoryValue || expenseType?.subcategory || '')
+    .trim()
+    .toLowerCase();
+
+  return {
+    id: expenseType?.id || `${categoryValue}:${subcategoryValue}:${value}`,
+    categoryValue,
+    subcategoryValue,
+    value,
+    label: label || value,
+    color: expenseType?.color || getExpenseChartColor(index),
+  };
+}
+
+export function getExpenseCategoryOptions(customCategories = []) {
+  return [...EXPENSE_CATEGORIES, ...customCategories.map((category, index) => normalizeExpenseCategoryOption(category, index))];
+}
+
+export function getExpenseSubcategories(categoryValue, customSubcategories = []) {
+  const normalizedCategory = String(categoryValue || '').trim().toLowerCase();
+
+  return customSubcategories
+    .map((subcategory, index) => normalizeExpenseSubcategoryOption(subcategory, index))
+    .filter((subcategory) => subcategory.categoryValue === normalizedCategory)
+    .sort((left, right) => left.label.localeCompare(right.label));
+}
+
+export function getExpenseTypes(categoryValue, subcategoryValue, customExpenseTypes = []) {
+  const normalizedCategory = String(categoryValue || '').trim().toLowerCase();
+  const normalizedSubcategory = String(subcategoryValue || '').trim().toLowerCase();
+
+  return customExpenseTypes
+    .map((expenseType, index) => normalizeExpenseTypeOption(expenseType, index))
+    .filter(
+      (expenseType) =>
+        expenseType.categoryValue === normalizedCategory && expenseType.subcategoryValue === normalizedSubcategory,
+    )
+    .sort((left, right) => left.label.localeCompare(right.label));
+}
+
+export function createExpenseCategoryValue(label, existingCategories = []) {
+  const baseValue = slugifyExpenseValue(label) || 'category';
+  const existingValues = new Set(getExpenseCategoryOptions(existingCategories).map((category) => category.value));
+
+  if (!existingValues.has(baseValue)) return baseValue;
+
+  let suffix = 2;
+  while (existingValues.has(`${baseValue}_${suffix}`)) suffix += 1;
+  return `${baseValue}_${suffix}`;
+}
+
+export function createExpenseSubcategoryValue(label, categoryValue, existingSubcategories = []) {
+  const baseValue = slugifyExpenseValue(label) || 'subcategory';
+  const existingValues = new Set(
+    getExpenseSubcategories(categoryValue, existingSubcategories).map((subcategory) => subcategory.value),
+  );
+
+  if (!existingValues.has(baseValue)) return baseValue;
+
+  let suffix = 2;
+  while (existingValues.has(`${baseValue}_${suffix}`)) suffix += 1;
+  return `${baseValue}_${suffix}`;
+}
+
+export function createExpenseTypeValue(label, categoryValue, subcategoryValue, existingExpenseTypes = []) {
+  const baseValue = slugifyExpenseValue(label) || 'expense_type';
+  const existingValues = new Set(
+    getExpenseTypes(categoryValue, subcategoryValue, existingExpenseTypes).map((expenseType) => expenseType.value),
+  );
+
+  if (!existingValues.has(baseValue)) return baseValue;
+
+  let suffix = 2;
+  while (existingValues.has(`${baseValue}_${suffix}`)) suffix += 1;
+  return `${baseValue}_${suffix}`;
+}
+
 export function getTypeInfo(typeValue) {
   return INVESTMENT_TYPES.find((t) => t.value === typeValue) || INVESTMENT_TYPES[INVESTMENT_TYPES.length - 1];
 }
@@ -56,14 +199,82 @@ export function getRiskInfo(riskValue) {
   return RISK_LEVELS.find((r) => r.value === riskValue) || RISK_LEVELS[0];
 }
 
-export function getExpenseCategoryInfo(categoryValue) {
-  if (!categoryValue) return EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1];
+export function getExpenseCategoryInfo(categoryValue, customCategories = [], fallbackLabel = '') {
+  const options = getExpenseCategoryOptions(customCategories);
+  const normalized = String(categoryValue || '').trim().toLowerCase();
+  const fallbackNormalized = String(fallbackLabel || '').trim().toLowerCase();
 
-  const normalized = String(categoryValue).trim().toLowerCase();
-  return (
-    EXPENSE_CATEGORIES.find((category) => category.value === normalized || category.label.toLowerCase() === normalized) ||
-    EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1]
+  const matchedCategory = options.find(
+    (category) => category.value === normalized || category.label.toLowerCase() === normalized || category.label.toLowerCase() === fallbackNormalized,
   );
+  if (matchedCategory) return matchedCategory;
+
+  if (fallbackLabel) {
+    return {
+      value: normalized || slugifyExpenseValue(fallbackLabel) || options[options.length - 1].value,
+      label: String(fallbackLabel).trim(),
+      color: getExpenseChartColor(options.length),
+    };
+  }
+
+  return options[options.length - 1];
+}
+
+export function getExpenseSubcategoryInfo(categoryValue, subcategoryValue, customSubcategories = [], fallbackLabel = '') {
+  const options = getExpenseSubcategories(categoryValue, customSubcategories);
+  const normalized = String(subcategoryValue || '').trim().toLowerCase();
+  const fallbackNormalized = String(fallbackLabel || '').trim().toLowerCase();
+
+  const matchedSubcategory = options.find(
+    (subcategory) =>
+      subcategory.value === normalized ||
+      subcategory.label.toLowerCase() === normalized ||
+      subcategory.label.toLowerCase() === fallbackNormalized,
+  );
+  if (matchedSubcategory) return matchedSubcategory;
+
+  if (fallbackLabel) {
+    return {
+      value: normalized || slugifyExpenseValue(fallbackLabel) || 'uncategorized',
+      label: String(fallbackLabel).trim(),
+      categoryValue: String(categoryValue || '').trim().toLowerCase(),
+      color: getExpenseChartColor(options.length),
+    };
+  }
+
+  return null;
+}
+
+export function getExpenseTypeInfo(
+  categoryValue,
+  subcategoryValue,
+  expenseTypeValue,
+  customExpenseTypes = [],
+  fallbackLabel = '',
+) {
+  const options = getExpenseTypes(categoryValue, subcategoryValue, customExpenseTypes);
+  const normalized = String(expenseTypeValue || '').trim().toLowerCase();
+  const fallbackNormalized = String(fallbackLabel || '').trim().toLowerCase();
+
+  const matchedExpenseType = options.find(
+    (expenseType) =>
+      expenseType.value === normalized ||
+      expenseType.label.toLowerCase() === normalized ||
+      expenseType.label.toLowerCase() === fallbackNormalized,
+  );
+  if (matchedExpenseType) return matchedExpenseType;
+
+  if (fallbackLabel) {
+    return {
+      value: normalized || slugifyExpenseValue(fallbackLabel) || 'uncategorized',
+      label: String(fallbackLabel).trim(),
+      categoryValue: String(categoryValue || '').trim().toLowerCase(),
+      subcategoryValue: String(subcategoryValue || '').trim().toLowerCase(),
+      color: getExpenseChartColor(options.length),
+    };
+  }
+
+  return null;
 }
 
 export function getPaymentMethodInfo(paymentMethod) {
@@ -298,6 +509,10 @@ export function getDemoExpenses() {
       date: '2026-03-15',
       dateTime: '2026-03-15T19:15',
       category: 'groceries',
+      subcategory: 'weekly_supplies',
+      subcategoryLabel: 'Weekly Supplies',
+      expenseType: 'essentials',
+      expenseTypeLabel: 'Essentials',
       paidById: 'me',
       paidByName: 'Me',
       paymentMethod: 'upi',
@@ -310,6 +525,10 @@ export function getDemoExpenses() {
       date: '2026-03-10',
       dateTime: '2026-03-10T09:45',
       category: 'utilities',
+      subcategory: 'electricity',
+      subcategoryLabel: 'Electricity',
+      expenseType: 'bill_payment',
+      expenseTypeLabel: 'Bill Payment',
       paidById: 'me',
       paidByName: 'Me',
       paymentMethod: 'upi',
@@ -322,6 +541,10 @@ export function getDemoExpenses() {
       date: '2026-03-18',
       dateTime: '2026-03-18T06:40',
       category: 'transport',
+      subcategory: 'cab',
+      subcategoryLabel: 'Cab',
+      expenseType: 'ride_fare',
+      expenseTypeLabel: 'Ride Fare',
       paidById: 'me',
       paidByName: 'Me',
       paymentMethod: 'card',
@@ -334,6 +557,10 @@ export function getDemoExpenses() {
       date: '2026-03-20',
       dateTime: '2026-03-20T21:05',
       category: 'food',
+      subcategory: 'dining_out',
+      subcategoryLabel: 'Dining Out',
+      expenseType: 'meal',
+      expenseTypeLabel: 'Meal',
       paidById: 'p1',
       paidByName: 'Akhil',
       paymentMethod: 'cash',

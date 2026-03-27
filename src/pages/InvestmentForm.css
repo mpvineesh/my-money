@@ -58,6 +58,36 @@
   letter-spacing: 0.05em;
 }
 
+.form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.form-label-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #4f46e5;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.form-label-action:disabled,
+.form-inline-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.form-label-action:hover:not(:disabled) {
+  color: #3730a3;
+}
+
 .form-input {
   padding: 12px 14px;
   border: 1.5px solid #e2e8f0;
@@ -327,6 +357,12 @@
   font-weight: 700;
   color: #0f172a;
   margin: 0;
+}
+
+.form-modal-context {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
 .form-modal-close {

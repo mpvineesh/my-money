@@ -8,6 +8,14 @@
     ],
     "rewrites": [
       {
+        "source": "/api/ai/**",
+        "run": {
+          "serviceId": "my-money-ai-server",
+          "region": "asia-south1",
+          "pinTag": true
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
