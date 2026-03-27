@@ -174,6 +174,7 @@ function normalizeAiReport(aiReport) {
     id: aiReport?.id || aiReport?.periodKey || '',
     periodKey: aiReport?.periodKey || '',
     periodLabel: aiReport?.periodLabel || aiReport?.periodKey || 'Monthly Report',
+    provider: aiReport?.provider || 'openai',
     generatedAt,
     summary: aiReport?.summary || '',
     wins: Array.isArray(aiReport?.wins) ? aiReport.wins.filter(Boolean) : [],
@@ -592,6 +593,7 @@ export function AppProvider({ children }) {
     const result = await requestMonthlyAiReport(user, {
       periodKey,
       forceRefresh: Boolean(options.forceRefresh),
+      provider: options.provider || 'openai',
     });
     const normalizedReport = normalizeAiReport(result?.report || {});
 

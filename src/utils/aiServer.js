@@ -1,8 +1,10 @@
+const RENDER_AI_SERVER_URL = 'https://my-money-nzbk.onrender.com';
+
 function getAiServerUrl() {
   const configuredUrl = import.meta.env.VITE_AI_SERVER_URL;
   if (configuredUrl) return configuredUrl.replace(/\/+$/, '');
   if (import.meta.env.DEV) return 'http://localhost:8787';
-  return '';
+  return RENDER_AI_SERVER_URL;
 }
 
 export async function requestMonthlyAiReport(user, payload) {

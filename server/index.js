@@ -1,5 +1,6 @@
 /* global process */
 import 'dotenv/config';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import express from 'express';
 import cors from 'cors';
@@ -10,7 +11,10 @@ import OpenAI from 'openai';
 
 const app = express();
 const port = Number(process.env.PORT) || 8787;
+const defaultAiProvider = String(process.env.AI_PROVIDER || 'openai').trim().toLowerCase();
 const openAiModel = process.env.OPENAI_MODEL || 'gpt-5-mini';
+const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const firebaseProjectId = process.env.FIREBASE_PROJECT_ID || '';
 
 function readServiceAccount() {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
@@ -27,6 +31,7 @@ function readServiceAccount() {
 const serviceAccount = readServiceAccount();
 initializeApp({
   credential: serviceAccount ? cert(serviceAccount) : applicationDefault(),
+  projectId: firebaseProjectId || serviceAccount?.project_id,
 });
 
 const auth = getAuth();
@@ -82,6 +87,54 @@ function createError(status, message) {
   const error = new Error(message);
   error.status = status;
   return error;
+}
+
+function fingerprintSecret(secret) {
+  const value = String(secret || '').trim();
+  if (!value) return 'missing';
+  return createHash('sha256').update(value).digest('hex').slice(0, 12);
+}
+
+function getFirebaseCredentialSource() {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) return 'env-json';
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) return 'file-path';
+  return 'application-default';
+}
+
+function logStartupConfig() {
+  console.info('AI server startup config', {
+    port,
+    defaultAiProvider,
+    openAiModel,
+    geminiModel,
+    openAiKeyFingerprint: fingerprintSecret(process.env.OPENAI_API_KEY),
+    geminiKeyFingerprint: fingerprintSecret(process.env.GEMINI_API_KEY),
+    firebaseProjectId: firebaseProjectId || serviceAccount?.project_id || 'unset',
+    firebaseCredentialSource: getFirebaseCredentialSource(),
+    corsOrigin: process.env.CORS_ORIGIN || '*',
+  });
+}
+
+function logAiError(provider, model, error) {
+  console.error(`${provider} request failed`, {
+    status: error?.status || 'unknown',
+    code: error?.code || 'unknown',
+    type: error?.type || 'unknown',
+    requestId: error?.request_id || error?.headers?.['x-request-id'] || 'unknown',
+    model,
+    openAiKeyFingerprint: fingerprintSecret(process.env.OPENAI_API_KEY),
+    geminiKeyFingerprint: fingerprintSecret(process.env.GEMINI_API_KEY),
+    message: error?.message || 'unknown',
+  });
+}
+
+function normalizeAiProvider(provider) {
+  const value = String(provider || defaultAiProvider || 'openai').trim().toLowerCase();
+  return value === 'gemini' ? 'gemini' : 'openai';
+}
+
+function getProviderModel(provider) {
+  return provider === 'gemini' ? geminiModel : openAiModel;
 }
 
 function safeNumber(value) {
@@ -232,8 +285,129 @@ async function requireUser(request, _response, next) {
     request.user = await auth.verifyIdToken(token);
     next();
   } catch (error) {
-    next(error.status ? error : createError(401, 'Invalid or expired Firebase ID token.'));
+    if (error.status) {
+      next(error);
+      return;
+    }
+
+    const diagnostic =
+      process.env.NODE_ENV === 'production' ? '' : ` Firebase Admin verification failed: ${error.message}`;
+    next(createError(401, `Invalid or expired Firebase ID token.${diagnostic}`));
   }
+}
+
+async function generateOpenAiReport(promptPayload) {
+  if (!process.env.OPENAI_API_KEY) {
+    throw createError(500, 'OPENAI_API_KEY is not configured on the AI server.');
+  }
+
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+  try {
+    const aiResponse = await client.responses.create({
+      model: openAiModel,
+      input: [
+        {
+          role: 'system',
+          content:
+            'You are a personal finance analyst for a money-tracking app. Use only the provided JSON. Do not invent transactions or balances. Avoid regulated financial advice, and give practical observations and next steps.',
+        },
+        {
+          role: 'user',
+          content: `Create a monthly finance report from this data:\n${JSON.stringify(promptPayload, null, 2)}`,
+        },
+      ],
+      text: {
+        format: {
+          type: 'json_schema',
+          name: 'monthly_finance_report',
+          strict: true,
+          schema: REPORT_SCHEMA,
+        },
+      },
+    });
+
+    if (!aiResponse.output_text) {
+      throw createError(502, 'OpenAI returned an empty response.');
+    }
+
+    return sanitizeReport(JSON.parse(aiResponse.output_text));
+  } catch (error) {
+    logAiError('OpenAI', openAiModel, error);
+    const diagnostic =
+      process.env.NODE_ENV === 'production'
+        ? ''
+        : ` provider=openai code=${error?.code || 'unknown'} requestId=${error?.request_id || error?.headers?.['x-request-id'] || 'unknown'}`;
+    throw createError(error?.status === 429 ? 429 : 502, `AI request failed.${diagnostic}`);
+  }
+}
+
+async function generateGeminiReport(promptPayload) {
+  if (!process.env.GEMINI_API_KEY) {
+    throw createError(500, 'GEMINI_API_KEY is not configured on the AI server.');
+  }
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': process.env.GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text:
+                    'You are a personal finance analyst for a money-tracking app. Use only the provided JSON. Do not invent transactions or balances. Avoid regulated financial advice, and give practical observations and next steps.',
+                },
+              ],
+            },
+            {
+              parts: [
+                {
+                  text: `Create a monthly finance report from this data:\n${JSON.stringify(promptPayload, null, 2)}`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseJsonSchema: REPORT_SCHEMA,
+          },
+        }),
+      },
+    );
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const apiError = payload?.error || {};
+      const error = new Error(apiError.message || 'Gemini request failed.');
+      error.status = response.status;
+      error.code = apiError.status || apiError.code || 'unknown';
+      error.type = apiError.status || 'unknown';
+      throw error;
+    }
+
+    const text = payload?.candidates?.[0]?.content?.parts?.find((part) => typeof part?.text === 'string')?.text || '';
+    if (!text) {
+      throw createError(502, 'Gemini returned an empty response.');
+    }
+
+    return sanitizeReport(JSON.parse(text));
+  } catch (error) {
+    logAiError('Gemini', geminiModel, error);
+    const diagnostic =
+      process.env.NODE_ENV === 'production' ? '' : ` provider=gemini code=${error?.code || 'unknown'}`;
+    throw createError(error?.status === 429 ? 429 : 502, `AI request failed.${diagnostic}`);
+  }
+}
+
+async function generateProviderReport(provider, promptPayload) {
+  return provider === 'gemini' ? generateGeminiReport(promptPayload) : generateOpenAiReport(promptPayload);
 }
 
 app.use(cors({
@@ -247,13 +421,10 @@ app.get('/health', (_request, response) => {
 
 app.post('/api/ai/reports/monthly', requireUser, async (request, response, next) => {
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      throw createError(500, 'OPENAI_API_KEY is not configured on the AI server.');
-    }
-
+    const provider = normalizeAiProvider(request.body?.provider);
     const { periodKey, periodLabel, startDateKey, nextMonthKey, previousMonthKey } = parsePeriodKey(request.body?.periodKey);
     const forceRefresh = Boolean(request.body?.forceRefresh);
-    const reportRef = db.doc(`users/${request.user.uid}/aiReports/${periodKey}`);
+    const reportRef = db.doc(`users/${request.user.uid}/aiReports/${provider}_${periodKey}`);
     const existingReport = await reportRef.get();
 
     if (existingReport.exists && !forceRefresh) {
@@ -302,47 +473,14 @@ app.post('/api/ai/reports/monthly', requireUser, async (request, response, next)
       goalsSummary,
       loansSummary,
     });
-
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const aiResponse = await client.responses.create({
-      model: openAiModel,
-      input: [
-        {
-          role: 'system',
-          content:
-            'You are a personal finance analyst for a money-tracking app. Use only the provided JSON. Do not invent transactions or balances. Avoid regulated financial advice, and give practical observations and next steps.',
-        },
-        {
-          role: 'user',
-          content: `Create a monthly finance report from this data:\n${JSON.stringify(promptPayload, null, 2)}`,
-        },
-      ],
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'monthly_finance_report',
-          strict: true,
-          schema: REPORT_SCHEMA,
-        },
-      },
-    });
-
-    if (!aiResponse.output_text) {
-      throw createError(502, 'OpenAI returned an empty response.');
-    }
-
-    let parsedReport;
-    try {
-      parsedReport = sanitizeReport(JSON.parse(aiResponse.output_text));
-    } catch (error) {
-      throw createError(502, `Could not parse the AI response: ${error.message}`);
-    }
+    const parsedReport = await generateProviderReport(provider, promptPayload);
 
     const reportDocument = {
+      provider,
       periodKey,
       periodLabel,
       generatedAt: Timestamp.now(),
-      model: openAiModel,
+      model: getProviderModel(provider),
       summary: parsedReport.summary,
       wins: parsedReport.wins,
       risks: parsedReport.risks,
@@ -376,7 +514,7 @@ app.post('/api/ai/reports/monthly', requireUser, async (request, response, next)
 
     response.json({
       cached: false,
-      report: serializeReport(periodKey, reportDocument),
+      report: serializeReport(`${provider}_${periodKey}`, reportDocument),
     });
   } catch (error) {
     next(error);
@@ -391,5 +529,6 @@ app.use((error, _request, response, next) => {
 });
 
 app.listen(port, () => {
+  logStartupConfig();
   console.log(`AI server listening on http://localhost:${port}`);
 });

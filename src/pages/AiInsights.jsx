@@ -4,6 +4,11 @@ import { useApp } from '../context/useApp';
 import { formatCurrency, formatDateTime } from '../utils/constants';
 import './AiInsights.css';
 
+const AI_PROVIDER_OPTIONS = [
+  { value: 'openai', label: 'OpenAI' },
+  { value: 'gemini', label: 'Gemini' },
+];
+
 function getCurrentMonthValue() {
   const now = new Date();
   const year = now.getFullYear();
@@ -28,9 +33,14 @@ export default function AiInsights() {
   const { aiReports, generateMonthlyAiReport } = useApp();
   const [periodKey, setPeriodKey] = useState(getCurrentMonthValue);
   const [selectedReportId, setSelectedReportId] = useState('');
+  const [provider, setProvider] = useState(() => localStorage.getItem('myMoney_ai_provider') || 'openai');
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem('myMoney_ai_provider', provider);
+  }, [provider]);
 
   useEffect(() => {
     if (!aiReports.length) {
@@ -54,7 +64,7 @@ export default function AiInsights() {
     setStatusMessage('');
 
     try {
-      const result = await generateMonthlyAiReport(periodKey, { forceRefresh });
+      const result = await generateMonthlyAiReport(periodKey, { forceRefresh, provider });
       setSelectedReportId(result.report.id);
       setStatusMessage(result.cached ? 'Loaded the saved report for this month.' : 'Generated a fresh report.');
     } catch (err) {
@@ -90,6 +100,18 @@ export default function AiInsights() {
               onChange={(event) => setPeriodKey(event.target.value)}
             />
           </label>
+          <div className="ai-provider-toggle" role="tablist" aria-label="AI provider">
+            {AI_PROVIDER_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`ai-provider-btn ${provider === option.value ? 'active' : ''}`}
+                onClick={() => setProvider(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
           <button type="button" className="ai-primary-btn" onClick={() => handleGenerate(false)} disabled={loading}>
             <Sparkles size={18} />
             <span>{loading ? 'Generating...' : 'Generate Report'}</span>
@@ -160,6 +182,7 @@ export default function AiInsights() {
                     <strong>{report.periodLabel}</strong>
                     <span>{formatDateTime(report.generatedAt)}</span>
                   </div>
+                  <span className="ai-provider-chip">{(report.provider || 'openai').toUpperCase()}</span>
                   <p>{report.summary || 'No summary generated yet.'}</p>
                 </button>
               ))}
@@ -181,7 +204,9 @@ export default function AiInsights() {
                   <p className="ai-panel-label">Current View</p>
                   <h2 className="ai-panel-title">{selectedReport.periodLabel}</h2>
                 </div>
-                <span className="ai-generated-at">Generated {formatDateTime(selectedReport.generatedAt)}</span>
+                <span className="ai-generated-at">
+                  {(selectedReport.provider || 'openai').toUpperCase()} · Generated {formatDateTime(selectedReport.generatedAt)}
+                </span>
               </div>
 
               <div className="ai-summary-card">

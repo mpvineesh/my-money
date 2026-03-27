@@ -55,6 +55,30 @@
   justify-content: flex-end;
 }
 
+.ai-provider-toggle {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 16px;
+  background: #ecfeff;
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  gap: 4px;
+}
+
+.ai-provider-btn {
+  border: 0;
+  background: transparent;
+  color: #0f172a;
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.ai-provider-btn.active {
+  background: #0f172a;
+  color: white;
+}
+
 .ai-period-picker,
 .ai-primary-btn,
 .ai-ghost-btn {
@@ -217,6 +241,19 @@
 .ai-report-card span,
 .ai-report-card p {
   color: #64748b;
+}
+
+.ai-provider-chip {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .ai-report-card.active {
