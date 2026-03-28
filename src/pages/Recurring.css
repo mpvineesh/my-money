@@ -1,0 +1,349 @@
+.recurring-page {
+  padding: 16px;
+  padding-bottom: 90px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.recurring-header {
+  margin-bottom: 18px;
+}
+
+.recurring-label {
+  font-size: 0.78rem;
+  color: #ea580c;
+  font-weight: 700;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.recurring-title {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.recurring-subtitle {
+  color: #64748b;
+  font-size: 0.94rem;
+  margin: 0;
+}
+
+.recurring-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.recurring-stat {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+}
+
+.recurring-stat-highlight {
+  background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%);
+}
+
+.recurring-stat-label,
+.recurring-list-label,
+.recurring-field span {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ea580c;
+  font-weight: 700;
+}
+
+.recurring-stat strong {
+  font-size: 1.4rem;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.recurring-stat span:last-child {
+  color: #64748b;
+  font-size: 0.86rem;
+}
+
+.recurring-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.05fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.recurring-form,
+.recurring-list-panel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05);
+}
+
+.recurring-form-head,
+.recurring-list-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.recurring-form-head h2,
+.recurring-list-head h2 {
+  margin: 0 0 4px;
+  color: #0f172a;
+  font-size: 1.05rem;
+}
+
+.recurring-form-head p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.recurring-kind-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff7ed;
+  border-radius: 999px;
+  padding: 4px;
+  margin-bottom: 14px;
+}
+
+.recurring-kind-toggle button,
+.recurring-secondary-btn,
+.recurring-icon-btn,
+.recurring-primary-btn {
+  border: none;
+  cursor: pointer;
+}
+
+.recurring-kind-toggle button {
+  background: transparent;
+  color: #c2410c;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 0.84rem;
+}
+
+.recurring-kind-toggle button.active {
+  background: white;
+  color: #9a3412;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.recurring-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.recurring-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recurring-field-wide {
+  grid-column: 1 / -1;
+}
+
+.recurring-field input,
+.recurring-field select,
+.recurring-field textarea {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #0f172a;
+  padding: 0 14px;
+  font-size: 0.95rem;
+}
+
+.recurring-field textarea {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  min-height: 92px;
+  resize: vertical;
+}
+
+.recurring-field input:focus,
+.recurring-field select:focus,
+.recurring-field textarea:focus {
+  outline: none;
+  border-color: #fb923c;
+  box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.14);
+}
+
+.recurring-form-actions {
+  margin-top: 16px;
+}
+
+.recurring-secondary-btn {
+  background: transparent;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.recurring-list {
+  display: grid;
+  gap: 12px;
+}
+
+.recurring-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 16px;
+  background: #fff;
+}
+
+.recurring-card-top,
+.recurring-card-meta,
+.recurring-card-actions,
+.recurring-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recurring-card-title-row {
+  justify-content: flex-start;
+  margin-bottom: 4px;
+}
+
+.recurring-card strong {
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.recurring-card p,
+.recurring-card-meta span {
+  color: #64748b;
+  font-size: 0.84rem;
+  margin: 0;
+}
+
+.recurring-card-amount {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.recurring-card-meta {
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+.recurring-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.recurring-status-neutral {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.recurring-status-warning {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.recurring-status-danger {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.recurring-card-actions {
+  justify-content: flex-end;
+}
+
+.recurring-primary-btn,
+.recurring-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.recurring-primary-btn {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.recurring-icon-btn {
+  background: #f8fafc;
+  color: #475569;
+}
+
+.recurring-icon-btn.danger {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.recurring-empty {
+  border: 1px dashed #cbd5e1;
+  border-radius: 18px;
+  padding: 28px 20px;
+  text-align: center;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.recurring-empty svg {
+  margin-bottom: 10px;
+}
+
+.recurring-empty h3 {
+  margin: 0 0 6px;
+  color: #0f172a;
+}
+
+.recurring-empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .recurring-summary-grid,
+  .recurring-layout,
+  .recurring-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recurring-card-top,
+  .recurring-card-actions,
+  .recurring-form-head,
+  .recurring-list-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .recurring-primary-btn,
+  .recurring-icon-btn {
+    width: 100%;
+  }
+}

@@ -17,6 +17,8 @@ import Expenses from './pages/Expenses';
 import ExpenseList from './pages/ExpenseList';
 import ExpenseForm from './pages/ExpenseForm';
 import AiInsights from './pages/AiInsights';
+import Recurring from './pages/Recurring';
+import Settings from './pages/Settings';
 import './App.css';
 
 export default function App() {
@@ -44,7 +46,9 @@ export default function App() {
                 <Route path="/expenses/list" element={<RequireAuth><ExpenseList /></RequireAuth>} />
                 <Route path="/expenses/new" element={<RequireAuth><ExpenseForm /></RequireAuth>} />
                 <Route path="/expenses/edit/:id" element={<RequireAuth><ExpenseForm /></RequireAuth>} />
+                <Route path="/recurring" element={<RequireAuth><Recurring /></RequireAuth>} />
                 <Route path="/ai-insights" element={<RequireAuth><AiInsights /></RequireAuth>} />
+                <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
               </Routes>
             </main>
             <BottomNav />

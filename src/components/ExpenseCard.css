@@ -71,6 +71,12 @@
   border: 1px solid #ccfbf1;
 }
 
+.expense-chip-project {
+  background: #ecfeff;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+}
+
 .expense-card-notes {
   margin-top: 12px;
   color: #475569;

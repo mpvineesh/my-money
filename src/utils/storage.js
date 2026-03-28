@@ -5,9 +5,13 @@ const STORAGE_KEYS = {
   CASH: 'myMoney_cash',
   EXPENSES: 'myMoney_expenses',
   EXPENSE_PAYERS: 'myMoney_expense_payers',
+  EXPENSE_PROJECTS: 'myMoney_expense_projects',
   EXPENSE_CATEGORIES: 'myMoney_expense_categories',
   EXPENSE_SUBCATEGORIES: 'myMoney_expense_subcategories',
   EXPENSE_TYPES: 'myMoney_expense_types',
+  EXPENSE_BUDGETS: 'myMoney_expense_budgets',
+  RECURRING_ENTRIES: 'myMoney_recurring_entries',
+  APP_SETTINGS: 'myMoney_app_settings',
   AI_REPORTS: 'myMoney_ai_reports',
 };
 
@@ -101,6 +105,23 @@ export function saveExpensePayers(payers) {
   }
 }
 
+export function loadExpenseProjects() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.EXPENSE_PROJECTS);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveExpenseProjects(projects) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.EXPENSE_PROJECTS, JSON.stringify(projects));
+  } catch {
+    // ignore
+  }
+}
+
 export function loadExpenseCategories() {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.EXPENSE_CATEGORIES);
@@ -147,6 +168,57 @@ export function loadExpenseTypes() {
 export function saveExpenseTypes(expenseTypes) {
   try {
     localStorage.setItem(STORAGE_KEYS.EXPENSE_TYPES, JSON.stringify(expenseTypes));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadExpenseBudgets() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.EXPENSE_BUDGETS);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveExpenseBudgets(expenseBudgets) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.EXPENSE_BUDGETS, JSON.stringify(expenseBudgets));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadRecurringEntries() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.RECURRING_ENTRIES);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveRecurringEntries(recurringEntries) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.RECURRING_ENTRIES, JSON.stringify(recurringEntries));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadAppSettings() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.APP_SETTINGS);
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveAppSettings(appSettings) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.APP_SETTINGS, JSON.stringify(appSettings));
   } catch {
     // ignore
   }

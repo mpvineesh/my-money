@@ -63,9 +63,270 @@
   background: #f0fdfa;
 }
 
-.expense-home-summary {
+.expense-budget-panel {
+  margin-bottom: 18px;
+}
+
+.expense-budget-header {
+  align-items: flex-end;
+}
+
+.expense-budget-subtitle {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-top: 4px;
+  max-width: 56ch;
+}
+
+.expense-budget-month {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.expense-budget-month span,
+.expense-budget-field span,
+.expense-budget-stat-label {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.expense-budget-month input,
+.expense-budget-field input,
+.expense-budget-field select {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid #dbeafe;
+  background: #fff;
+  color: #0f172a;
+  padding: 0 14px;
+  font-size: 0.95rem;
+}
+
+.expense-budget-month input:focus,
+.expense-budget-field input:focus,
+.expense-budget-field select:focus {
+  outline: none;
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
+}
+
+.expense-budget-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.expense-budget-summary-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.expense-budget-stat {
+  padding: 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.expense-budget-stat strong {
+  font-size: 1.4rem;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.expense-budget-stat span:last-child {
+  font-size: 0.88rem;
+  color: #64748b;
+}
+
+.expense-budget-stat.danger {
+  border-color: #fecaca;
+  background: linear-gradient(135deg, #fff7ed 0%, #fef2f2 100%);
+}
+
+.expense-budget-form {
+  border: 1px solid #dbeafe;
+  border-radius: 20px;
+  padding: 18px;
+  background: #f8fafc;
+}
+
+.expense-budget-form-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.expense-budget-form-head h3 {
+  font-size: 1rem;
+  color: #0f172a;
+  margin-bottom: 3px;
+}
+
+.expense-budget-form-head p {
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.expense-budget-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.expense-budget-form-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.expense-budget-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.expense-budget-form-actions {
+  margin-top: 14px;
+}
+
+.expense-budget-list {
+  display: grid;
+  gap: 12px;
+}
+
+.expense-budget-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 16px;
+  background: #fff;
+}
+
+.expense-budget-item-main,
+.expense-budget-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.expense-budget-item-main strong,
+.expense-budget-item-amounts strong {
+  color: #0f172a;
+}
+
+.expense-budget-item-main span,
+.expense-budget-item-amounts span,
+.expense-budget-status {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.expense-budget-item-main > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.expense-budget-item-amounts {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.expense-budget-progress {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+  margin: 14px 0 12px;
+}
+
+.expense-budget-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0f766e 0%, #14b8a6 100%);
+}
+
+.expense-budget-progress span.danger {
+  background: linear-gradient(90deg, #ea580c 0%, #dc2626 100%);
+}
+
+.expense-budget-status {
+  font-weight: 700;
+}
+
+.expense-budget-status.danger {
+  color: #dc2626;
+}
+
+.expense-budget-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.expense-budget-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #dbeafe;
+  background: #fff;
+  color: #0f766e;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.expense-budget-action.danger {
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.expense-budget-empty {
+  border: 1px dashed #cbd5e1;
+  border-radius: 18px;
+  padding: 24px;
+  text-align: center;
+  background: #f8fafc;
+}
+
+.expense-budget-empty h3 {
+  font-size: 1rem;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.expense-budget-empty p {
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.expense-home-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -110,6 +371,43 @@
   grid-template-columns: 1.2fr 0.8fr;
   gap: 14px;
   margin-bottom: 18px;
+}
+
+.expense-project-panel {
+  margin-bottom: 18px;
+}
+
+.expense-project-list {
+  display: grid;
+  gap: 12px;
+}
+
+.expense-project-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%);
+}
+
+.expense-project-item strong,
+.expense-project-item-amounts strong {
+  color: #0f172a;
+}
+
+.expense-project-item span,
+.expense-project-item-amounts span {
+  display: block;
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.expense-project-item-amounts {
+  text-align: right;
 }
 
 .expense-panel {
@@ -290,6 +588,8 @@
 
 @media (max-width: 640px) {
   .expense-home-header,
+  .expense-budget-top,
+  .expense-budget-summary-grid,
   .expense-home-summary,
   .expense-home-grid,
   .expense-subcategory-grid,
@@ -313,5 +613,22 @@
   .expense-home-cta {
     width: 100%;
     text-align: center;
+  }
+
+  .expense-budget-header,
+  .expense-budget-item-main,
+  .expense-budget-item-footer,
+  .expense-budget-form-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .expense-budget-item-actions {
+    justify-content: stretch;
+  }
+
+  .expense-budget-action {
+    flex: 1;
+    justify-content: center;
   }
 }

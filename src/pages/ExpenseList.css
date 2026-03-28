@@ -61,9 +61,44 @@
 
 .expense-list-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
+}
+
+.expense-list-filter-bar {
+  margin-bottom: 16px;
+}
+
+.expense-list-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.expense-list-filter span {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.expense-list-filter select {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid #dbeafe;
+  background: #fff;
+  color: #0f172a;
+  padding: 0 14px;
+  font-size: 0.95rem;
+}
+
+.expense-list-filter select:focus {
+  outline: none;
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12);
 }
 
 .expense-list-stat {

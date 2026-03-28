@@ -88,8 +88,25 @@ const REPORT_SCHEMA = {
   },
 };
 
+const ASK_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['answer', 'highlights', 'scenarioSummary'],
+  properties: {
+    answer: { type: 'string' },
+    highlights: {
+      type: 'array',
+      items: { type: 'string' },
+      maxItems: 5,
+    },
+    scenarioSummary: { type: 'string' },
+  },
+};
+
 const AI_REPORT_SYSTEM_PROMPT =
   'You are a personal finance analyst for a money-tracking app. Use only the provided JSON. Do not invent transactions or balances. Avoid regulated financial advice, and give practical observations and next steps. Balance the report across expenses and investments, and explicitly comment on portfolio progress, gains or losses, and concentration where data supports it.';
+const AI_ASK_SYSTEM_PROMPT =
+  'You are a personal finance analyst for a money-tracking app. Use only the provided JSON. Answer the user question directly, keep assumptions explicit, and do not invent transactions, returns, or interest savings. If a what-if scenario is provided, reason from the deterministic scenario values instead of making up projections.';
 
 function createError(status, message) {
   const error = new Error(message);
@@ -215,6 +232,7 @@ function summarizeExpenses(expenses, previousExpenses) {
   const categories = buildTopBreakdown(expenses, (expense) => expense.categoryLabel || expense.category);
   const subcategories = buildTopBreakdown(expenses, (expense) => expense.subcategoryLabel || expense.subcategory || 'Uncategorized');
   const expenseTypes = buildTopBreakdown(expenses, (expense) => expense.expenseTypeLabel || expense.expenseType || 'Uncategorized');
+  const projects = buildTopBreakdown(expenses, (expense) => expense.project || 'No Project');
 
   return {
     totalSpent,
@@ -225,9 +243,11 @@ function summarizeExpenses(expenses, previousExpenses) {
     categories,
     subcategories,
     expenseTypes,
+    projects,
     topCategory: categories[0] || null,
     topSubcategory: subcategories[0] || null,
     topExpenseType: expenseTypes[0] || null,
+    topProject: projects[0] || null,
   };
 }
 
@@ -301,6 +321,14 @@ function sanitizeReport(aiReport) {
   };
 }
 
+function sanitizeAskResponse(aiResponse) {
+  return {
+    answer: normalizeLabel(aiResponse.answer, 'No answer returned.'),
+    highlights: Array.isArray(aiResponse.highlights) ? aiResponse.highlights.filter(Boolean) : [],
+    scenarioSummary: normalizeLabel(aiResponse.scenarioSummary, 'No scenario adjustments were applied.'),
+  };
+}
+
 function serializeReport(id, report) {
   return {
     id,
@@ -331,7 +359,7 @@ async function requireUser(request, _response, next) {
   }
 }
 
-async function generateOpenAiReport(promptPayload) {
+async function generateOpenAiJson({ promptPayload, schema, schemaName, systemPrompt, sanitize }) {
   if (!process.env.OPENAI_API_KEY) {
     throw createError(500, 'OPENAI_API_KEY is not configured on the AI server.');
   }
@@ -344,19 +372,19 @@ async function generateOpenAiReport(promptPayload) {
       input: [
         {
           role: 'system',
-          content: AI_REPORT_SYSTEM_PROMPT,
+          content: systemPrompt,
         },
         {
           role: 'user',
-          content: `Create a monthly finance report from this data:\n${JSON.stringify(promptPayload, null, 2)}`,
+          content: JSON.stringify(promptPayload, null, 2),
         },
       ],
       text: {
         format: {
           type: 'json_schema',
-          name: 'monthly_finance_report',
+          name: schemaName,
           strict: true,
-          schema: REPORT_SCHEMA,
+          schema,
         },
       },
     });
@@ -365,7 +393,7 @@ async function generateOpenAiReport(promptPayload) {
       throw createError(502, 'OpenAI returned an empty response.');
     }
 
-    return sanitizeReport(JSON.parse(aiResponse.output_text));
+    return sanitize(JSON.parse(aiResponse.output_text));
   } catch (error) {
     logAiError('OpenAI', openAiModel, error);
     const diagnostic =
@@ -376,7 +404,7 @@ async function generateOpenAiReport(promptPayload) {
   }
 }
 
-async function generateGeminiReport(promptPayload) {
+async function generateGeminiJson({ promptPayload, schema, systemPrompt, sanitize }) {
   if (!process.env.GEMINI_API_KEY) {
     throw createError(500, 'GEMINI_API_KEY is not configured on the AI server.');
   }
@@ -395,21 +423,21 @@ async function generateGeminiReport(promptPayload) {
             {
               parts: [
                 {
-                  text: AI_REPORT_SYSTEM_PROMPT,
+                  text: systemPrompt,
                 },
               ],
             },
             {
               parts: [
                 {
-                  text: `Create a monthly finance report from this data:\n${JSON.stringify(promptPayload, null, 2)}`,
+                  text: JSON.stringify(promptPayload, null, 2),
                 },
               ],
             },
           ],
           generationConfig: {
             responseMimeType: 'application/json',
-            responseJsonSchema: REPORT_SCHEMA,
+            responseJsonSchema: schema,
           },
         }),
       },
@@ -430,7 +458,7 @@ async function generateGeminiReport(promptPayload) {
       throw createError(502, 'Gemini returned an empty response.');
     }
 
-    return sanitizeReport(JSON.parse(text));
+    return sanitize(JSON.parse(text));
   } catch (error) {
     logAiError('Gemini', geminiModel, error);
     const diagnostic =
@@ -439,8 +467,89 @@ async function generateGeminiReport(promptPayload) {
   }
 }
 
+async function generateOpenAiReport(promptPayload) {
+  return generateOpenAiJson({
+    promptPayload: {
+      task: 'Create a monthly finance report from this data.',
+      data: promptPayload,
+    },
+    schema: REPORT_SCHEMA,
+    schemaName: 'monthly_finance_report',
+    systemPrompt: AI_REPORT_SYSTEM_PROMPT,
+    sanitize: sanitizeReport,
+  });
+}
+
+async function generateGeminiReport(promptPayload) {
+  return generateGeminiJson({
+    promptPayload: {
+      task: 'Create a monthly finance report from this data.',
+      data: promptPayload,
+    },
+    schema: REPORT_SCHEMA,
+    systemPrompt: AI_REPORT_SYSTEM_PROMPT,
+    sanitize: sanitizeReport,
+  });
+}
+
 async function generateProviderReport(provider, promptPayload) {
   return provider === 'gemini' ? generateGeminiReport(promptPayload) : generateOpenAiReport(promptPayload);
+}
+
+async function generateOpenAiAsk(promptPayload) {
+  return generateOpenAiJson({
+    promptPayload: {
+      task: 'Answer the user question and analyze the what-if scenario using this finance data.',
+      data: promptPayload,
+    },
+    schema: ASK_SCHEMA,
+    schemaName: 'finance_ask_response',
+    systemPrompt: AI_ASK_SYSTEM_PROMPT,
+    sanitize: sanitizeAskResponse,
+  });
+}
+
+async function generateGeminiAsk(promptPayload) {
+  return generateGeminiJson({
+    promptPayload: {
+      task: 'Answer the user question and analyze the what-if scenario using this finance data.',
+      data: promptPayload,
+    },
+    schema: ASK_SCHEMA,
+    systemPrompt: AI_ASK_SYSTEM_PROMPT,
+    sanitize: sanitizeAskResponse,
+  });
+}
+
+async function generateProviderAsk(provider, promptPayload) {
+  return provider === 'gemini' ? generateGeminiAsk(promptPayload) : generateOpenAiAsk(promptPayload);
+}
+
+function buildWhatIfScenario(scenarioInput, summaries) {
+  const horizonMonths = Math.min(60, Math.max(1, Math.round(safeNumber(scenarioInput?.horizonMonths) || 12)));
+  const monthlyExpenseReduction = Math.max(0, safeNumber(scenarioInput?.monthlyExpenseReduction));
+  const extraMonthlyInvestment = Math.max(0, safeNumber(scenarioInput?.extraMonthlyInvestment));
+  const oneTimeGoalContribution = Math.max(0, safeNumber(scenarioInput?.oneTimeGoalContribution));
+
+  const estimatedExpenseSavings = monthlyExpenseReduction * horizonMonths;
+  const estimatedAdditionalInvestment = extraMonthlyInvestment * horizonMonths;
+  const projectedMonthlySpend = Math.max(0, summaries.expensesSummary.totalSpent - monthlyExpenseReduction);
+  const projectedGoalSaved = summaries.goalsSummary.totalSaved + oneTimeGoalContribution;
+
+  return {
+    horizonMonths,
+    monthlyExpenseReduction,
+    extraMonthlyInvestment,
+    oneTimeGoalContribution,
+    estimatedExpenseSavings,
+    estimatedAdditionalInvestment,
+    projectedMonthlySpend,
+    projectedGoalSaved,
+    projectedGoalCoverage: summaries.goalsSummary.totalTarget
+      ? Number(((projectedGoalSaved / summaries.goalsSummary.totalTarget) * 100).toFixed(1))
+      : 0,
+    projectedInvestedAmount: summaries.investmentsSummary.totalInvested + estimatedAdditionalInvestment,
+  };
 }
 
 app.use(cors({
@@ -529,6 +638,7 @@ app.post('/api/ai/reports/monthly', requireUser, async (request, response, next)
         topCategory: expensesSummary.topCategory,
         topSubcategory: expensesSummary.topSubcategory,
         topExpenseType: expensesSummary.topExpenseType,
+        topProject: expensesSummary.topProject,
         investmentValue: investmentsSummary.totalCurrent,
         investedAmount: investmentsSummary.totalInvested,
         investmentGain: investmentsSummary.gain,
@@ -544,6 +654,7 @@ app.post('/api/ai/reports/monthly', requireUser, async (request, response, next)
         categories: expensesSummary.categories,
         subcategories: expensesSummary.subcategories,
         expenseTypes: expensesSummary.expenseTypes,
+        projects: expensesSummary.projects,
         investmentTypes: investmentsSummary.byType,
         holdings: investmentsSummary.topHoldings,
       },
@@ -555,6 +666,81 @@ app.post('/api/ai/reports/monthly', requireUser, async (request, response, next)
     response.json({
       cached: false,
       report: serializeReport(`${provider}_${periodKey}`, reportDocument),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/ai/ask', requireUser, async (request, response, next) => {
+  try {
+    const provider = normalizeAiProvider(request.body?.provider);
+    const { periodLabel, startDateKey, nextMonthKey, previousMonthKey } = parsePeriodKey(request.body?.periodKey);
+    const question = String(request.body?.question || '').trim();
+    const scenarioInput = request.body?.scenario || {};
+    const hasScenario = ['monthlyExpenseReduction', 'extraMonthlyInvestment', 'oneTimeGoalContribution']
+      .some((key) => safeNumber(scenarioInput?.[key]) > 0);
+
+    if (!question && !hasScenario) {
+      throw createError(400, 'Provide a question or at least one what-if input.');
+    }
+
+    const currentExpensesQuery = db
+      .collection(`users/${request.user.uid}/expenses`)
+      .where('date', '>=', `${startDateKey}-01`)
+      .where('date', '<', `${nextMonthKey}-01`);
+    const previousExpensesQuery = db
+      .collection(`users/${request.user.uid}/expenses`)
+      .where('date', '>=', `${previousMonthKey}-01`)
+      .where('date', '<', `${startDateKey}-01`);
+
+    const [currentExpensesSnap, previousExpensesSnap, investmentsSnap, goalsSnap, loansSnap] = await Promise.all([
+      currentExpensesQuery.get(),
+      previousExpensesQuery.get(),
+      db.collection(`users/${request.user.uid}/investments`).get(),
+      db.collection(`users/${request.user.uid}/goals`).get(),
+      db.collection(`users/${request.user.uid}/loans`).get(),
+    ]);
+
+    const expensesSummary = summarizeExpenses(
+      currentExpensesSnap.docs.map((doc) => doc.data()),
+      previousExpensesSnap.docs.map((doc) => doc.data()),
+    );
+    const investmentsSummary = summarizeInvestments(investmentsSnap.docs.map((doc) => doc.data()));
+    const goalsSummary = summarizeGoals(goalsSnap.docs.map((doc) => doc.data()));
+    const loansSummary = summarizeLoans(loansSnap.docs.map((doc) => doc.data()));
+    const scenario = buildWhatIfScenario(scenarioInput, {
+      expensesSummary,
+      investmentsSummary,
+      goalsSummary,
+      loansSummary,
+    });
+
+    const snapshot = buildPromptPayload({
+      periodLabel,
+      expensesSummary,
+      investmentsSummary,
+      goalsSummary,
+      loansSummary,
+    });
+
+    const askPayload = {
+      period: periodLabel,
+      question: question || 'Review the scenario and explain the impact in plain language.',
+      snapshot,
+      scenario,
+    };
+
+    const result = await generateProviderAsk(provider, askPayload);
+
+    response.json({
+      provider,
+      model: getProviderModel(provider),
+      periodLabel,
+      generatedAt: new Date().toISOString(),
+      snapshot,
+      scenario,
+      result,
     });
   } catch (error) {
     next(error);

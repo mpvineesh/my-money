@@ -9,6 +9,8 @@ import {
   CreditCard,
   Wallet,
   Sparkles,
+  Repeat,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import './BottomNav.css';
@@ -66,8 +68,14 @@ function MoreMenu() {
           <button className="more-item" onClick={() => { setOpen(false); navigate('/expenses'); }}>
             <Wallet size={16} style={{ marginRight: 8 }} /> Expenses
           </button>
+          <button className="more-item" onClick={() => { setOpen(false); navigate('/recurring'); }}>
+            <Repeat size={16} style={{ marginRight: 8 }} /> Recurring
+          </button>
           <button className="more-item" onClick={() => { setOpen(false); navigate('/ai-insights'); }}>
             <Sparkles size={16} style={{ marginRight: 8 }} /> AI Insights
+          </button>
+          <button className="more-item" onClick={() => { setOpen(false); navigate('/settings'); }}>
+            <SettingsIcon size={16} style={{ marginRight: 8 }} /> Settings
           </button>
         </div>
       )}

@@ -25,6 +25,175 @@
   margin: 0;
 }
 
+.dash-networth-panel {
+  margin-bottom: 24px;
+}
+
+.dash-networth-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.dash-networth-label {
+  font-size: 0.74rem;
+  color: #0f766e;
+  font-weight: 700;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dash-networth-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.dash-networth-subtitle {
+  color: #64748b;
+  font-size: 0.88rem;
+  margin: 0;
+  max-width: 54ch;
+}
+
+.dash-networth-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #eef2ff;
+}
+
+.dash-networth-toggle button {
+  border: none;
+  background: transparent;
+  color: #6366f1;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dash-networth-toggle button.active {
+  background: white;
+  color: #312e81;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.dash-networth-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dash-networth-stat {
+  background: white;
+  border-radius: 18px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dash-networth-primary {
+  background: linear-gradient(135deg, #eef2ff 0%, #ecfeff 100%);
+}
+
+.dash-networth-stat-label {
+  font-size: 0.72rem;
+  color: #0f766e;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dash-networth-stat strong {
+  font-size: 1.3rem;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.dash-networth-stat span:last-child {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.dash-networth-chart-card {
+  background: white;
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.dash-networth-chart-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.dash-networth-chart-label {
+  display: block;
+  font-size: 0.74rem;
+  color: #64748b;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dash-networth-chart-summary strong {
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
+.dash-positive {
+  color: #16a34a;
+}
+
+.dash-negative {
+  color: #dc2626;
+}
+
+.dash-networth-footnote {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 0.8rem;
+  margin-top: 10px;
+}
+
+.dash-networth-tooltip {
+  background: #0f172a;
+  padding: 10px 12px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.2);
+}
+
+.dash-networth-tooltip strong {
+  color: white;
+  font-size: 0.84rem;
+}
+
+.dash-networth-tooltip span {
+  color: #cbd5e1;
+  font-size: 0.78rem;
+}
+
 .dash-stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -89,6 +258,11 @@
 .stat-card-danger .stat-card-icon {
   background: #fef2f2;
   color: #ef4444;
+}
+
+.dash-neutral-icon {
+  background: #f8fafc;
+  color: #475569;
 }
 
 .stat-label {
@@ -303,5 +477,18 @@
 @media (max-width: 360px) {
   .stat-value {
     font-size: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .dash-networth-header,
+  .dash-networth-chart-summary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dash-networth-summary,
+  .dash-stats-grid {
+    grid-template-columns: 1fr;
   }
 }

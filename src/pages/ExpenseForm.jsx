@@ -16,6 +16,7 @@ import {
 import './InvestmentForm.css';
 
 const ADD_OTHER_PAYER_VALUE = '__add_other_payer__';
+const ADD_PROJECT_VALUE = '__add_project__';
 const ADD_SUBCATEGORY_VALUE = '__add_subcategory__';
 const ADD_EXPENSE_TYPE_VALUE = '__add_expense_type__';
 
@@ -26,6 +27,13 @@ const MODAL_COPY = {
     fieldLabel: 'Name *',
     placeholder: 'e.g., Akhil',
     submitLabel: 'Save payer',
+  },
+  project: {
+    label: 'Project',
+    title: 'Add project',
+    fieldLabel: 'Project name *',
+    placeholder: 'e.g., House Construction',
+    submitLabel: 'Save project',
   },
   category: {
     label: 'Category',
@@ -62,7 +70,7 @@ function toDateTimeInputValue(value) {
   return String(value).slice(0, 16);
 }
 
-function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategories = [], expenseTypes = []) {
+function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategories = [], expenseTypes = [], prefill = null) {
   if (id) {
     const expense = expenses.find((item) => item.id === id);
     if (expense) {
@@ -85,6 +93,7 @@ function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategori
       return {
         name: expense.name || '',
         amount: expense.amount || '',
+        project: expense.project || '',
         dateTime: toDateTimeInputValue(expense.dateTime || expense.date),
         category: category.value,
         categoryLabel: category.label,
@@ -105,10 +114,10 @@ function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategori
   }
 
   const defaultCategory = getExpenseCategoryInfo('other', expenseCategories);
-
-  return {
+  const baseForm = {
     name: '',
     amount: '',
+    project: '',
     dateTime: getCurrentDateTimeValue(),
     category: defaultCategory.value,
     categoryLabel: defaultCategory.label,
@@ -122,6 +131,46 @@ function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategori
     paymentMethodOther: '',
     notes: '',
   };
+
+  if (!prefill) return baseForm;
+
+  const category = getExpenseCategoryInfo(prefill.category, expenseCategories, prefill.categoryLabel);
+  const subcategory = getExpenseSubcategoryInfo(
+    category.value,
+    prefill.subcategory,
+    expenseSubcategories,
+    prefill.subcategoryLabel,
+  );
+  const expenseType = getExpenseTypeInfo(
+    category.value,
+    subcategory?.value || '',
+    prefill.expenseType,
+    expenseTypes,
+    prefill.expenseTypeLabel,
+  );
+  const paymentMethod = getPaymentMethodInfo(prefill.paymentMethod || baseForm.paymentMethod);
+
+  return {
+    ...baseForm,
+    ...prefill,
+    amount: prefill.amount || '',
+    project: prefill.project || '',
+    dateTime: toDateTimeInputValue(prefill.dateTime || prefill.date),
+    category: category.value,
+    categoryLabel: category.label,
+    subcategory: subcategory?.value || '',
+    subcategoryLabel: subcategory?.label || '',
+    expenseType: expenseType?.value || '',
+    expenseTypeLabel: expenseType?.label || '',
+    paidById: prefill.paidById || baseForm.paidById,
+    paidByName: prefill.paidByName || baseForm.paidByName,
+    paymentMethod: paymentMethod.value,
+    paymentMethodOther:
+      paymentMethod.value === 'other'
+        ? prefill.paymentMethodOther || prefill.paymentMethodLabel || ''
+        : '',
+    notes: prefill.notes || '',
+  };
 }
 
 export default function ExpenseForm() {
@@ -129,9 +178,12 @@ export default function ExpenseForm() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const location = useLocation();
+  const prefill = location.state?.prefill || null;
+  const sourceRecurringId = location.state?.sourceRecurringId || '';
   const {
     expenses,
     expensePayers,
+    expenseProjects,
     expenseCategories,
     expenseSubcategories,
     expenseTypes,
@@ -139,13 +191,15 @@ export default function ExpenseForm() {
     updateExpense,
     deleteExpense,
     addExpensePayer,
+    addExpenseProject,
     addExpenseCategory,
     addExpenseSubcategory,
     addExpenseType,
+    markRecurringEntryRecorded,
   } = useApp();
 
   const [form, setForm] = useState(() =>
-    getInitialForm(expenses, id, expenseCategories, expenseSubcategories, expenseTypes),
+    getInitialForm(expenses, id, expenseCategories, expenseSubcategories, expenseTypes, prefill),
   );
   const [showDelete, setShowDelete] = useState(false);
   const [modalType, setModalType] = useState(null);
@@ -192,6 +246,21 @@ export default function ExpenseForm() {
 
     return [...options.values()];
   }, [expenseCategories, form.category, form.categoryLabel]);
+
+  const projectOptions = useMemo(() => {
+    const options = new Map(
+      expenseProjects.map((project) => [project.toLowerCase(), project]),
+    );
+
+    expenses.forEach((expense) => {
+      const project = String(expense.project || '').trim();
+      if (project) options.set(project.toLowerCase(), project);
+    });
+
+    if (form.project) options.set(form.project.toLowerCase(), form.project);
+
+    return [...options.values()].sort((left, right) => left.localeCompare(right));
+  }, [expenseProjects, expenses, form.project]);
 
   const selectedCategory = useMemo(
     () => getExpenseCategoryInfo(form.category, expenseCategories, form.categoryLabel),
@@ -329,6 +398,18 @@ export default function ExpenseForm() {
     }));
   };
 
+  const handleProjectSelection = (value) => {
+    if (value === ADD_PROJECT_VALUE) {
+      openModal('project');
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      project: value,
+    }));
+  };
+
   const handleModalSave = () => {
     const trimmedName = modalName.trim();
     if (!trimmedName || !modalType) return;
@@ -342,6 +423,18 @@ export default function ExpenseForm() {
         ...prev,
         paidById: nextPayer.id,
         paidByName: nextPayer.name,
+      }));
+      closeModal();
+      return;
+    }
+
+    if (modalType === 'project') {
+      const nextProject = addExpenseProject(trimmedName);
+      if (!nextProject) return;
+
+      setForm((prev) => ({
+        ...prev,
+        project: nextProject,
       }));
       closeModal();
       return;
@@ -423,6 +516,7 @@ export default function ExpenseForm() {
       ...form,
       name: form.name.trim(),
       amount: Number(form.amount) || 0,
+      project: form.project.trim(),
       dateTime: form.dateTime,
       date: form.dateTime.slice(0, 10),
       category: category.value,
@@ -439,6 +533,7 @@ export default function ExpenseForm() {
       updateExpense(id, payload);
     } else {
       addExpense(payload);
+      if (sourceRecurringId) markRecurringEntryRecorded(sourceRecurringId, payload.date);
     }
 
     navigate(returnTo);
@@ -505,6 +600,33 @@ export default function ExpenseForm() {
               required
             />
           </div>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Project</label>
+          <div className="form-inline-select">
+            <select
+              className="form-input"
+              value={form.project}
+              onChange={(event) => handleProjectSelection(event.target.value)}
+            >
+              <option value="">No project</option>
+              {projectOptions.map((project) => (
+                <option key={project} value={project}>
+                  {project}
+                </option>
+              ))}
+              <option value={ADD_PROJECT_VALUE}>Add new project...</option>
+            </select>
+            <button type="button" className="form-inline-btn" onClick={() => openModal('project')}>
+              <Plus size={16} />
+            </button>
+          </div>
+          <datalist id="expense-project-options">
+            {projectOptions.map((project) => (
+              <option key={project} value={project} />
+            ))}
+          </datalist>
         </div>
 
         <div className="form-row">

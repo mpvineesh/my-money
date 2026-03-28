@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Target, TrendingUp, Wallet } from 'lucide-react';
+import { Briefcase, Target, TrendingUp, Wallet, Repeat } from 'lucide-react';
 import './AddPage.css';
 
 export default function AddPage() {
@@ -43,6 +43,16 @@ export default function AddPage() {
           <div className="add-option-text">
             <h3>New Expense</h3>
             <p>Record amount, date, paid by, payment method, and category allocation</p>
+          </div>
+        </button>
+
+        <button className="add-option-card" onClick={() => navigate('/recurring')}>
+          <div className="add-option-icon" style={{ background: '#fff7ed', color: '#ea580c' }}>
+            <Repeat size={28} />
+          </div>
+          <div className="add-option-text">
+            <h3>Recurring Entry</h3>
+            <p>Set up SIPs, rent, subscriptions, insurance, and other repeatable entries</p>
           </div>
         </button>
       </div>

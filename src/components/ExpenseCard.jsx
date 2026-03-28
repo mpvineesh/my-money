@@ -46,6 +46,7 @@ export default function ExpenseCard({ expense, returnTo = '' }) {
       </div>
 
       <div className="expense-card-meta">
+        {expense.project ? <span className="expense-chip expense-chip-project">{expense.project}</span> : null}
         <span className="expense-chip" style={{ backgroundColor: `${category.color}18`, color: category.color }}>
           {category.label}
         </span>

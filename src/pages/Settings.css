@@ -1,0 +1,133 @@
+.settings-page {
+  padding: 20px 16px 96px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.settings-icon-circle {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #0f766e, #0f172a);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+}
+
+.settings-label,
+.settings-panel-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #0f766e;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.settings-title {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.settings-subtitle {
+  color: #64748b;
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.settings-panel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.05);
+}
+
+.settings-panel-head h2 {
+  margin: 0 0 16px;
+  color: #0f172a;
+}
+
+.settings-toggle-list {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-toggle-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.settings-toggle-card strong {
+  display: block;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.settings-toggle-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.88rem;
+  max-width: 52ch;
+}
+
+.settings-switch {
+  width: 56px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: #cbd5e1;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.settings-switch span {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: white;
+  transition: transform 0.2s ease;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+}
+
+.settings-switch.active {
+  background: #0f766e;
+}
+
+.settings-switch.active span {
+  transform: translateX(24px);
+}
+
+@media (max-width: 640px) {
+  .settings-header,
+  .settings-toggle-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .settings-switch {
+    align-self: flex-end;
+  }
+}

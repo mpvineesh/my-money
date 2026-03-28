@@ -13,12 +13,20 @@ import {
   saveExpenses,
   loadExpensePayers,
   saveExpensePayers,
+  loadExpenseProjects,
+  saveExpenseProjects,
   loadExpenseCategories,
   saveExpenseCategories,
   loadExpenseSubcategories,
   saveExpenseSubcategories,
   loadExpenseTypes,
   saveExpenseTypes,
+  loadExpenseBudgets,
+  saveExpenseBudgets,
+  loadRecurringEntries,
+  saveRecurringEntries,
+  loadAppSettings,
+  saveAppSettings,
   loadAiReports,
   saveAiReports,
 } from '../utils/storage';
@@ -48,7 +56,7 @@ import { AppContext } from './AppContextDef';
 import { useAuth } from './useAuth';
 import { db } from '../firebase';
 import { collection, doc, onSnapshot, orderBy, query, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { requestMonthlyAiReport } from '../utils/aiServer';
+import { requestAiAsk, requestMonthlyAiReport } from '../utils/aiServer';
 
 function formatStoredExpenseDateTime(value) {
   if (!value) return '';
@@ -124,6 +132,132 @@ function normalizeExpenseTypes(expenseTypes) {
     });
 }
 
+function normalizeExpenseBudget(budget, customCategories = [], customSubcategories = []) {
+  const categoryInfo = getExpenseCategoryInfo(budget?.categoryValue || budget?.category, customCategories, budget?.categoryLabel);
+  const subcategoryInfo = budget?.subcategoryValue || budget?.subcategory
+    ? getExpenseSubcategoryInfo(
+        categoryInfo.value,
+        budget?.subcategoryValue || budget?.subcategory,
+        customSubcategories,
+        budget?.subcategoryLabel,
+      )
+    : null;
+
+  return {
+    id: budget?.id || uuidv4(),
+    periodKey: /^\d{4}-\d{2}$/.test(String(budget?.periodKey || '').trim()) ? String(budget.periodKey).trim() : new Date().toISOString().slice(0, 7),
+    categoryValue: categoryInfo.value,
+    categoryLabel: categoryInfo.label,
+    subcategoryValue: subcategoryInfo?.value || '',
+    subcategoryLabel: subcategoryInfo?.label || '',
+    amount: Number(budget?.amount) || 0,
+  };
+}
+
+function normalizeExpenseBudgets(expenseBudgets, customCategories = [], customSubcategories = []) {
+  const seen = new Map();
+
+  expenseBudgets
+    .map((budget) => normalizeExpenseBudget(budget, customCategories, customSubcategories))
+    .filter((budget) => budget.categoryValue && budget.periodKey && budget.amount > 0)
+    .forEach((budget) => {
+      seen.set(`${budget.periodKey}:${budget.categoryValue}:${budget.subcategoryValue || 'all'}`, budget);
+    });
+
+  return [...seen.values()].sort((left, right) => {
+    if (left.periodKey === right.periodKey) {
+      if (left.categoryLabel === right.categoryLabel) return left.subcategoryLabel.localeCompare(right.subcategoryLabel);
+      return left.categoryLabel.localeCompare(right.categoryLabel);
+    }
+    return right.periodKey.localeCompare(left.periodKey);
+  });
+}
+
+function addMonthsToDate(dateValue, monthsToAdd) {
+  const [year, month, day] = String(dateValue || '').split('-').map(Number);
+  if (!year || !month || !day) return getTodayDateValue();
+
+  const nextDate = new Date(year, month - 1, day);
+  nextDate.setMonth(nextDate.getMonth() + monthsToAdd);
+  return nextDate.toISOString().slice(0, 10);
+}
+
+function addFrequencyToDate(dateValue, frequency) {
+  switch (frequency) {
+    case 'quarterly':
+      return addMonthsToDate(dateValue, 3);
+    case 'yearly':
+      return addMonthsToDate(dateValue, 12);
+    case 'monthly':
+    default:
+      return addMonthsToDate(dateValue, 1);
+  }
+}
+
+function normalizeRecurringEntry(entry, customCategories = [], customSubcategories = []) {
+  const kind = entry?.kind === 'investment' ? 'investment' : 'expense';
+  const category = kind === 'expense'
+    ? getExpenseCategoryInfo(entry?.categoryValue || entry?.category, customCategories, entry?.categoryLabel)
+    : null;
+  const subcategory = kind === 'expense' && (entry?.subcategoryValue || entry?.subcategory)
+    ? getExpenseSubcategoryInfo(
+        category?.value || '',
+        entry?.subcategoryValue || entry?.subcategory,
+        customSubcategories,
+        entry?.subcategoryLabel,
+      )
+    : null;
+
+  return {
+    id: entry?.id || uuidv4(),
+    title: String(entry?.title || entry?.name || '').trim(),
+    kind,
+    amount: Number(entry?.amount) || 0,
+    frequency: ['monthly', 'quarterly', 'yearly'].includes(entry?.frequency) ? entry.frequency : 'monthly',
+    nextDueDate: normalizeHistoryDate(entry?.nextDueDate || entry?.dueDate, getTodayDateValue()),
+    lastRecordedDate: normalizeHistoryDate(entry?.lastRecordedDate || '', ''),
+    categoryValue: category?.value || '',
+    categoryLabel: category?.label || '',
+    subcategoryValue: subcategory?.value || '',
+    subcategoryLabel: subcategory?.label || '',
+    investmentType: String(entry?.investmentType || entry?.type || 'mutual_funds').trim().toLowerCase() || 'mutual_funds',
+    notes: String(entry?.notes || '').trim(),
+  };
+}
+
+function normalizeRecurringEntries(recurringEntries, customCategories = [], customSubcategories = []) {
+  return recurringEntries
+    .map((entry) => normalizeRecurringEntry(entry, customCategories, customSubcategories))
+    .filter((entry) => entry.title && entry.amount > 0)
+    .sort((left, right) => left.nextDueDate.localeCompare(right.nextDueDate) || left.title.localeCompare(right.title));
+}
+
+const DEFAULT_APP_SETTINGS = {
+  dashboardSections: {
+    netWorth: true,
+    portfolioStats: true,
+    assetAllocation: true,
+    goalProgress: true,
+    topInvestments: true,
+  },
+};
+
+function normalizeAppSettings(appSettings) {
+  const dashboardSections = appSettings?.dashboardSections && typeof appSettings.dashboardSections === 'object'
+    ? appSettings.dashboardSections
+    : {};
+
+  return {
+    dashboardSections: {
+      netWorth: dashboardSections.netWorth !== false,
+      portfolioStats: dashboardSections.portfolioStats !== false,
+      assetAllocation: dashboardSections.assetAllocation !== false,
+      goalProgress: dashboardSections.goalProgress !== false,
+      topInvestments: dashboardSections.topInvestments !== false,
+    },
+  };
+}
+
 function normalizeExpense(expense, customCategories = [], customSubcategories = [], customExpenseTypes = []) {
   const categoryInfo = getExpenseCategoryInfo(expense?.category, customCategories, expense?.categoryLabel);
   const subcategoryInfo = getExpenseSubcategoryInfo(
@@ -147,6 +281,7 @@ function normalizeExpense(expense, customCategories = [], customSubcategories = 
   return {
     ...expense,
     amount: Number(expense?.amount) || 0,
+    project: String(expense?.project || expense?.projectName || '').trim(),
     category: categoryInfo.value,
     categoryLabel: categoryInfo.label,
     subcategory: subcategoryInfo?.value || '',
@@ -269,6 +404,20 @@ function normalizeExpensePayers(payers) {
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
+function normalizeExpenseProjects(projects) {
+  const seen = new Set();
+
+  return projects
+    .map((project) => String(project?.name || project || '').trim())
+    .filter((project) => {
+      const normalized = project.toLowerCase();
+      if (!project || seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    })
+    .sort((left, right) => left.localeCompare(right));
+}
+
 function normalizeAiReport(aiReport) {
   const generatedAt =
     typeof aiReport?.generatedAt === 'string'
@@ -307,6 +456,7 @@ function normalizeAiReport(aiReport) {
       categories: Array.isArray(aiReport?.breakdown?.categories) ? aiReport.breakdown.categories : [],
       subcategories: Array.isArray(aiReport?.breakdown?.subcategories) ? aiReport.breakdown.subcategories : [],
       expenseTypes: Array.isArray(aiReport?.breakdown?.expenseTypes) ? aiReport.breakdown.expenseTypes : [],
+      projects: Array.isArray(aiReport?.breakdown?.projects) ? aiReport.breakdown.projects : [],
       investmentTypes: Array.isArray(aiReport?.breakdown?.investmentTypes) ? aiReport.breakdown.investmentTypes : [],
       holdings: Array.isArray(aiReport?.breakdown?.holdings) ? aiReport.breakdown.holdings : [],
     },
@@ -363,6 +513,26 @@ function loadPersistedExpenseTypes() {
   return normalizeExpenseTypes(loadExpenseTypes());
 }
 
+function loadPersistedExpenseBudgets() {
+  return normalizeExpenseBudgets(
+    loadExpenseBudgets(),
+    loadPersistedExpenseCategories(),
+    loadPersistedExpenseSubcategories(),
+  );
+}
+
+function loadPersistedRecurringEntries() {
+  return normalizeRecurringEntries(
+    loadRecurringEntries(),
+    loadPersistedExpenseCategories(),
+    loadPersistedExpenseSubcategories(),
+  );
+}
+
+function loadPersistedAppSettings() {
+  return normalizeAppSettings(loadAppSettings());
+}
+
 function loadPersistedAiReports() {
   return sortAiReports(loadAiReports().map(normalizeAiReport));
 }
@@ -370,6 +540,9 @@ function loadPersistedAiReports() {
 const INITIAL_EXPENSE_CATEGORIES = loadPersistedExpenseCategories();
 const INITIAL_EXPENSE_SUBCATEGORIES = loadPersistedExpenseSubcategories();
 const INITIAL_EXPENSE_TYPES = loadPersistedExpenseTypes();
+const INITIAL_EXPENSE_BUDGETS = loadPersistedExpenseBudgets();
+const INITIAL_RECURRING_ENTRIES = loadPersistedRecurringEntries();
+const INITIAL_APP_SETTINGS = loadPersistedAppSettings();
 const INITIAL_AI_REPORTS = loadPersistedAiReports();
 
 export function AppProvider({ children }) {
@@ -385,9 +558,13 @@ export function AppProvider({ children }) {
     ),
   );
   const [expensePayers, setExpensePayers] = useState(() => normalizeExpensePayers(loadExpensePayers()));
+  const [expenseProjects, setExpenseProjects] = useState(() => normalizeExpenseProjects(loadExpenseProjects()));
   const [expenseCategories, setExpenseCategories] = useState(INITIAL_EXPENSE_CATEGORIES);
   const [expenseSubcategories, setExpenseSubcategories] = useState(INITIAL_EXPENSE_SUBCATEGORIES);
   const [expenseTypes, setExpenseTypes] = useState(INITIAL_EXPENSE_TYPES);
+  const [expenseBudgets, setExpenseBudgets] = useState(INITIAL_EXPENSE_BUDGETS);
+  const [recurringEntries, setRecurringEntries] = useState(INITIAL_RECURRING_ENTRIES);
+  const [appSettings, setAppSettings] = useState(INITIAL_APP_SETTINGS);
   const [aiReports, setAiReports] = useState(INITIAL_AI_REPORTS);
 
   useEffect(() => {
@@ -431,6 +608,13 @@ export function AppProvider({ children }) {
       saveExpensePayers(items);
     });
 
+    const expenseProjectsCol = collection(db, 'users', user.uid, 'expenseProjects');
+    const unsubExpenseProjects = onSnapshot(expenseProjectsCol, (snap) => {
+      const items = normalizeExpenseProjects(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setExpenseProjects(items);
+      saveExpenseProjects(items);
+    });
+
     const expenseCategoriesCol = collection(db, 'users', user.uid, 'expenseCategories');
     const unsubExpenseCategories = onSnapshot(expenseCategoriesCol, (snap) => {
       const items = normalizeExpenseCategories(snap.docs.map((d, index) => ({ id: d.id, ...d.data(), sortIndex: index })));
@@ -456,6 +640,35 @@ export function AppProvider({ children }) {
       saveExpenseTypes(items);
     });
 
+    const expenseBudgetsCol = collection(db, 'users', user.uid, 'expenseBudgets');
+    const unsubExpenseBudgets = onSnapshot(expenseBudgetsCol, (snap) => {
+      const items = normalizeExpenseBudgets(
+        snap.docs.map((d) => ({ id: d.id, ...d.data() })),
+        expenseCategories,
+        expenseSubcategories,
+      );
+      setExpenseBudgets(items);
+      saveExpenseBudgets(items);
+    });
+
+    const recurringEntriesCol = collection(db, 'users', user.uid, 'recurringEntries');
+    const unsubRecurringEntries = onSnapshot(recurringEntriesCol, (snap) => {
+      const items = normalizeRecurringEntries(
+        snap.docs.map((d) => ({ id: d.id, ...d.data() })),
+        expenseCategories,
+        expenseSubcategories,
+      );
+      setRecurringEntries(items);
+      saveRecurringEntries(items);
+    });
+
+    const appSettingsRef = doc(db, 'users', user.uid, 'settings', 'preferences');
+    const unsubAppSettings = onSnapshot(appSettingsRef, (snap) => {
+      const nextSettings = normalizeAppSettings(snap.exists() ? snap.data() : {});
+      setAppSettings(nextSettings);
+      saveAppSettings(nextSettings);
+    });
+
     const aiReportsQuery = query(collection(db, 'users', user.uid, 'aiReports'), orderBy('generatedAt', 'desc'));
     const unsubAiReports = onSnapshot(aiReportsQuery, (snap) => {
       const items = sortAiReports(snap.docs.map((d) => normalizeAiReport({ id: d.id, ...d.data() })));
@@ -469,12 +682,38 @@ export function AppProvider({ children }) {
       unsubLoans();
       unsubExpenses();
       unsubExpensePayers();
+      unsubExpenseProjects();
       unsubExpenseCategories();
       unsubExpenseSubcategories();
       unsubExpenseTypes();
+      unsubExpenseBudgets();
+      unsubRecurringEntries();
+      unsubAppSettings();
       unsubAiReports();
     };
-  }, [user]);
+  }, [expenseCategories, expenseSubcategories, user]);
+
+  const addExpenseProject = useCallback((projectName) => {
+    const trimmedName = String(projectName || '').trim();
+    if (!trimmedName) return null;
+
+    const existingProject = expenseProjects.find((project) => project.toLowerCase() === trimmedName.toLowerCase());
+    if (existingProject) return existingProject;
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'expenseProjects', uuidv4());
+      setDoc(ref, { name: trimmedName });
+      return trimmedName;
+    }
+
+    setExpenseProjects((prev) => {
+      const updated = normalizeExpenseProjects([...prev, trimmedName]);
+      saveExpenseProjects(updated);
+      return updated;
+    });
+
+    return trimmedName;
+  }, [expenseProjects, user]);
 
   const addInvestment = useCallback((investment) => {
     const newItem = buildInvestmentForSave({ ...investment, id: uuidv4() });
@@ -532,6 +771,7 @@ export function AppProvider({ children }) {
 
   const addExpense = useCallback((expense) => {
     const newItem = normalizeExpense({ ...expense, id: uuidv4() }, expenseCategories, expenseSubcategories, expenseTypes);
+    if (newItem.project) addExpenseProject(newItem.project);
     if (user) {
       const ref = doc(db, 'users', user.uid, 'expenses', newItem.id);
       setDoc(ref, newItem);
@@ -542,10 +782,11 @@ export function AppProvider({ children }) {
       saveExpenses(updated);
       return updated;
     });
-  }, [expenseCategories, expenseSubcategories, expenseTypes, user]);
+  }, [addExpenseProject, expenseCategories, expenseSubcategories, expenseTypes, user]);
 
   const updateExpense = useCallback((id, expense) => {
     const normalizedExpense = normalizeExpense(expense, expenseCategories, expenseSubcategories, expenseTypes);
+    if (normalizedExpense.project) addExpenseProject(normalizedExpense.project);
     if (user) {
       const ref = doc(db, 'users', user.uid, 'expenses', id);
       updateDoc(ref, { ...normalizedExpense });
@@ -556,7 +797,7 @@ export function AppProvider({ children }) {
       saveExpenses(updated);
       return updated;
     });
-  }, [expenseCategories, expenseSubcategories, expenseTypes, user]);
+  }, [addExpenseProject, expenseCategories, expenseSubcategories, expenseTypes, user]);
 
   const deleteExpense = useCallback((id) => {
     if (user) {
@@ -690,6 +931,226 @@ export function AppProvider({ children }) {
     return newExpenseType;
   }, [expenseTypes, user]);
 
+  const addExpenseBudget = useCallback((expenseBudget) => {
+    const normalizedBudget = normalizeExpenseBudget(expenseBudget, expenseCategories, expenseSubcategories);
+    if (!normalizedBudget.categoryValue || normalizedBudget.amount <= 0) return null;
+
+    const existingBudget = expenseBudgets.find((item) =>
+      item.periodKey === normalizedBudget.periodKey
+      && item.categoryValue === normalizedBudget.categoryValue
+      && (item.subcategoryValue || '') === (normalizedBudget.subcategoryValue || ''),
+    );
+
+    if (existingBudget) {
+      const nextBudget = { ...normalizedBudget, id: existingBudget.id };
+      if (user) {
+        const ref = doc(db, 'users', user.uid, 'expenseBudgets', existingBudget.id);
+        setDoc(ref, nextBudget);
+        return nextBudget;
+      }
+
+      setExpenseBudgets((prev) => {
+        const updated = normalizeExpenseBudgets(
+          prev.map((item) => (item.id === existingBudget.id ? nextBudget : item)),
+          expenseCategories,
+          expenseSubcategories,
+        );
+        saveExpenseBudgets(updated);
+        return updated;
+      });
+      return nextBudget;
+    }
+
+    const newBudget = { ...normalizedBudget, id: normalizedBudget.id || uuidv4() };
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'expenseBudgets', newBudget.id);
+      setDoc(ref, newBudget);
+      return newBudget;
+    }
+
+    setExpenseBudgets((prev) => {
+      const updated = normalizeExpenseBudgets([...prev, newBudget], expenseCategories, expenseSubcategories);
+      saveExpenseBudgets(updated);
+      return updated;
+    });
+
+    return newBudget;
+  }, [expenseBudgets, expenseCategories, expenseSubcategories, user]);
+
+  const updateExpenseBudget = useCallback((id, expenseBudget) => {
+    const previousBudget = expenseBudgets.find((item) => item.id === id);
+    const normalizedBudget = normalizeExpenseBudget({ ...previousBudget, ...expenseBudget, id }, expenseCategories, expenseSubcategories);
+    if (!normalizedBudget.categoryValue || normalizedBudget.amount <= 0) return null;
+    const conflictingBudget = expenseBudgets.find((item) =>
+      item.id !== id
+      && item.periodKey === normalizedBudget.periodKey
+      && item.categoryValue === normalizedBudget.categoryValue
+      && (item.subcategoryValue || '') === (normalizedBudget.subcategoryValue || ''),
+    );
+
+    if (conflictingBudget) {
+      if (user) {
+        const conflictRef = doc(db, 'users', user.uid, 'expenseBudgets', conflictingBudget.id);
+        const currentRef = doc(db, 'users', user.uid, 'expenseBudgets', id);
+        setDoc(conflictRef, { ...normalizedBudget, id: conflictingBudget.id });
+        deleteDoc(currentRef);
+        return { ...normalizedBudget, id: conflictingBudget.id };
+      }
+
+      setExpenseBudgets((prev) => {
+        const updated = normalizeExpenseBudgets(
+          prev
+            .filter((item) => item.id !== id)
+            .map((item) => (item.id === conflictingBudget.id ? { ...normalizedBudget, id: conflictingBudget.id } : item)),
+          expenseCategories,
+          expenseSubcategories,
+        );
+        saveExpenseBudgets(updated);
+        return updated;
+      });
+      return { ...normalizedBudget, id: conflictingBudget.id };
+    }
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'expenseBudgets', id);
+      updateDoc(ref, { ...normalizedBudget });
+      return normalizedBudget;
+    }
+
+    setExpenseBudgets((prev) => {
+      const updated = normalizeExpenseBudgets(
+        prev.map((item) => (item.id === id ? normalizedBudget : item)),
+        expenseCategories,
+        expenseSubcategories,
+      );
+      saveExpenseBudgets(updated);
+      return updated;
+    });
+
+    return normalizedBudget;
+  }, [expenseBudgets, expenseCategories, expenseSubcategories, user]);
+
+  const deleteExpenseBudget = useCallback((id) => {
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'expenseBudgets', id);
+      deleteDoc(ref);
+      return;
+    }
+
+    setExpenseBudgets((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      saveExpenseBudgets(updated);
+      return updated;
+    });
+  }, [user]);
+
+  const addRecurringEntry = useCallback((recurringEntry) => {
+    const newEntry = normalizeRecurringEntry({ ...recurringEntry, id: uuidv4() }, expenseCategories, expenseSubcategories);
+    if (!newEntry.title || newEntry.amount <= 0) return null;
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'recurringEntries', newEntry.id);
+      setDoc(ref, newEntry);
+      return newEntry;
+    }
+
+    setRecurringEntries((prev) => {
+      const updated = normalizeRecurringEntries([...prev, newEntry], expenseCategories, expenseSubcategories);
+      saveRecurringEntries(updated);
+      return updated;
+    });
+
+    return newEntry;
+  }, [expenseCategories, expenseSubcategories, user]);
+
+  const updateRecurringEntry = useCallback((id, recurringEntry) => {
+    const currentEntry = recurringEntries.find((item) => item.id === id);
+    const normalizedEntry = normalizeRecurringEntry({ ...currentEntry, ...recurringEntry, id }, expenseCategories, expenseSubcategories);
+    if (!normalizedEntry.title || normalizedEntry.amount <= 0) return null;
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'recurringEntries', id);
+      updateDoc(ref, { ...normalizedEntry });
+      return normalizedEntry;
+    }
+
+    setRecurringEntries((prev) => {
+      const updated = normalizeRecurringEntries(
+        prev.map((item) => (item.id === id ? normalizedEntry : item)),
+        expenseCategories,
+        expenseSubcategories,
+      );
+      saveRecurringEntries(updated);
+      return updated;
+    });
+
+    return normalizedEntry;
+  }, [expenseCategories, expenseSubcategories, recurringEntries, user]);
+
+  const deleteRecurringEntry = useCallback((id) => {
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'recurringEntries', id);
+      deleteDoc(ref);
+      return;
+    }
+
+    setRecurringEntries((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      saveRecurringEntries(updated);
+      return updated;
+    });
+  }, [user]);
+
+  const markRecurringEntryRecorded = useCallback((id, recordedDate = getTodayDateValue()) => {
+    const entry = recurringEntries.find((item) => item.id === id);
+    if (!entry) return null;
+
+    const nextRecordedDate = normalizeHistoryDate(recordedDate, getTodayDateValue());
+    const updatedEntry = {
+      ...entry,
+      lastRecordedDate: nextRecordedDate,
+      nextDueDate: addFrequencyToDate(nextRecordedDate, entry.frequency),
+    };
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'recurringEntries', id);
+      updateDoc(ref, {
+        lastRecordedDate: updatedEntry.lastRecordedDate,
+        nextDueDate: updatedEntry.nextDueDate,
+      });
+      return updatedEntry;
+    }
+
+    setRecurringEntries((prev) => {
+      const updated = normalizeRecurringEntries(
+        prev.map((item) => (item.id === id ? updatedEntry : item)),
+        expenseCategories,
+        expenseSubcategories,
+      );
+      saveRecurringEntries(updated);
+      return updated;
+    });
+
+    return updatedEntry;
+  }, [expenseCategories, expenseSubcategories, recurringEntries, user]);
+
+  const updateAppSettings = useCallback((nextSettings) => {
+    const normalizedSettings = normalizeAppSettings({
+      ...appSettings,
+      ...(typeof nextSettings === 'function' ? nextSettings(appSettings) : nextSettings),
+    });
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'settings', 'preferences');
+      setDoc(ref, normalizedSettings, { merge: true });
+      return normalizedSettings;
+    }
+
+    setAppSettings(normalizedSettings);
+    saveAppSettings(normalizedSettings);
+    return normalizedSettings;
+  }, [appSettings, user]);
+
   const setCash = useCallback((amount) => {
     const value = Number(amount) || 0;
     setCashState(value);
@@ -721,6 +1182,11 @@ export function AppProvider({ children }) {
       ...result,
       report: normalizedReport,
     };
+  }, [user]);
+
+  const askAi = useCallback(async (payload) => {
+    if (!user) throw new Error('Sign in is required to ask AI.');
+    return requestAiAsk(user, payload);
   }, [user]);
 
   const updateInvestment = useCallback((id, investment) => {
@@ -803,19 +1269,27 @@ export function AppProvider({ children }) {
     setCashState(demoCash);
     setExpenses(demoExpenses.map(normalizeExpense));
     setExpensePayers([]);
+    setExpenseProjects([]);
     saveInvestments(demoInv);
     saveGoals(demoGoals);
     saveLoans(demoLoans);
     saveCash(demoCash);
     saveExpenses(demoExpenses.map(normalizeExpense));
     saveExpensePayers([]);
+    saveExpenseProjects([]);
     saveExpenseCategories([]);
     saveExpenseSubcategories([]);
     saveExpenseTypes([]);
+    saveExpenseBudgets([]);
+    saveRecurringEntries([]);
+    saveAppSettings(DEFAULT_APP_SETTINGS);
     saveAiReports([]);
     setExpenseCategories([]);
     setExpenseSubcategories([]);
     setExpenseTypes([]);
+    setExpenseBudgets([]);
+    setRecurringEntries([]);
+    setAppSettings(DEFAULT_APP_SETTINGS);
     setAiReports([]);
   }, []);
 
@@ -826,9 +1300,13 @@ export function AppProvider({ children }) {
     cash,
     expenses,
     expensePayers,
+    expenseProjects,
     expenseCategories,
     expenseSubcategories,
     expenseTypes,
+    expenseBudgets,
+    recurringEntries,
+    appSettings,
     aiReports,
     addInvestment,
     updateInvestment,
@@ -844,10 +1322,20 @@ export function AppProvider({ children }) {
     updateExpense,
     deleteExpense,
     addExpensePayer,
+    addExpenseProject,
     addExpenseCategory,
     addExpenseSubcategory,
     addExpenseType,
+    addExpenseBudget,
+    updateExpenseBudget,
+    deleteExpenseBudget,
+    addRecurringEntry,
+    updateRecurringEntry,
+    deleteRecurringEntry,
+    markRecurringEntryRecorded,
+    updateAppSettings,
     generateMonthlyAiReport,
+    askAi,
     resetToDemo,
   };
 

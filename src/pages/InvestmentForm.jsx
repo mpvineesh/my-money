@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../context/useApp';
 import { INVESTMENT_TYPES, RISK_LEVELS } from '../utils/constants';
 import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import './InvestmentForm.css';
 
-function getInitialForm(investments, id) {
+function getInitialForm(investments, id, prefill = null) {
   const today = new Date().toISOString().slice(0, 10);
   if (id) {
     const inv = investments.find((i) => i.id === id);
@@ -24,7 +24,7 @@ function getInitialForm(investments, id) {
       };
     }
   }
-  return {
+  const baseForm = {
     name: '',
     type: 'mutual_funds',
     investedAmount: '',
@@ -36,15 +36,30 @@ function getInitialForm(investments, id) {
     snapshotDate: today,
     notes: '',
   };
+
+  if (!prefill) return baseForm;
+
+  return {
+    ...baseForm,
+    ...prefill,
+    investedAmount: prefill.investedAmount || '',
+    currentValue: prefill.currentValue || '',
+    snapshotDate: prefill.snapshotDate || today,
+    notes: prefill.notes || '',
+  };
 }
 
 export default function InvestmentForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
+  const location = useLocation();
   const navigate = useNavigate();
-  const { investments, addInvestment, updateInvestment, deleteInvestment } = useApp();
+  const prefill = location.state?.prefill || null;
+  const sourceRecurringId = location.state?.sourceRecurringId || '';
+  const returnTo = location.state?.returnTo || '/investments';
+  const { investments, addInvestment, updateInvestment, deleteInvestment, markRecurringEntryRecorded } = useApp();
 
-  const [form, setForm] = useState(() => getInitialForm(investments, id));
+  const [form, setForm] = useState(() => getInitialForm(investments, id, prefill));
 
   const [showDelete, setShowDelete] = useState(false);
 
@@ -66,13 +81,14 @@ export default function InvestmentForm() {
       updateInvestment(id, data);
     } else {
       addInvestment(data);
+      if (sourceRecurringId) markRecurringEntryRecorded(sourceRecurringId, data.snapshotDate);
     }
-    navigate('/investments');
+    navigate(returnTo);
   };
 
   const handleDelete = () => {
     deleteInvestment(id);
-    navigate('/investments');
+    navigate(returnTo);
   };
 
   const isValid = form.name.trim() && form.investedAmount;
