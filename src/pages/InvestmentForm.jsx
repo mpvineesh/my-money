@@ -6,6 +6,7 @@ import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import './InvestmentForm.css';
 
 function getInitialForm(investments, id) {
+  const today = new Date().toISOString().slice(0, 10);
   if (id) {
     const inv = investments.find((i) => i.id === id);
     if (inv) {
@@ -18,6 +19,7 @@ function getInitialForm(investments, id) {
         startDate: inv.startDate || '',
         maturityDate: inv.maturityDate || '',
         interestRate: inv.interestRate || '',
+        snapshotDate: inv.lastUpdated || today,
         notes: inv.notes || '',
       };
     }
@@ -31,6 +33,7 @@ function getInitialForm(investments, id) {
     startDate: '',
     maturityDate: '',
     interestRate: '',
+    snapshotDate: today,
     notes: '',
   };
 }
@@ -56,6 +59,7 @@ export default function InvestmentForm() {
       investedAmount: Number(form.investedAmount) || 0,
       currentValue: Number(form.currentValue) || 0,
       interestRate: form.interestRate ? Number(form.interestRate) : '',
+      snapshotDate: form.snapshotDate,
     };
 
     if (isEdit) {
@@ -201,6 +205,19 @@ export default function InvestmentForm() {
             value={form.interestRate}
             onChange={(e) => handleChange('interestRate', e.target.value)}
           />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Value As Of</label>
+          <input
+            type="date"
+            className="form-input"
+            value={form.snapshotDate}
+            onChange={(e) => handleChange('snapshotDate', e.target.value)}
+          />
+          <p className="form-helper-text">
+            Each save records a history snapshot for this date so monthly and yearly progress can be tracked.
+          </p>
         </div>
 
         <div className="form-group">

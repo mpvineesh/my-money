@@ -40,7 +40,7 @@ const db = getFirestore();
 const REPORT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['summary', 'wins', 'risks', 'recommendations', 'anomalies'],
+  required: ['summary', 'wins', 'risks', 'recommendations', 'anomalies', 'investmentInsights'],
   properties: {
     summary: { type: 'string' },
     wins: {
@@ -80,8 +80,16 @@ const REPORT_SCHEMA = {
         },
       },
     },
+    investmentInsights: {
+      type: 'array',
+      items: { type: 'string' },
+      maxItems: 4,
+    },
   },
 };
+
+const AI_REPORT_SYSTEM_PROMPT =
+  'You are a personal finance analyst for a money-tracking app. Use only the provided JSON. Do not invent transactions or balances. Avoid regulated financial advice, and give practical observations and next steps. Balance the report across expenses and investments, and explicitly comment on portfolio progress, gains or losses, and concentration where data supports it.';
 
 function createError(status, message) {
   const error = new Error(message);
@@ -171,6 +179,15 @@ function normalizeLabel(value, fallback = 'Other') {
   return text || fallback;
 }
 
+function titleCaseLabel(value) {
+  return String(value || '')
+    .replace(/_/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 function toPercent(current, previous) {
   if (!previous) return current ? 100 : 0;
   return Number((((current - previous) / previous) * 100).toFixed(1));
@@ -217,12 +234,29 @@ function summarizeExpenses(expenses, previousExpenses) {
 function summarizeInvestments(investments) {
   const totalInvested = investments.reduce((sum, investment) => sum + safeNumber(investment.investedAmount), 0);
   const totalCurrent = investments.reduce((sum, investment) => sum + safeNumber(investment.currentValue), 0);
+  const byType = buildTopBreakdown(
+    investments.map((investment) => ({
+      amount: safeNumber(investment.currentValue),
+      label: titleCaseLabel(investment.type || 'other'),
+    })),
+    (investment) => investment.label,
+  );
+  const topHoldings = [...investments]
+    .map((investment) => ({
+      label: normalizeLabel(investment.name, 'Investment'),
+      amount: safeNumber(investment.currentValue),
+    }))
+    .sort((left, right) => right.amount - left.amount)
+    .slice(0, 5);
 
   return {
     count: investments.length,
     totalInvested,
     totalCurrent,
     gain: totalCurrent - totalInvested,
+    returnPercentage: totalInvested ? Number((((totalCurrent - totalInvested) / totalInvested) * 100).toFixed(1)) : 0,
+    byType,
+    topHoldings,
   };
 }
 
@@ -263,6 +297,7 @@ function sanitizeReport(aiReport) {
     risks: Array.isArray(aiReport.risks) ? aiReport.risks.filter(Boolean) : [],
     recommendations: Array.isArray(aiReport.recommendations) ? aiReport.recommendations : [],
     anomalies: Array.isArray(aiReport.anomalies) ? aiReport.anomalies : [],
+    investmentInsights: Array.isArray(aiReport.investmentInsights) ? aiReport.investmentInsights.filter(Boolean) : [],
   };
 }
 
@@ -309,8 +344,7 @@ async function generateOpenAiReport(promptPayload) {
       input: [
         {
           role: 'system',
-          content:
-            'You are a personal finance analyst for a money-tracking app. Use only the provided JSON. Do not invent transactions or balances. Avoid regulated financial advice, and give practical observations and next steps.',
+          content: AI_REPORT_SYSTEM_PROMPT,
         },
         {
           role: 'user',
@@ -357,12 +391,11 @@ async function generateGeminiReport(promptPayload) {
           'x-goog-api-key': process.env.GEMINI_API_KEY,
         },
         body: JSON.stringify({
-          contents: [
+      contents: [
             {
               parts: [
                 {
-                  text:
-                    'You are a personal finance analyst for a money-tracking app. Use only the provided JSON. Do not invent transactions or balances. Avoid regulated financial advice, and give practical observations and next steps.',
+                  text: AI_REPORT_SYSTEM_PROMPT,
                 },
               ],
             },
@@ -486,6 +519,7 @@ app.post('/api/ai/reports/monthly', requireUser, async (request, response, next)
       risks: parsedReport.risks,
       recommendations: parsedReport.recommendations,
       anomalies: parsedReport.anomalies,
+      investmentInsights: parsedReport.investmentInsights,
       metrics: {
         totalSpent: expensesSummary.totalSpent,
         previousSpent: expensesSummary.previousSpent,
@@ -496,7 +530,11 @@ app.post('/api/ai/reports/monthly', requireUser, async (request, response, next)
         topSubcategory: expensesSummary.topSubcategory,
         topExpenseType: expensesSummary.topExpenseType,
         investmentValue: investmentsSummary.totalCurrent,
+        investedAmount: investmentsSummary.totalInvested,
         investmentGain: investmentsSummary.gain,
+        investmentReturnPercentage: investmentsSummary.returnPercentage,
+        topInvestmentType: investmentsSummary.byType[0] || null,
+        topHolding: investmentsSummary.topHoldings[0] || null,
         goalTarget: goalsSummary.totalTarget,
         goalSaved: goalsSummary.totalSaved,
         loanPrincipal: loansSummary.totalPrincipal,
@@ -506,6 +544,8 @@ app.post('/api/ai/reports/monthly', requireUser, async (request, response, next)
         categories: expensesSummary.categories,
         subcategories: expensesSummary.subcategories,
         expenseTypes: expensesSummary.expenseTypes,
+        investmentTypes: investmentsSummary.byType,
+        holdings: investmentsSummary.topHoldings,
       },
       promptPayload,
     };

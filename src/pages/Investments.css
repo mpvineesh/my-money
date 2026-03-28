@@ -35,6 +35,123 @@
   gap: 2px;
 }
 
+.inv-progress-panel {
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.inv-progress-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.inv-progress-label {
+  font-size: 0.72rem;
+  color: #6366f1;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.inv-progress-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.inv-progress-toggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: #eef2ff;
+  border-radius: 14px;
+}
+
+.inv-progress-toggle button {
+  border: none;
+  background: transparent;
+  color: #475569;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inv-progress-toggle button.active {
+  background: white;
+  color: #4338ca;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.inv-progress-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.inv-progress-summary > div {
+  background: white;
+  border: 1px solid #edf2f7;
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.inv-progress-summary-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.inv-progress-summary strong {
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.inv-progress-positive {
+  color: #16a34a !important;
+}
+
+.inv-progress-negative {
+  color: #dc2626 !important;
+}
+
+.inv-progress-chart {
+  margin-top: 8px;
+}
+
+.inv-progress-tooltip {
+  display: grid;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.92);
+  color: white;
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+}
+
+.inv-progress-footnote {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
 .inv-total-label {
   font-size: 0.65rem;
   color: #94a3b8;
@@ -213,4 +330,14 @@
   margin: 0 0 16px;
   font-size: 0.9rem;
   color: #64748b;
+}
+
+@media (max-width: 640px) {
+  .inv-progress-header {
+    flex-direction: column;
+  }
+
+  .inv-progress-summary {
+    grid-template-columns: 1fr;
+  }
 }

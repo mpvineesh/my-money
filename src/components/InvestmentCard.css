@@ -96,6 +96,10 @@
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .gain-value {
@@ -113,6 +117,12 @@
 
 .gain-value.neutral {
   color: #94a3b8;
+}
+
+.inv-card-history-meta {
+  font-size: 0.72rem;
+  color: #64748b;
+  text-align: right;
 }
 
 .inv-card-projection {

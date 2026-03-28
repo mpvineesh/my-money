@@ -1,5 +1,5 @@
 import { createElement, useEffect, useMemo, useState } from 'react';
-import { Sparkles, RefreshCcw, CalendarRange, TrendingUp, AlertTriangle, CircleDollarSign } from 'lucide-react';
+import { Sparkles, RefreshCcw, CalendarRange, TrendingUp, AlertTriangle, CircleDollarSign, BriefcaseBusiness, PieChart } from 'lucide-react';
 import { useApp } from '../context/useApp';
 import { formatCurrency, formatDateTime } from '../utils/constants';
 import './AiInsights.css';
@@ -80,6 +80,12 @@ export default function AiInsights() {
   const expenseCount = Number(selectedReport?.metrics?.expenseCount) || 0;
   const topCategory = selectedReport?.metrics?.topCategory?.label || 'N/A';
   const topType = selectedReport?.metrics?.topExpenseType?.label || 'N/A';
+  const investmentValue = Number(selectedReport?.metrics?.investmentValue) || 0;
+  const investedAmount = Number(selectedReport?.metrics?.investedAmount) || 0;
+  const investmentGain = Number(selectedReport?.metrics?.investmentGain) || 0;
+  const investmentReturnPercentage = Number(selectedReport?.metrics?.investmentReturnPercentage) || 0;
+  const topInvestmentType = selectedReport?.metrics?.topInvestmentType?.label || 'N/A';
+  const topHolding = selectedReport?.metrics?.topHolding?.label || 'N/A';
 
   return (
     <div className="ai-insights-page">
@@ -146,6 +152,24 @@ export default function AiInsights() {
           label="Top expense type"
           value={topType}
           hint={selectedReport?.metrics?.topExpenseType?.amount ? formatCurrency(selectedReport.metrics.topExpenseType.amount) : ''}
+        />
+        <ReportMetric
+          icon={BriefcaseBusiness}
+          label="Portfolio value"
+          value={formatCurrency(investmentValue)}
+          hint={investedAmount ? `Invested: ${formatCurrency(investedAmount)}` : 'No investment data'}
+        />
+        <ReportMetric
+          icon={TrendingUp}
+          label="Portfolio gain"
+          value={`${investmentGain >= 0 ? '+' : ''}${formatCurrency(investmentGain)}`}
+          hint={`${investmentGain >= 0 ? '+' : ''}${investmentReturnPercentage}% overall`}
+        />
+        <ReportMetric
+          icon={PieChart}
+          label="Top investment type"
+          value={topInvestmentType}
+          hint={selectedReport?.metrics?.topInvestmentType?.amount ? formatCurrency(selectedReport.metrics.topInvestmentType.amount) : topHolding}
         />
       </section>
 
@@ -276,6 +300,17 @@ export default function AiInsights() {
               </div>
 
               <article className="ai-section-card">
+                <h3>Investment insights</h3>
+                {selectedReport.investmentInsights.length ? (
+                  <ul className="ai-list">
+                    {selectedReport.investmentInsights.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                ) : (
+                  <p className="ai-muted">No investment-specific insights were generated for this report.</p>
+                )}
+              </article>
+
+              <article className="ai-section-card">
                 <h3>Top spending buckets</h3>
                 <div className="ai-breakdown-columns">
                   <div>
@@ -309,6 +344,36 @@ export default function AiInsights() {
                           <strong>{formatCurrency(item.amount)}</strong>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article className="ai-section-card">
+                <h3>Portfolio breakdown</h3>
+                <div className="ai-breakdown-columns">
+                  <div>
+                    <p className="ai-breakdown-label">Investment types</p>
+                    <div className="ai-breakdown-list">
+                      {selectedReport.breakdown.investmentTypes.map((item) => (
+                        <div key={item.label} className="ai-breakdown-item">
+                          <span>{item.label}</span>
+                          <strong>{formatCurrency(item.amount)}</strong>
+                        </div>
+                      ))}
+                      {!selectedReport.breakdown.investmentTypes.length ? <p className="ai-muted">No type split available.</p> : null}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="ai-breakdown-label">Top holdings</p>
+                    <div className="ai-breakdown-list">
+                      {selectedReport.breakdown.holdings.map((item) => (
+                        <div key={item.label} className="ai-breakdown-item">
+                          <span>{item.label}</span>
+                          <strong>{formatCurrency(item.amount)}</strong>
+                        </div>
+                      ))}
+                      {!selectedReport.breakdown.holdings.length ? <p className="ai-muted">No holdings available.</p> : null}
                     </div>
                   </div>
                 </div>

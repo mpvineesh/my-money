@@ -1,4 +1,4 @@
-import { getTypeInfo, formatCurrency, calculateReturns } from '../utils/constants';
+import { getTypeInfo, formatCurrency, calculateReturns, formatDate } from '../utils/constants';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import {
   LineChart,
@@ -16,6 +16,7 @@ export default function InvestmentCard({ investment, onClick }) {
   const gain = investment.currentValue - investment.investedAmount;
   const isPositive = gain > 0;
   const isNeutral = gain === 0;
+  const historyCount = Array.isArray(investment.history) ? investment.history.length : 0;
 
   // Projection: compute future values for next N years using interestRate (annual %)
   const years = 5;
@@ -52,6 +53,9 @@ export default function InvestmentCard({ investment, onClick }) {
       <div className="inv-card-gain">
         <span className={`gain-value ${isPositive ? 'positive' : isNeutral ? 'neutral' : 'negative'}`}>
           {isPositive ? '+' : ''}{formatCurrency(gain)}
+        </span>
+        <span className="inv-card-history-meta">
+          Updated {formatDate(investment.lastUpdated)}{historyCount ? ` · ${historyCount} snapshot${historyCount === 1 ? '' : 's'}` : ''}
         </span>
       </div>
 

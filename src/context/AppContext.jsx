@@ -56,6 +56,16 @@ function formatStoredExpenseDateTime(value) {
   return String(value).slice(0, 16);
 }
 
+function getTodayDateValue() {
+  const now = new Date();
+  const timezoneAdjusted = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return timezoneAdjusted.toISOString().slice(0, 10);
+}
+
+function normalizeHistoryDate(value, fallbackDate = getTodayDateValue()) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || '').trim()) ? String(value).trim() : fallbackDate;
+}
+
 function normalizeExpenseCategories(categories) {
   const seen = new Set();
 
@@ -156,6 +166,102 @@ function normalizeExpense(expense, customCategories = [], customSubcategories = 
   };
 }
 
+function normalizeInvestmentHistoryEntry(entry, fallbackDate = getTodayDateValue()) {
+  return {
+    date: normalizeHistoryDate(entry?.date || entry?.snapshotDate || entry?.lastUpdated, fallbackDate),
+    investedAmount: Number(entry?.investedAmount) || 0,
+    currentValue: Number(entry?.currentValue) || 0,
+  };
+}
+
+function normalizeInvestmentHistory(history, investment) {
+  const fallbackDate = normalizeHistoryDate(
+    investment?.lastUpdated || investment?.snapshotDate,
+    getTodayDateValue(),
+  );
+  const entries = Array.isArray(history) ? history : [];
+
+  if (!entries.length) {
+    return [
+      normalizeInvestmentHistoryEntry(
+        {
+          date: fallbackDate,
+          investedAmount: investment?.investedAmount,
+          currentValue: investment?.currentValue,
+        },
+        fallbackDate,
+      ),
+    ];
+  }
+
+  const byDate = new Map();
+  entries.forEach((entry) => {
+    const normalizedEntry = normalizeInvestmentHistoryEntry(entry, fallbackDate);
+    byDate.set(normalizedEntry.date, normalizedEntry);
+  });
+
+  return [...byDate.values()].sort((left, right) => left.date.localeCompare(right.date));
+}
+
+function normalizeInvestment(investment) {
+  const investedAmount = Number(investment?.investedAmount) || 0;
+  const currentValue = Number(investment?.currentValue) || 0;
+  const interestRate = investment?.interestRate === '' || investment?.interestRate === null || investment?.interestRate === undefined
+    ? ''
+    : Number(investment.interestRate) || 0;
+  const history = normalizeInvestmentHistory(investment?.history, {
+    ...investment,
+    investedAmount,
+    currentValue,
+  });
+  const latestSnapshot = history[history.length - 1];
+  const { snapshotDate: _snapshotDate, ...rest } = investment || {};
+
+  return {
+    ...rest,
+    investedAmount,
+    currentValue,
+    interestRate,
+    history,
+    lastUpdated: normalizeHistoryDate(investment?.lastUpdated || latestSnapshot?.date, getTodayDateValue()),
+  };
+}
+
+function buildInvestmentForSave(investment, previousInvestment = null) {
+  const mergedInvestment = normalizeInvestment({
+    ...(previousInvestment || {}),
+    ...(investment || {}),
+    history: previousInvestment?.history || investment?.history,
+  });
+  const snapshotDate = normalizeHistoryDate(
+    investment?.snapshotDate || investment?.lastUpdated || mergedInvestment.lastUpdated,
+    getTodayDateValue(),
+  );
+  const historyByDate = new Map(
+    mergedInvestment.history.map((entry) => [entry.date, normalizeInvestmentHistoryEntry(entry, snapshotDate)]),
+  );
+
+  historyByDate.set(
+    snapshotDate,
+    normalizeInvestmentHistoryEntry(
+      {
+        date: snapshotDate,
+        investedAmount: mergedInvestment.investedAmount,
+        currentValue: mergedInvestment.currentValue,
+      },
+      snapshotDate,
+    ),
+  );
+
+  const { snapshotDate: _snapshotDate, ...rest } = {
+    ...mergedInvestment,
+    history: [...historyByDate.values()].sort((left, right) => left.date.localeCompare(right.date)),
+    lastUpdated: snapshotDate,
+  };
+
+  return normalizeInvestment(rest);
+}
+
 function normalizeExpensePayers(payers) {
   return payers
     .filter((payer) => payer?.name && payer.id !== DEFAULT_EXPENSE_PAYER.id)
@@ -179,6 +285,7 @@ function normalizeAiReport(aiReport) {
     summary: aiReport?.summary || '',
     wins: Array.isArray(aiReport?.wins) ? aiReport.wins.filter(Boolean) : [],
     risks: Array.isArray(aiReport?.risks) ? aiReport.risks.filter(Boolean) : [],
+    investmentInsights: Array.isArray(aiReport?.investmentInsights) ? aiReport.investmentInsights.filter(Boolean) : [],
     recommendations: Array.isArray(aiReport?.recommendations)
       ? aiReport.recommendations
           .filter((item) => item?.title || item?.reason)
@@ -200,6 +307,8 @@ function normalizeAiReport(aiReport) {
       categories: Array.isArray(aiReport?.breakdown?.categories) ? aiReport.breakdown.categories : [],
       subcategories: Array.isArray(aiReport?.breakdown?.subcategories) ? aiReport.breakdown.subcategories : [],
       expenseTypes: Array.isArray(aiReport?.breakdown?.expenseTypes) ? aiReport.breakdown.expenseTypes : [],
+      investmentTypes: Array.isArray(aiReport?.breakdown?.investmentTypes) ? aiReport.breakdown.investmentTypes : [],
+      holdings: Array.isArray(aiReport?.breakdown?.holdings) ? aiReport.breakdown.holdings : [],
     },
     metrics: aiReport?.metrics && typeof aiReport.metrics === 'object' ? aiReport.metrics : {},
     model: aiReport?.model || '',
@@ -266,7 +375,7 @@ const INITIAL_AI_REPORTS = loadPersistedAiReports();
 export function AppProvider({ children }) {
   const { user } = useAuth();
 
-  const [investments, setInvestments] = useState(loadPersistedInvestments);
+  const [investments, setInvestments] = useState(() => loadPersistedInvestments().map((investment) => normalizeInvestment(investment)));
   const [goals, setGoals] = useState(loadPersistedGoals);
   const [loans, setLoans] = useState(loadPersistedLoans);
   const [cash, setCashState] = useState(loadCash);
@@ -290,7 +399,7 @@ export function AppProvider({ children }) {
     const loansCol = collection(db, 'users', user.uid, 'loans');
 
     const unsubInv = onSnapshot(invCol, (snap) => {
-      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const items = snap.docs.map((d) => normalizeInvestment({ id: d.id, ...d.data() }));
       setInvestments(items);
       // also persist locally for offline fallback
       saveInvestments(items);
@@ -368,7 +477,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const addInvestment = useCallback((investment) => {
-    const newItem = { ...investment, id: uuidv4() };
+    const newItem = buildInvestmentForSave({ ...investment, id: uuidv4() });
     if (user) {
       const ref = doc(db, 'users', user.uid, 'investments', newItem.id);
       setDoc(ref, newItem);
@@ -615,17 +724,19 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const updateInvestment = useCallback((id, investment) => {
+    const previousInvestment = investments.find((item) => item.id === id);
+    const normalizedInvestment = buildInvestmentForSave({ ...investment, id }, previousInvestment);
     if (user) {
       const ref = doc(db, 'users', user.uid, 'investments', id);
-      updateDoc(ref, { ...investment });
+      updateDoc(ref, { ...normalizedInvestment });
       return;
     }
     setInvestments((prev) => {
-      const updated = prev.map((inv) => (inv.id === id ? { ...inv, ...investment } : inv));
+      const updated = prev.map((inv) => (inv.id === id ? normalizedInvestment : inv));
       saveInvestments(updated);
       return updated;
     });
-  }, [user]);
+  }, [investments, user]);
 
   const deleteInvestment = useCallback((id) => {
     if (user) {
@@ -681,7 +792,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const resetToDemo = useCallback(() => {
-    const demoInv = getDemoInvestments();
+    const demoInv = getDemoInvestments().map((investment) => normalizeInvestment(investment));
     const demoGoals = getDemoGoals();
     const demoLoans = getDemoLoans();
     const demoCash = getDemoCash();

@@ -58,6 +58,12 @@
   letter-spacing: 0.05em;
 }
 
+.form-helper-text {
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
 .form-label-row {
   display: flex;
   align-items: center;
