@@ -5,27 +5,19 @@ import {
   formatDateTime,
   getExpenseCategoryInfo,
   getExpenseSubcategoryInfo,
-  getExpenseTypeInfo,
   getPaymentMethodInfo,
 } from '../utils/constants';
 import './ExpenseCard.css';
 
 export default function ExpenseCard({ expense, returnTo = '' }) {
   const navigate = useNavigate();
-  const { expenseCategories, expenseSubcategories, expenseTypes } = useApp();
+  const { expenseCategories, expenseSubcategories } = useApp();
   const category = getExpenseCategoryInfo(expense.category, expenseCategories, expense.categoryLabel);
   const subcategory = getExpenseSubcategoryInfo(
     category.value,
     expense.subcategory,
     expenseSubcategories,
     expense.subcategoryLabel,
-  );
-  const expenseType = getExpenseTypeInfo(
-    category.value,
-    subcategory?.value || '',
-    expense.expenseType,
-    expenseTypes,
-    expense.expenseTypeLabel,
   );
   const paymentMethod = getPaymentMethodInfo(expense.paymentMethod);
   const paidByName = expense.paidByName || 'Me';
@@ -51,7 +43,6 @@ export default function ExpenseCard({ expense, returnTo = '' }) {
           {category.label}
         </span>
         {subcategory ? <span className="expense-chip expense-chip-subtle">{subcategory.label}</span> : null}
-        {expenseType ? <span className="expense-chip expense-chip-outline">{expenseType.label}</span> : null}
         <span className="expense-chip">{paidByName}</span>
         <span className="expense-chip">
           {paymentMethod.value === 'other' && expense.paymentMethodOther

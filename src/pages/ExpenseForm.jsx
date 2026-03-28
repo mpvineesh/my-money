@@ -9,8 +9,6 @@ import {
   getExpenseCategoryOptions,
   getExpenseSubcategories,
   getExpenseSubcategoryInfo,
-  getExpenseTypeInfo,
-  getExpenseTypes,
   getPaymentMethodInfo,
 } from '../utils/constants';
 import './InvestmentForm.css';
@@ -18,7 +16,6 @@ import './InvestmentForm.css';
 const ADD_OTHER_PAYER_VALUE = '__add_other_payer__';
 const ADD_PROJECT_VALUE = '__add_project__';
 const ADD_SUBCATEGORY_VALUE = '__add_subcategory__';
-const ADD_EXPENSE_TYPE_VALUE = '__add_expense_type__';
 
 const MODAL_COPY = {
   payer: {
@@ -49,13 +46,6 @@ const MODAL_COPY = {
     placeholder: 'e.g., Painting',
     submitLabel: 'Save subcategory',
   },
-  expenseType: {
-    label: 'Expense Type',
-    title: 'Add expense type',
-    fieldLabel: 'Expense type name *',
-    placeholder: 'e.g., Labour',
-    submitLabel: 'Save expense type',
-  },
 };
 
 function getCurrentDateTimeValue() {
@@ -70,7 +60,7 @@ function toDateTimeInputValue(value) {
   return String(value).slice(0, 16);
 }
 
-function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategories = [], expenseTypes = [], prefill = null) {
+function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategories = [], prefill = null) {
   if (id) {
     const expense = expenses.find((item) => item.id === id);
     if (expense) {
@@ -80,13 +70,6 @@ function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategori
         expense.subcategory || expense.subCategory,
         expenseSubcategories,
         expense.subcategoryLabel || expense.subCategoryLabel,
-      );
-      const expenseType = getExpenseTypeInfo(
-        category.value,
-        subcategory?.value || '',
-        expense.expenseType || expense.typeOfExpense,
-        expenseTypes,
-        expense.expenseTypeLabel || expense.typeOfExpenseLabel,
       );
       const paymentMethod = getPaymentMethodInfo(expense.paymentMethod);
 
@@ -99,8 +82,6 @@ function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategori
         categoryLabel: category.label,
         subcategory: subcategory?.value || '',
         subcategoryLabel: subcategory?.label || '',
-        expenseType: expenseType?.value || '',
-        expenseTypeLabel: expenseType?.label || '',
         paidById: expense.paidById || DEFAULT_EXPENSE_PAYER.id,
         paidByName: expense.paidByName || DEFAULT_EXPENSE_PAYER.name,
         paymentMethod: paymentMethod.value,
@@ -123,8 +104,6 @@ function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategori
     categoryLabel: defaultCategory.label,
     subcategory: '',
     subcategoryLabel: '',
-    expenseType: '',
-    expenseTypeLabel: '',
     paidById: DEFAULT_EXPENSE_PAYER.id,
     paidByName: DEFAULT_EXPENSE_PAYER.name,
     paymentMethod: 'upi',
@@ -141,13 +120,6 @@ function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategori
     expenseSubcategories,
     prefill.subcategoryLabel,
   );
-  const expenseType = getExpenseTypeInfo(
-    category.value,
-    subcategory?.value || '',
-    prefill.expenseType,
-    expenseTypes,
-    prefill.expenseTypeLabel,
-  );
   const paymentMethod = getPaymentMethodInfo(prefill.paymentMethod || baseForm.paymentMethod);
 
   return {
@@ -160,8 +132,6 @@ function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategori
     categoryLabel: category.label,
     subcategory: subcategory?.value || '',
     subcategoryLabel: subcategory?.label || '',
-    expenseType: expenseType?.value || '',
-    expenseTypeLabel: expenseType?.label || '',
     paidById: prefill.paidById || baseForm.paidById,
     paidByName: prefill.paidByName || baseForm.paidByName,
     paymentMethod: paymentMethod.value,
@@ -186,7 +156,6 @@ export default function ExpenseForm() {
     expenseProjects,
     expenseCategories,
     expenseSubcategories,
-    expenseTypes,
     addExpense,
     updateExpense,
     deleteExpense,
@@ -194,12 +163,11 @@ export default function ExpenseForm() {
     addExpenseProject,
     addExpenseCategory,
     addExpenseSubcategory,
-    addExpenseType,
     markRecurringEntryRecorded,
   } = useApp();
 
   const [form, setForm] = useState(() =>
-    getInitialForm(expenses, id, expenseCategories, expenseSubcategories, expenseTypes, prefill),
+    getInitialForm(expenses, id, expenseCategories, expenseSubcategories, prefill),
   );
   const [showDelete, setShowDelete] = useState(false);
   const [modalType, setModalType] = useState(null);
@@ -285,45 +253,6 @@ export default function ExpenseForm() {
     return [...options.values()];
   }, [expenseSubcategories, form.subcategory, form.subcategoryLabel, selectedCategory.value]);
 
-  const selectedSubcategory = useMemo(
-    () =>
-      getExpenseSubcategoryInfo(
-        selectedCategory.value,
-        form.subcategory,
-        expenseSubcategories,
-        form.subcategoryLabel,
-      ),
-    [expenseSubcategories, form.subcategory, form.subcategoryLabel, selectedCategory.value],
-  );
-
-  const expenseTypeOptions = useMemo(() => {
-    const options = new Map(
-      getExpenseTypes(selectedCategory.value, selectedSubcategory?.value || '', expenseTypes).map((expenseType) => [
-        expenseType.value,
-        expenseType,
-      ]),
-    );
-
-    if (form.expenseType && !options.has(form.expenseType)) {
-      const currentExpenseType = getExpenseTypeInfo(
-        selectedCategory.value,
-        selectedSubcategory?.value || '',
-        form.expenseType,
-        expenseTypes,
-        form.expenseTypeLabel,
-      );
-      if (currentExpenseType) options.set(currentExpenseType.value, currentExpenseType);
-    }
-
-    return [...options.values()];
-  }, [
-    expenseTypes,
-    form.expenseType,
-    form.expenseTypeLabel,
-    selectedCategory.value,
-    selectedSubcategory?.value,
-  ]);
-
   const modalMeta = modalType ? MODAL_COPY[modalType] : null;
 
   const handleChange = (field, value) => {
@@ -349,8 +278,6 @@ export default function ExpenseForm() {
       categoryLabel: category.label,
       subcategory: '',
       subcategoryLabel: '',
-      expenseType: '',
-      expenseTypeLabel: '',
     }));
   };
 
@@ -365,22 +292,6 @@ export default function ExpenseForm() {
       ...prev,
       subcategory: subcategory?.value || '',
       subcategoryLabel: subcategory?.label || '',
-      expenseType: '',
-      expenseTypeLabel: '',
-    }));
-  };
-
-  const handleExpenseTypeSelection = (value) => {
-    if (value === ADD_EXPENSE_TYPE_VALUE) {
-      openModal('expenseType');
-      return;
-    }
-
-    const expenseType = expenseTypeOptions.find((item) => item.value === value);
-    setForm((prev) => ({
-      ...prev,
-      expenseType: expenseType?.value || '',
-      expenseTypeLabel: expenseType?.label || '',
     }));
   };
 
@@ -450,8 +361,6 @@ export default function ExpenseForm() {
         categoryLabel: nextCategory.label,
         subcategory: '',
         subcategoryLabel: '',
-        expenseType: '',
-        expenseTypeLabel: '',
       }));
       closeModal();
       return;
@@ -470,28 +379,10 @@ export default function ExpenseForm() {
         ...prev,
         subcategory: nextSubcategory.value,
         subcategoryLabel: nextSubcategory.label,
-        expenseType: '',
-        expenseTypeLabel: '',
       }));
       closeModal();
       return;
     }
-
-    if (!selectedCategory.value || !selectedSubcategory?.value) return;
-
-    const nextExpenseType = addExpenseType({
-      label: trimmedName,
-      categoryValue: selectedCategory.value,
-      subcategoryValue: selectedSubcategory.value,
-    });
-    if (!nextExpenseType) return;
-
-    setForm((prev) => ({
-      ...prev,
-      expenseType: nextExpenseType.value,
-      expenseTypeLabel: nextExpenseType.label,
-    }));
-    closeModal();
   };
 
   const handleSubmit = (event) => {
@@ -503,13 +394,6 @@ export default function ExpenseForm() {
       form.subcategory,
       expenseSubcategories,
       form.subcategoryLabel,
-    );
-    const expenseType = getExpenseTypeInfo(
-      category.value,
-      subcategory?.value || '',
-      form.expenseType,
-      expenseTypes,
-      form.expenseTypeLabel,
     );
 
     const payload = {
@@ -523,8 +407,6 @@ export default function ExpenseForm() {
       categoryLabel: category.label,
       subcategory: subcategory?.value || '',
       subcategoryLabel: subcategory?.label || '',
-      expenseType: expenseType?.value || '',
-      expenseTypeLabel: expenseType?.label || '',
       paymentMethodOther: form.paymentMethod === 'other' ? form.paymentMethodOther.trim() : '',
       notes: form.notes.trim(),
     };
@@ -748,48 +630,6 @@ export default function ExpenseForm() {
         </div>
 
         <div className="form-group">
-          <div className="form-label-row">
-            <label className="form-label">Expense Type</label>
-            <button
-              type="button"
-              className="form-label-action"
-              onClick={() => openModal('expenseType')}
-              disabled={!selectedSubcategory?.value}
-            >
-              <Plus size={14} />
-              Add expense type
-            </button>
-          </div>
-          <div className="form-inline-select">
-            <select
-              className="form-input"
-              value={form.expenseType}
-              onChange={(event) => handleExpenseTypeSelection(event.target.value)}
-              disabled={!selectedSubcategory?.value}
-            >
-              <option value="">Select expense type (optional)</option>
-              {expenseTypeOptions.map((expenseType) => (
-                <option
-                  key={`${expenseType.categoryValue}:${expenseType.subcategoryValue}:${expenseType.value}`}
-                  value={expenseType.value}
-                >
-                  {expenseType.label}
-                </option>
-              ))}
-              {selectedSubcategory?.value ? <option value={ADD_EXPENSE_TYPE_VALUE}>Add new expense type...</option> : null}
-            </select>
-            <button
-              type="button"
-              className="form-inline-btn"
-              onClick={() => openModal('expenseType')}
-              disabled={!selectedSubcategory?.value}
-            >
-              <Plus size={16} />
-            </button>
-          </div>
-        </div>
-
-        <div className="form-group">
           <label className="form-label">Notes</label>
           <textarea
             className="form-input form-textarea"
@@ -840,11 +680,6 @@ export default function ExpenseForm() {
                 <h2 className="form-modal-title">{modalMeta.title}</h2>
                 {modalType === 'subcategory' ? (
                   <p className="form-modal-context">Under {selectedCategory.label}</p>
-                ) : null}
-                {modalType === 'expenseType' ? (
-                  <p className="form-modal-context">
-                    Under {selectedCategory.label} / {selectedSubcategory?.label || 'Uncategorized'}
-                  </p>
                 ) : null}
               </div>
               <button type="button" className="form-modal-close" onClick={closeModal}>

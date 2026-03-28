@@ -150,7 +150,6 @@ export default function AiInsights() {
   const changeAmount = totalSpent - previousSpent;
   const expenseCount = Number(selectedReport?.metrics?.expenseCount) || 0;
   const topCategory = selectedReport?.metrics?.topCategory?.label || 'N/A';
-  const topType = selectedReport?.metrics?.topExpenseType?.label || 'N/A';
   const topProject = selectedReport?.metrics?.topProject?.label || 'N/A';
   const investmentValue = Number(selectedReport?.metrics?.investmentValue) || 0;
   const investedAmount = Number(selectedReport?.metrics?.investedAmount) || 0;
@@ -417,12 +416,6 @@ export default function AiInsights() {
           hint={selectedReport?.metrics?.topCategory?.amount ? formatCurrency(selectedReport.metrics.topCategory.amount) : ''}
         />
         <ReportMetric
-          icon={Sparkles}
-          label="Top expense type"
-          value={topType}
-          hint={selectedReport?.metrics?.topExpenseType?.amount ? formatCurrency(selectedReport.metrics.topExpenseType.amount) : ''}
-        />
-        <ReportMetric
           icon={Target}
           label="Top project"
           value={topProject}
@@ -603,17 +596,6 @@ export default function AiInsights() {
                     <p className="ai-breakdown-label">Subcategories</p>
                     <div className="ai-breakdown-list">
                       {selectedReport.breakdown.subcategories.map((item) => (
-                        <div key={item.label} className="ai-breakdown-item">
-                          <span>{item.label}</span>
-                          <strong>{formatCurrency(item.amount)}</strong>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="ai-breakdown-label">Expense types</p>
-                    <div className="ai-breakdown-list">
-                      {selectedReport.breakdown.expenseTypes.map((item) => (
                         <div key={item.label} className="ai-breakdown-item">
                           <span>{item.label}</span>
                           <strong>{formatCurrency(item.amount)}</strong>

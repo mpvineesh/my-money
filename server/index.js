@@ -231,7 +231,6 @@ function summarizeExpenses(expenses, previousExpenses) {
 
   const categories = buildTopBreakdown(expenses, (expense) => expense.categoryLabel || expense.category);
   const subcategories = buildTopBreakdown(expenses, (expense) => expense.subcategoryLabel || expense.subcategory || 'Uncategorized');
-  const expenseTypes = buildTopBreakdown(expenses, (expense) => expense.expenseTypeLabel || expense.expenseType || 'Uncategorized');
   const projects = buildTopBreakdown(expenses, (expense) => expense.project || 'No Project');
 
   return {
@@ -242,11 +241,9 @@ function summarizeExpenses(expenses, previousExpenses) {
     changePercentage: toPercent(totalSpent, previousSpent),
     categories,
     subcategories,
-    expenseTypes,
     projects,
     topCategory: categories[0] || null,
     topSubcategory: subcategories[0] || null,
-    topExpenseType: expenseTypes[0] || null,
     topProject: projects[0] || null,
   };
 }
@@ -637,7 +634,6 @@ app.post('/api/ai/reports/monthly', requireUser, async (request, response, next)
         changePercentage: expensesSummary.changePercentage,
         topCategory: expensesSummary.topCategory,
         topSubcategory: expensesSummary.topSubcategory,
-        topExpenseType: expensesSummary.topExpenseType,
         topProject: expensesSummary.topProject,
         investmentValue: investmentsSummary.totalCurrent,
         investedAmount: investmentsSummary.totalInvested,
@@ -653,7 +649,6 @@ app.post('/api/ai/reports/monthly', requireUser, async (request, response, next)
       breakdown: {
         categories: expensesSummary.categories,
         subcategories: expensesSummary.subcategories,
-        expenseTypes: expensesSummary.expenseTypes,
         projects: expensesSummary.projects,
         investmentTypes: investmentsSummary.byType,
         holdings: investmentsSummary.topHoldings,

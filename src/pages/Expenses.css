@@ -373,8 +373,28 @@
   margin-bottom: 18px;
 }
 
+.expense-allocation-panel,
+.expense-project-drilldown-panel {
+  margin-bottom: 18px;
+}
+
+.expense-allocation-grid,
+.expense-project-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
 .expense-project-panel {
   margin-bottom: 18px;
+}
+
+.expense-panel-nested {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
 }
 
 .expense-project-list {
@@ -591,6 +611,8 @@
   .expense-budget-top,
   .expense-budget-summary-grid,
   .expense-home-summary,
+  .expense-allocation-grid,
+  .expense-project-grid,
   .expense-home-grid,
   .expense-subcategory-grid,
   .expense-type-grid {

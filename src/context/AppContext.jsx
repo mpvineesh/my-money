@@ -48,7 +48,6 @@ import {
   normalizeExpenseTypeOption,
   createExpenseTypeValue,
   getExpenseTypes,
-  getExpenseTypeInfo,
   getExpenseChartColor,
   getPaymentMethodInfo,
 } from '../utils/constants';
@@ -258,20 +257,13 @@ function normalizeAppSettings(appSettings) {
   };
 }
 
-function normalizeExpense(expense, customCategories = [], customSubcategories = [], customExpenseTypes = []) {
+function normalizeExpense(expense, customCategories = [], customSubcategories = []) {
   const categoryInfo = getExpenseCategoryInfo(expense?.category, customCategories, expense?.categoryLabel);
   const subcategoryInfo = getExpenseSubcategoryInfo(
     categoryInfo.value,
     expense?.subcategory || expense?.subCategory,
     customSubcategories,
     expense?.subcategoryLabel || expense?.subCategoryLabel,
-  );
-  const expenseTypeInfo = getExpenseTypeInfo(
-    categoryInfo.value,
-    subcategoryInfo?.value || '',
-    expense?.expenseType || expense?.typeOfExpense,
-    customExpenseTypes,
-    expense?.expenseTypeLabel || expense?.typeOfExpenseLabel,
   );
   const paymentMethodInfo = getPaymentMethodInfo(expense?.paymentMethod);
   const dateTime = formatStoredExpenseDateTime(expense?.dateTime || expense?.date);
@@ -286,8 +278,8 @@ function normalizeExpense(expense, customCategories = [], customSubcategories = 
     categoryLabel: categoryInfo.label,
     subcategory: subcategoryInfo?.value || '',
     subcategoryLabel: subcategoryInfo?.label || '',
-    expenseType: expenseTypeInfo?.value || '',
-    expenseTypeLabel: expenseTypeInfo?.label || '',
+    expenseType: '',
+    expenseTypeLabel: '',
     paymentMethod: paymentMethodInfo.value,
     paymentMethodOther:
       paymentMethodInfo.value === 'other'

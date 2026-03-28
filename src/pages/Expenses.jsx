@@ -10,7 +10,6 @@ import {
   getExpenseChartColor,
   getExpenseSubcategoryInfo,
   getExpenseSubcategories,
-  getExpenseTypeInfo,
 } from '../utils/constants';
 import './Expenses.css';
 
@@ -48,14 +47,14 @@ export default function Expenses() {
     expenses,
     expenseCategories,
     expenseSubcategories,
-    expenseTypes,
     expenseBudgets,
     addExpenseBudget,
     updateExpenseBudget,
     deleteExpenseBudget,
   } = useApp();
+  const [selectedProjectValue, setSelectedProjectValue] = useState('');
   const [selectedCategoryValue, setSelectedCategoryValue] = useState('');
-  const [selectedSubcategoryValue, setSelectedSubcategoryValue] = useState('');
+  const [selectedProjectCategoryValue, setSelectedProjectCategoryValue] = useState('');
   const [budgetMonth, setBudgetMonth] = useState(getCurrentMonthValue());
   const [budgetForm, setBudgetForm] = useState({
     id: '',
@@ -122,6 +121,11 @@ export default function Expenses() {
     : categoryBreakdown[0]?.key || '';
   const activeCategory = categoryBreakdown.find((category) => category.key === activeCategoryValue) || categoryBreakdown[0];
 
+  const activeProjectValue = projectBreakdown.some((project) => project.key === selectedProjectValue)
+    ? selectedProjectValue
+    : projectBreakdown[0]?.key || '';
+  const activeProject = projectBreakdown.find((project) => project.key === activeProjectValue) || projectBreakdown[0];
+
   const subcategoryBreakdown = useMemo(() => {
     if (!activeCategoryValue) return [];
 
@@ -151,19 +155,46 @@ export default function Expenses() {
     return [...totals.values()].sort((left, right) => right.amount - left.amount);
   }, [activeCategoryValue, expenseCategories, expenseSubcategories, expenses]);
 
-  const activeSubcategoryValue = subcategoryBreakdown.some((subcategory) => subcategory.key === selectedSubcategoryValue)
-    ? selectedSubcategoryValue
-    : subcategoryBreakdown[0]?.key || '';
-  const activeSubcategory = subcategoryBreakdown.find((subcategory) => subcategory.key === activeSubcategoryValue) || subcategoryBreakdown[0];
-
-  const expenseTypeBreakdown = useMemo(() => {
-    if (!activeCategoryValue || !activeSubcategoryValue) return [];
+  const projectCategoryBreakdown = useMemo(() => {
+    if (!activeProjectValue) return [];
 
     const totals = new Map();
 
     expenses.forEach((expense) => {
+      const project = String(expense.project || '').trim();
+      if (project !== activeProjectValue) return;
+
       const category = getExpenseCategoryInfo(expense.category, expenseCategories, expense.categoryLabel);
-      if (category.value !== activeCategoryValue) return;
+      const current = totals.get(category.value);
+
+      totals.set(category.value, {
+        key: category.value,
+        name: category.label,
+        amount: (current?.amount || 0) + (Number(expense.amount) || 0),
+        color: category.color,
+      });
+    });
+
+    return [...totals.values()].sort((left, right) => right.amount - left.amount);
+  }, [activeProjectValue, expenseCategories, expenses]);
+
+  const activeProjectCategoryValue = projectCategoryBreakdown.some((category) => category.key === selectedProjectCategoryValue)
+    ? selectedProjectCategoryValue
+    : projectCategoryBreakdown[0]?.key || '';
+  const activeProjectCategory =
+    projectCategoryBreakdown.find((category) => category.key === activeProjectCategoryValue) || projectCategoryBreakdown[0];
+
+  const projectSubcategoryBreakdown = useMemo(() => {
+    if (!activeProjectValue || !activeProjectCategoryValue) return [];
+
+    const totals = new Map();
+
+    expenses.forEach((expense) => {
+      const project = String(expense.project || '').trim();
+      if (project !== activeProjectValue) return;
+
+      const category = getExpenseCategoryInfo(expense.category, expenseCategories, expense.categoryLabel);
+      if (category.value !== activeProjectCategoryValue) return;
 
       const subcategory = getExpenseSubcategoryInfo(
         category.value,
@@ -171,29 +202,19 @@ export default function Expenses() {
         expenseSubcategories,
         expense.subcategoryLabel,
       );
-      const subcategoryKey = subcategory?.value || 'uncategorized';
-      if (subcategoryKey !== activeSubcategoryValue) return;
-
-      const expenseType = getExpenseTypeInfo(
-        category.value,
-        subcategory?.value || '',
-        expense.expenseType,
-        expenseTypes,
-        expense.expenseTypeLabel,
-      );
-      const key = expenseType?.value || 'uncategorized';
+      const key = subcategory?.value || 'uncategorized';
       const current = totals.get(key);
 
       totals.set(key, {
         key,
-        name: expenseType?.label || 'Uncategorized',
+        name: subcategory?.label || 'Uncategorized',
         amount: (current?.amount || 0) + (Number(expense.amount) || 0),
-        color: current?.color || expenseType?.color || getExpenseChartColor(totals.size),
+        color: current?.color || subcategory?.color || getExpenseChartColor(totals.size),
       });
     });
 
     return [...totals.values()].sort((left, right) => right.amount - left.amount);
-  }, [activeCategoryValue, activeSubcategoryValue, expenseCategories, expenseSubcategories, expenseTypes, expenses]);
+  }, [activeProjectCategoryValue, activeProjectValue, expenseCategories, expenseSubcategories, expenses]);
 
   const monthlyExpenses = useMemo(
     () => expenses.filter((expense) => getExpensePeriodKey(expense) === budgetMonth),
@@ -268,7 +289,8 @@ export default function Expenses() {
   const topCategory = categoryBreakdown[0];
   const topProject = projectBreakdown[0] || null;
   const activeCategoryTotal = activeCategory?.amount || 0;
-  const activeSubcategoryTotal = activeSubcategory?.amount || 0;
+  const activeProjectTotal = activeProject?.amount || 0;
+  const activeProjectCategoryTotal = activeProjectCategory?.amount || 0;
 
   function resetBudgetForm() {
     setBudgetForm({
@@ -532,91 +554,196 @@ export default function Expenses() {
             </article>
           </section>
 
+          <section className="expense-panel expense-allocation-panel">
+            <div className="expense-panel-header">
+              <div>
+                <p className="expense-panel-label">Whole Expense Allocation</p>
+                <h2 className="expense-panel-title">How all expenses are distributed</h2>
+              </div>
+            </div>
+
+            <div className="expense-allocation-grid">
+              <article className="expense-panel expense-chart-panel expense-panel-nested">
+                <div className="expense-panel-header">
+                  <div>
+                    <p className="expense-panel-label">Allocation</p>
+                    <h3 className="expense-panel-title">Expense split by category</h3>
+                  </div>
+                </div>
+
+                <div className="expense-chart-wrap">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={categoryBreakdown}
+                        dataKey="amount"
+                        nameKey="name"
+                        innerRadius={68}
+                        outerRadius={98}
+                        paddingAngle={3}
+                        stroke="none"
+                      >
+                        {categoryBreakdown.map((entry) => (
+                          <Cell key={entry.key} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<ExpenseChartTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="expense-chart-center">
+                    <span>Total</span>
+                    <strong>{formatCurrency(totalSpent)}</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article className="expense-panel expense-panel-nested">
+                <div className="expense-panel-header">
+                  <div>
+                    <p className="expense-panel-label">Breakdown</p>
+                    <h3 className="expense-panel-title">Where most of it goes</h3>
+                  </div>
+                </div>
+
+                <div className="expense-breakdown-list">
+                  {categoryBreakdown.map((item) => (
+                    <div key={item.key} className="expense-breakdown-item">
+                      <div className="expense-breakdown-main">
+                        <span className="expense-breakdown-dot" style={{ backgroundColor: item.color }} />
+                        <div>
+                          <strong>{item.name}</strong>
+                          <span>{totalSpent ? `${Math.round((item.amount / totalSpent) * 100)}% of total` : '0%'}</span>
+                        </div>
+                      </div>
+                      <strong>{formatCurrency(item.amount)}</strong>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            </div>
+          </section>
+
           {projectBreakdown.length ? (
             <section className="expense-panel expense-project-panel">
               <div className="expense-panel-header">
                 <div>
                   <p className="expense-panel-label">Projects</p>
-                  <h2 className="expense-panel-title">Project-based expense tracking</h2>
+                  <h2 className="expense-panel-title">Project-wise expense allocation</h2>
                 </div>
               </div>
 
-              <div className="expense-project-list">
-                {projectBreakdown.map((project) => (
-                  <article key={project.key} className="expense-project-item">
-                    <div>
-                      <strong>{project.name}</strong>
-                      <span>{project.count} expense{project.count === 1 ? '' : 's'} linked</span>
-                    </div>
-                    <div className="expense-project-item-amounts">
-                      <strong>{formatCurrency(project.amount)}</strong>
-                      <span>{totalSpent ? `${Math.round((project.amount / totalSpent) * 100)}% of total spend` : '0% of total spend'}</span>
-                    </div>
-                  </article>
-                ))}
+              <div className="expense-project-grid">
+                <div className="expense-chart-wrap">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={projectBreakdown}
+                        dataKey="amount"
+                        nameKey="name"
+                        innerRadius={68}
+                        outerRadius={98}
+                        paddingAngle={3}
+                        stroke="none"
+                      >
+                        {projectBreakdown.map((entry, index) => (
+                          <Cell key={entry.key} fill={getExpenseChartColor(index)} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<ExpenseChartTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="expense-chart-center">
+                    <span>Projects</span>
+                    <strong>{formatCurrency(totalSpent)}</strong>
+                  </div>
+                </div>
+
+                <div className="expense-project-list">
+                  {projectBreakdown.map((project) => (
+                    <article key={project.key} className="expense-project-item">
+                      <div>
+                        <strong>{project.name}</strong>
+                        <span>{project.count} expense{project.count === 1 ? '' : 's'} linked</span>
+                      </div>
+                      <div className="expense-project-item-amounts">
+                        <strong>{formatCurrency(project.amount)}</strong>
+                        <span>{totalSpent ? `${Math.round((project.amount / totalSpent) * 100)}% of total spend` : '0% of total spend'}</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
               </div>
             </section>
           ) : null}
 
-          <section className="expense-home-grid">
-            <article className="expense-panel expense-chart-panel">
+          {projectBreakdown.length ? (
+            <section className="expense-panel expense-project-drilldown-panel">
               <div className="expense-panel-header">
                 <div>
-                  <p className="expense-panel-label">Allocation</p>
-                  <h2 className="expense-panel-title">Expense split by category</h2>
+                  <p className="expense-panel-label">Project Drill Down</p>
+                  <h2 className="expense-panel-title">Category split within a project</h2>
                 </div>
               </div>
 
-              <div className="expense-chart-wrap">
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie
-                      data={categoryBreakdown}
-                      dataKey="amount"
-                      nameKey="name"
-                      innerRadius={68}
-                      outerRadius={98}
-                      paddingAngle={3}
-                      stroke="none"
-                    >
-                      {categoryBreakdown.map((entry) => (
-                        <Cell key={entry.key} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<ExpenseChartTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="expense-chart-center">
-                  <span>Total</span>
-                  <strong>{formatCurrency(totalSpent)}</strong>
-                </div>
-              </div>
-            </article>
-
-            <article className="expense-panel">
-              <div className="expense-panel-header">
-                <div>
-                  <p className="expense-panel-label">Breakdown</p>
-                  <h2 className="expense-panel-title">Where most of it goes</h2>
-                </div>
-              </div>
-
-              <div className="expense-breakdown-list">
-                {categoryBreakdown.map((item) => (
-                  <div key={item.key} className="expense-breakdown-item">
-                    <div className="expense-breakdown-main">
-                      <span className="expense-breakdown-dot" style={{ backgroundColor: item.color }} />
-                      <div>
-                        <strong>{item.name}</strong>
-                        <span>{totalSpent ? `${Math.round((item.amount / totalSpent) * 100)}% of total` : '0%'}</span>
-                      </div>
-                    </div>
-                    <strong>{formatCurrency(item.amount)}</strong>
-                  </div>
+              <div className="expense-category-filters">
+                {projectBreakdown.map((project) => (
+                  <button
+                    key={project.key}
+                    type="button"
+                    className={`expense-category-filter ${activeProject?.key === project.key ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedProjectValue(project.key);
+                      setSelectedProjectCategoryValue('');
+                    }}
+                  >
+                    {project.name}
+                  </button>
                 ))}
               </div>
-            </article>
-          </section>
+
+              <div className="expense-subcategory-grid">
+                <div className="expense-chart-wrap">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={projectCategoryBreakdown}
+                        dataKey="amount"
+                        nameKey="name"
+                        innerRadius={68}
+                        outerRadius={98}
+                        paddingAngle={3}
+                        stroke="none"
+                      >
+                        {projectCategoryBreakdown.map((entry) => (
+                          <Cell key={`${activeProjectValue}:${entry.key}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<ExpenseChartTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="expense-chart-center">
+                    <span>{activeProject?.name || 'Project'}</span>
+                    <strong>{formatCurrency(activeProjectTotal)}</strong>
+                  </div>
+                </div>
+
+                <div className="expense-breakdown-list">
+                  {projectCategoryBreakdown.map((item) => (
+                    <div key={`${activeProjectValue}:${item.key}`} className="expense-breakdown-item">
+                      <div className="expense-breakdown-main">
+                        <span className="expense-breakdown-dot" style={{ backgroundColor: item.color }} />
+                        <div>
+                          <strong>{item.name}</strong>
+                          <span>{activeProjectTotal ? `${Math.round((item.amount / activeProjectTotal) * 100)}% of project` : '0%'}</span>
+                        </div>
+                      </div>
+                      <strong>{formatCurrency(item.amount)}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null}
 
           <section className="expense-panel expense-subcategory-panel">
             <div className="expense-panel-header">
@@ -689,81 +816,84 @@ export default function Expenses() {
             ) : null}
           </section>
 
-          <section className="expense-panel expense-type-panel">
-            <div className="expense-panel-header">
-              <div>
-                <p className="expense-panel-label">Expense Type</p>
-                <h2 className="expense-panel-title">Expense type split by subcategory</h2>
+          {projectCategoryBreakdown.length ? (
+            <section className="expense-panel expense-subcategory-panel">
+              <div className="expense-panel-header">
+                <div>
+                  <p className="expense-panel-label">Project Drill Down</p>
+                  <h2 className="expense-panel-title">Subcategory split within project category</h2>
+                </div>
               </div>
-            </div>
 
-            <div className="expense-category-filters">
-              {subcategoryBreakdown.map((subcategory) => (
-                <button
-                  key={`${activeCategoryValue}:${subcategory.key}`}
-                  type="button"
-                  className={`expense-category-filter ${activeSubcategory?.key === subcategory.key ? 'active' : ''}`}
-                  style={
-                    activeSubcategory?.key === subcategory.key
-                      ? { backgroundColor: `${subcategory.color}15`, color: subcategory.color, borderColor: `${subcategory.color}50` }
-                      : {}
-                  }
-                  onClick={() => setSelectedSubcategoryValue(subcategory.key)}
-                >
-                  {subcategory.name}
-                </button>
-              ))}
-            </div>
+              <div className="expense-category-filters">
+                {projectCategoryBreakdown.map((category) => (
+                  <button
+                    key={`${activeProjectValue}:${category.key}`}
+                    type="button"
+                    className={`expense-category-filter ${activeProjectCategory?.key === category.key ? 'active' : ''}`}
+                    style={
+                      activeProjectCategory?.key === category.key
+                        ? { backgroundColor: `${category.color}15`, color: category.color, borderColor: `${category.color}50` }
+                        : {}
+                    }
+                    onClick={() => setSelectedProjectCategoryValue(category.key)}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
 
-            {activeSubcategory ? (
-              <div className="expense-type-grid">
-                <div className="expense-chart-wrap">
-                  <ResponsiveContainer width="100%" height={260}>
-                    <PieChart>
-                      <Pie
-                        data={expenseTypeBreakdown}
-                        dataKey="amount"
-                        nameKey="name"
-                        innerRadius={68}
-                        outerRadius={98}
-                        paddingAngle={3}
-                        stroke="none"
-                      >
-                        {expenseTypeBreakdown.map((entry) => (
-                          <Cell key={`${activeCategoryValue}:${activeSubcategory.key}:${entry.key}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<ExpenseChartTooltip />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="expense-chart-center">
-                    <span>{activeSubcategory.name}</span>
-                    <strong>{formatCurrency(activeSubcategoryTotal)}</strong>
+              {activeProjectCategory ? (
+                <div className="expense-subcategory-grid">
+                  <div className="expense-chart-wrap">
+                    <ResponsiveContainer width="100%" height={260}>
+                      <PieChart>
+                        <Pie
+                          data={projectSubcategoryBreakdown}
+                          dataKey="amount"
+                          nameKey="name"
+                          innerRadius={68}
+                          outerRadius={98}
+                          paddingAngle={3}
+                          stroke="none"
+                        >
+                          {projectSubcategoryBreakdown.map((entry) => (
+                            <Cell key={`${activeProjectValue}:${activeProjectCategory.key}:${entry.key}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<ExpenseChartTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="expense-chart-center">
+                      <span>{activeProjectCategory.name}</span>
+                      <strong>{formatCurrency(activeProjectCategoryTotal)}</strong>
+                    </div>
+                  </div>
+
+                  <div className="expense-breakdown-list">
+                    {projectSubcategoryBreakdown.map((item) => (
+                      <div key={`${activeProjectValue}:${activeProjectCategory.key}:${item.key}`} className="expense-breakdown-item">
+                        <div className="expense-breakdown-main">
+                          <span className="expense-breakdown-dot" style={{ backgroundColor: item.color }} />
+                          <div>
+                            <strong>{item.name}</strong>
+                            <span>{activeProjectCategoryTotal ? `${Math.round((item.amount / activeProjectCategoryTotal) * 100)}% of category` : '0%'}</span>
+                          </div>
+                        </div>
+                        <strong>{formatCurrency(item.amount)}</strong>
+                      </div>
+                    ))}
                   </div>
                 </div>
+              ) : null}
+            </section>
+          ) : null}
 
-                <div className="expense-breakdown-list">
-                  {expenseTypeBreakdown.map((item) => (
-                    <div key={`${activeCategoryValue}:${activeSubcategory.key}:${item.key}`} className="expense-breakdown-item">
-                      <div className="expense-breakdown-main">
-                        <span className="expense-breakdown-dot" style={{ backgroundColor: item.color }} />
-                        <div>
-                          <strong>{item.name}</strong>
-                          <span>{activeSubcategoryTotal ? `${Math.round((item.amount / activeSubcategoryTotal) * 100)}% of subcategory` : '0%'}</span>
-                        </div>
-                      </div>
-                      <strong>{formatCurrency(item.amount)}</strong>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </section>
         </>
       ) : (
         <div className="expense-empty-state">
           <h2>No expenses yet</h2>
-          <p>Add your first expense to unlock category, subcategory, expense type, and budget tracking insights.</p>
+          <p>Add your first expense to unlock project, category, subcategory, and budget tracking insights.</p>
           <Link to="/expenses/new" className="btn-primary">Add Expense</Link>
         </div>
       )}
