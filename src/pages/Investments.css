@@ -28,6 +28,12 @@
   margin: 0;
 }
 
+.inv-page-scope {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
 .inv-page-total {
   text-align: right;
   display: flex;

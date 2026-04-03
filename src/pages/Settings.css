@@ -67,6 +67,46 @@
   color: #0f172a;
 }
 
+.settings-panel-copy {
+  margin: -8px 0 16px;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.settings-field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.settings-field span {
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.settings-select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1.5px solid #dbe4ee;
+  background: white;
+  color: #0f172a;
+  font-size: 0.92rem;
+  outline: none;
+}
+
+.settings-select:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+.settings-helper-copy {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
 .settings-toggle-list {
   display: grid;
   gap: 12px;

@@ -114,19 +114,20 @@ function NetWorthTooltip({ active, payload, label }) {
 }
 
 export default function Dashboard() {
-  const { investments, goals, loans, cash, appSettings } = useApp();
+  const { investments, visibleInvestments, investmentVisibilityMember, goals, loans, cash, appSettings } = useApp();
   const navigate = useNavigate();
   const [netWorthRange, setNetWorthRange] = useState('month');
   const dashboardSections = appSettings?.dashboardSections || {};
+  const portfolioScopeLabel = investmentVisibilityMember ? investmentVisibilityMember.name : 'Whole family';
 
   const stats = useMemo(() => {
-    const totalInvested = investments.reduce((sum, i) => sum + (Number(i.investedAmount) || 0), 0);
-    const totalCurrent = investments.reduce((sum, i) => sum + (Number(i.currentValue) || 0), 0);
+    const totalInvested = visibleInvestments.reduce((sum, i) => sum + (Number(i.investedAmount) || 0), 0);
+    const totalCurrent = visibleInvestments.reduce((sum, i) => sum + (Number(i.currentValue) || 0), 0);
     const totalGain = totalCurrent - totalInvested;
     const overallReturn = calculateReturns(totalInvested, totalCurrent);
 
     const byType = {};
-    investments.forEach((inv) => {
+    visibleInvestments.forEach((inv) => {
       const type = inv.type || 'other';
       if (!byType[type]) byType[type] = { invested: 0, current: 0, count: 0 };
       byType[type].invested += Number(inv.investedAmount) || 0;
@@ -164,19 +165,19 @@ export default function Dashboard() {
       netWorth,
       goalCoverage,
     };
-  }, [cash, goals, investments, loans]);
+  }, [cash, goals, loans, visibleInvestments]);
 
   const topInvestments = useMemo(() => {
-    return [...investments].sort((a, b) => (Number(b.currentValue) || 0) - (Number(a.currentValue) || 0)).slice(0, 3);
-  }, [investments]);
+    return [...visibleInvestments].sort((a, b) => (Number(b.currentValue) || 0) - (Number(a.currentValue) || 0)).slice(0, 3);
+  }, [visibleInvestments]);
 
   const topGoals = useMemo(() => {
     return [...goals].slice(0, 2);
   }, [goals]);
 
   const netWorthSeries = useMemo(
-    () => buildNetWorthSeries(investments, netWorthRange, Number(cash) || 0, stats.totalLoanPrincipal, stats.totalGoalCurrent),
-    [cash, investments, netWorthRange, stats.totalGoalCurrent, stats.totalLoanPrincipal],
+    () => buildNetWorthSeries(visibleInvestments, netWorthRange, Number(cash) || 0, stats.totalLoanPrincipal, stats.totalGoalCurrent),
+    [cash, netWorthRange, stats.totalGoalCurrent, stats.totalLoanPrincipal, visibleInvestments],
   );
   const latestNetWorth = netWorthSeries[netWorthSeries.length - 1];
   const previousNetWorth = netWorthSeries[netWorthSeries.length - 2];
@@ -226,6 +227,7 @@ export default function Dashboard() {
         <div>
           <p className="dash-greeting">My Money</p>
           <h1 className="dash-title">Portfolio Overview</h1>
+          <p className="dash-subtitle">Investment view: {portfolioScopeLabel}</p>
         </div>
       </header>
 
@@ -415,7 +417,7 @@ export default function Dashboard() {
         </section>
       )}
 
-      {dashboardSections.topInvestments && investments.length > 0 && (
+      {dashboardSections.topInvestments && visibleInvestments.length > 0 && (
         <section className="dash-section">
           <div className="dash-section-header">
             <h2 className="dash-section-title">Top Investments</h2>
@@ -431,12 +433,14 @@ export default function Dashboard() {
         </section>
       )}
 
-      {investments.length === 0 && (
+      {visibleInvestments.length === 0 && (
         <div className="dash-empty">
           <Wallet size={48} strokeWidth={1} />
-          <h3>Start tracking your investments</h3>
-          <p>Add your first investment to see your portfolio here</p>
-          <button className="btn-primary" onClick={() => navigate('/add')}>Add Investment</button>
+          <h3>{investments.length === 0 ? 'Start tracking your investments' : `No investments for ${portfolioScopeLabel}`}</h3>
+          <p>{investments.length === 0 ? 'Add your first investment to see your portfolio here' : 'Change the portfolio visibility setting or add an investment for this member.'}</p>
+          <button className="btn-primary" onClick={() => navigate(investments.length === 0 ? '/add' : '/settings')}>
+            {investments.length === 0 ? 'Add Investment' : 'Open Settings'}
+          </button>
         </div>
       )}
 

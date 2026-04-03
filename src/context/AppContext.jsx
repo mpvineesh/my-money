@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   loadInvestments,
@@ -275,6 +275,7 @@ const DEFAULT_APP_SETTINGS = {
     goalProgress: true,
     topInvestments: true,
   },
+  investmentVisibilityMemberId: 'all',
 };
 
 function normalizeAppSettings(appSettings) {
@@ -290,7 +291,36 @@ function normalizeAppSettings(appSettings) {
       goalProgress: dashboardSections.goalProgress !== false,
       topInvestments: dashboardSections.topInvestments !== false,
     },
+    investmentVisibilityMemberId:
+      typeof appSettings?.investmentVisibilityMemberId === 'string' && appSettings.investmentVisibilityMemberId.trim()
+        ? appSettings.investmentVisibilityMemberId.trim()
+        : 'all',
   };
+}
+
+function buildInvestmentMemberOptions(familyMembers = [], investments = []) {
+  const options = new Map([[DEFAULT_FAMILY_MEMBER.id, DEFAULT_FAMILY_MEMBER]]);
+
+  familyMembers.forEach((member) => {
+    options.set(member.id, member);
+  });
+
+  investments.forEach((investment) => {
+    const memberId = investment.memberId || DEFAULT_FAMILY_MEMBER.id;
+    const memberName = investment.memberName || DEFAULT_FAMILY_MEMBER.name;
+    options.set(memberId, { id: memberId, name: memberName });
+  });
+
+  return [...options.values()].sort((left, right) => {
+    if (left.id === DEFAULT_FAMILY_MEMBER.id) return -1;
+    if (right.id === DEFAULT_FAMILY_MEMBER.id) return 1;
+    return left.name.localeCompare(right.name);
+  });
+}
+
+function normalizeInvestmentVisibilityMemberId(memberId, memberOptions = []) {
+  if (memberId === 'all') return 'all';
+  return memberOptions.some((member) => member.id === memberId) ? memberId : 'all';
 }
 
 function normalizeExpense(expense, customCategories = [], customSubcategories = []) {
@@ -637,6 +667,29 @@ export function AppProvider({ children }) {
   const [reminders, setReminders] = useState(INITIAL_REMINDERS);
   const [appSettings, setAppSettings] = useState(INITIAL_APP_SETTINGS);
   const [aiReports, setAiReports] = useState(INITIAL_AI_REPORTS);
+
+  const investmentMemberOptions = useMemo(
+    () => buildInvestmentMemberOptions(familyMembers, investments),
+    [familyMembers, investments],
+  );
+  const investmentVisibilityMemberId = useMemo(
+    () => normalizeInvestmentVisibilityMemberId(appSettings?.investmentVisibilityMemberId || 'all', investmentMemberOptions),
+    [appSettings?.investmentVisibilityMemberId, investmentMemberOptions],
+  );
+  const investmentVisibilityMember = useMemo(
+    () =>
+      investmentVisibilityMemberId === 'all'
+        ? null
+        : investmentMemberOptions.find((member) => member.id === investmentVisibilityMemberId) || null,
+    [investmentMemberOptions, investmentVisibilityMemberId],
+  );
+  const visibleInvestments = useMemo(
+    () =>
+      investmentVisibilityMemberId === 'all'
+        ? investments
+        : investments.filter((investment) => (investment.memberId || DEFAULT_FAMILY_MEMBER.id) === investmentVisibilityMemberId),
+    [investmentVisibilityMemberId, investments],
+  );
 
   useEffect(() => {
     // If user is signed in, listen to their Firestore collections and sync locally
@@ -1588,6 +1641,10 @@ export function AppProvider({ children }) {
   const value = {
     investments,
     familyMembers,
+    investmentMemberOptions,
+    investmentVisibilityMemberId,
+    investmentVisibilityMember,
+    visibleInvestments,
     goals,
     loans,
     cash,

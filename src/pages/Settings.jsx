@@ -33,7 +33,13 @@ const DASHBOARD_TOGGLES = [
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { appSettings, updateAppSettings } = useApp();
+  const {
+    appSettings,
+    investmentMemberOptions,
+    investmentVisibilityMemberId,
+    investmentVisibilityMember,
+    updateAppSettings,
+  } = useApp();
   const dashboardSections = appSettings?.dashboardSections || {};
 
   function handleToggle(key) {
@@ -43,6 +49,12 @@ export default function Settings() {
         [key]: !current?.dashboardSections?.[key],
       },
     }));
+  }
+
+  function handleInvestmentVisibilityChange(value) {
+    updateAppSettings({
+      investmentVisibilityMemberId: value,
+    });
   }
 
   return (
@@ -57,6 +69,38 @@ export default function Settings() {
           <p className="settings-subtitle">Choose which sections are visible on the dashboard home screen.</p>
         </div>
       </header>
+
+      <section className="settings-panel">
+        <div className="settings-panel-head">
+          <div>
+            <p className="settings-panel-label">Portfolio</p>
+            <h2>Investment visibility</h2>
+            <p className="settings-panel-copy">
+              Choose whether the app shows the whole family portfolio or only one member&apos;s investments.
+            </p>
+          </div>
+        </div>
+
+        <label className="settings-field">
+          <span>Show investments for</span>
+          <select
+            className="settings-select"
+            value={investmentVisibilityMemberId}
+            onChange={(event) => handleInvestmentVisibilityChange(event.target.value)}
+          >
+            <option value="all">Whole family</option>
+            {investmentMemberOptions.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <p className="settings-helper-copy">
+          Current view: <strong>{investmentVisibilityMember ? investmentVisibilityMember.name : 'Whole family'}</strong>. This affects the dashboard and investments pages.
+        </p>
+      </section>
 
       <section className="settings-panel">
         <div className="settings-panel-head">
