@@ -54,6 +54,14 @@
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.05);
 }
 
+.settings-panel + .settings-panel {
+  margin-top: 16px;
+}
+
+.settings-panel-secondary {
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+}
+
 .settings-panel-head h2 {
   margin: 0 0 16px;
   color: #0f172a;
@@ -120,11 +128,62 @@
   transform: translateX(24px);
 }
 
+.settings-link-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+
+.settings-link-card:hover {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+
+.settings-link-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #e0e7ff;
+  color: #4338ca;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-link-copy {
+  flex: 1;
+}
+
+.settings-link-copy strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.settings-link-copy p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
 @media (max-width: 640px) {
   .settings-header,
   .settings-toggle-card {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .settings-link-card {
+    align-items: flex-start;
   }
 
   .settings-switch {

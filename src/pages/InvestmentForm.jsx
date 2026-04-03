@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../context/useApp';
-import { INVESTMENT_TYPES, RISK_LEVELS } from '../utils/constants';
-import { ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, RISK_LEVELS } from '../utils/constants';
+import { ArrowLeft, Plus, Save, Trash2, Users, X } from 'lucide-react';
 import './InvestmentForm.css';
+
+const ADD_MEMBER_VALUE = '__add_member__';
 
 function getInitialForm(investments, id, prefill = null) {
   const today = new Date().toISOString().slice(0, 10);
@@ -12,6 +14,8 @@ function getInitialForm(investments, id, prefill = null) {
     if (inv) {
       return {
         name: inv.name || '',
+        memberId: inv.memberId || DEFAULT_FAMILY_MEMBER.id,
+        memberName: inv.memberName || DEFAULT_FAMILY_MEMBER.name,
         type: inv.type || 'mutual_funds',
         investedAmount: inv.investedAmount || '',
         currentValue: inv.currentValue || '',
@@ -26,6 +30,8 @@ function getInitialForm(investments, id, prefill = null) {
   }
   const baseForm = {
     name: '',
+    memberId: DEFAULT_FAMILY_MEMBER.id,
+    memberName: DEFAULT_FAMILY_MEMBER.name,
     type: 'mutual_funds',
     investedAmount: '',
     currentValue: '',
@@ -42,6 +48,8 @@ function getInitialForm(investments, id, prefill = null) {
   return {
     ...baseForm,
     ...prefill,
+    memberId: prefill.memberId || baseForm.memberId,
+    memberName: prefill.memberName || baseForm.memberName,
     investedAmount: prefill.investedAmount || '',
     currentValue: prefill.currentValue || '',
     snapshotDate: prefill.snapshotDate || today,
@@ -57,20 +65,93 @@ export default function InvestmentForm() {
   const prefill = location.state?.prefill || null;
   const sourceRecurringId = location.state?.sourceRecurringId || '';
   const returnTo = location.state?.returnTo || '/investments';
-  const { investments, addInvestment, updateInvestment, deleteInvestment, markRecurringEntryRecorded } = useApp();
+  const {
+    investments,
+    familyMembers,
+    addInvestment,
+    updateInvestment,
+    deleteInvestment,
+    addFamilyMember,
+    markRecurringEntryRecorded,
+  } = useApp();
 
   const [form, setForm] = useState(() => getInitialForm(investments, id, prefill));
-
   const [showDelete, setShowDelete] = useState(false);
+  const [showMemberModal, setShowMemberModal] = useState(false);
+  const [memberModalName, setMemberModalName] = useState('');
+
+  const memberOptions = useMemo(() => {
+    const options = new Map([[DEFAULT_FAMILY_MEMBER.id, DEFAULT_FAMILY_MEMBER]]);
+
+    familyMembers.forEach((member) => {
+      options.set(member.id, member);
+    });
+
+    investments.forEach((investment) => {
+      const memberId = investment.memberId || DEFAULT_FAMILY_MEMBER.id;
+      const memberName = investment.memberName || DEFAULT_FAMILY_MEMBER.name;
+      options.set(memberId, { id: memberId, name: memberName });
+    });
+
+    if (form.memberName) {
+      options.set(form.memberId || DEFAULT_FAMILY_MEMBER.id, {
+        id: form.memberId || DEFAULT_FAMILY_MEMBER.id,
+        name: form.memberName,
+      });
+    }
+
+    return [...options.values()].sort((left, right) => {
+      if (left.id === DEFAULT_FAMILY_MEMBER.id) return -1;
+      if (right.id === DEFAULT_FAMILY_MEMBER.id) return 1;
+      return left.name.localeCompare(right.name);
+    });
+  }, [familyMembers, form.memberId, form.memberName, investments]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleMemberSelection = (value) => {
+    if (value === ADD_MEMBER_VALUE) {
+      setShowMemberModal(true);
+      setMemberModalName('');
+      return;
+    }
+
+    const selectedMember = memberOptions.find((member) => member.id === value) || DEFAULT_FAMILY_MEMBER;
+    setForm((prev) => ({
+      ...prev,
+      memberId: selectedMember.id,
+      memberName: selectedMember.name,
+    }));
+  };
+
+  const handleMemberModalSave = () => {
+    const nextMember = addFamilyMember({ name: memberModalName });
+    if (!nextMember) return;
+
+    setForm((prev) => ({
+      ...prev,
+      memberId: nextMember.id,
+      memberName: nextMember.name,
+    }));
+    setShowMemberModal(false);
+    setMemberModalName('');
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    const selectedMember =
+      memberOptions.find((member) => member.id === form.memberId) || {
+        id: form.memberId || DEFAULT_FAMILY_MEMBER.id,
+        name: form.memberName?.trim() || DEFAULT_FAMILY_MEMBER.name,
+      };
+
     const data = {
       ...form,
+      memberId: selectedMember.id,
+      memberName: selectedMember.name,
       investedAmount: Number(form.investedAmount) || 0,
       currentValue: Number(form.currentValue) || 0,
       interestRate: form.interestRate ? Number(form.interestRate) : '',
@@ -91,12 +172,12 @@ export default function InvestmentForm() {
     navigate(returnTo);
   };
 
-  const isValid = form.name.trim() && form.investedAmount;
+  const isValid = form.name.trim() && form.investedAmount && form.memberName.trim();
 
   return (
     <div className="form-page">
       <header className="form-header">
-        <button className="form-back-btn" onClick={() => navigate(-1)}>
+        <button type="button" className="form-back-btn" onClick={() => navigate(-1)}>
           <ArrowLeft size={20} />
         </button>
         <h1 className="form-title">{isEdit ? 'Edit Investment' : 'Add Investment'}</h1>
@@ -111,27 +192,57 @@ export default function InvestmentForm() {
             className="form-input"
             placeholder="e.g., HDFC Mid-Cap Fund"
             value={form.name}
-            onChange={(e) => handleChange('name', e.target.value)}
+            onChange={(event) => handleChange('name', event.target.value)}
             required
           />
         </div>
 
         <div className="form-group">
+          <div className="form-label-row">
+            <label className="form-label">Family Member *</label>
+            <button type="button" className="form-label-action" onClick={() => navigate('/family-members')}>
+              <Users size={14} />
+              Manage members
+            </button>
+          </div>
+
+          <div className="form-inline-select">
+            <select
+              className="form-input"
+              value={form.memberId}
+              onChange={(event) => handleMemberSelection(event.target.value)}
+            >
+              {memberOptions.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name}
+                </option>
+              ))}
+              <option value={ADD_MEMBER_VALUE}>Add family member...</option>
+            </select>
+            <button type="button" className="form-inline-btn" onClick={() => setShowMemberModal(true)}>
+              <Plus size={16} />
+            </button>
+          </div>
+
+          <p className="form-helper-text">Use ownership to split the portfolio by person and manage family investments cleanly.</p>
+        </div>
+
+        <div className="form-group">
           <label className="form-label">Type</label>
           <div className="form-type-grid">
-            {INVESTMENT_TYPES.map((t) => (
+            {INVESTMENT_TYPES.map((type) => (
               <button
-                key={t.value}
+                key={type.value}
                 type="button"
-                className={`form-type-btn ${form.type === t.value ? 'active' : ''}`}
+                className={`form-type-btn ${form.type === type.value ? 'active' : ''}`}
                 style={
-                  form.type === t.value
-                    ? { backgroundColor: t.color + '15', color: t.color, borderColor: t.color + '50' }
+                  form.type === type.value
+                    ? { backgroundColor: `${type.color}15`, color: type.color, borderColor: `${type.color}50` }
                     : {}
                 }
-                onClick={() => handleChange('type', t.value)}
+                onClick={() => handleChange('type', type.value)}
               >
-                {t.label}
+                {type.label}
               </button>
             ))}
           </div>
@@ -147,7 +258,7 @@ export default function InvestmentForm() {
                 className="form-input"
                 placeholder="0"
                 value={form.investedAmount}
-                onChange={(e) => handleChange('investedAmount', e.target.value)}
+                onChange={(event) => handleChange('investedAmount', event.target.value)}
                 required
                 min="0"
               />
@@ -162,7 +273,7 @@ export default function InvestmentForm() {
                 className="form-input"
                 placeholder="0"
                 value={form.currentValue}
-                onChange={(e) => handleChange('currentValue', e.target.value)}
+                onChange={(event) => handleChange('currentValue', event.target.value)}
                 min="0"
               />
             </div>
@@ -172,19 +283,19 @@ export default function InvestmentForm() {
         <div className="form-group">
           <label className="form-label">Risk Level</label>
           <div className="form-risk-row">
-            {RISK_LEVELS.map((r) => (
+            {RISK_LEVELS.map((risk) => (
               <button
-                key={r.value}
+                key={risk.value}
                 type="button"
-                className={`form-risk-btn ${form.risk === r.value ? 'active' : ''}`}
+                className={`form-risk-btn ${form.risk === risk.value ? 'active' : ''}`}
                 style={
-                  form.risk === r.value
-                    ? { backgroundColor: r.color + '15', color: r.color, borderColor: r.color + '50' }
+                  form.risk === risk.value
+                    ? { backgroundColor: `${risk.color}15`, color: risk.color, borderColor: `${risk.color}50` }
                     : {}
                 }
-                onClick={() => handleChange('risk', r.value)}
+                onClick={() => handleChange('risk', risk.value)}
               >
-                {r.label}
+                {risk.label}
               </button>
             ))}
           </div>
@@ -197,7 +308,7 @@ export default function InvestmentForm() {
               type="date"
               className="form-input"
               value={form.startDate}
-              onChange={(e) => handleChange('startDate', e.target.value)}
+              onChange={(event) => handleChange('startDate', event.target.value)}
             />
           </div>
           <div className="form-group">
@@ -206,7 +317,7 @@ export default function InvestmentForm() {
               type="date"
               className="form-input"
               value={form.maturityDate}
-              onChange={(e) => handleChange('maturityDate', e.target.value)}
+              onChange={(event) => handleChange('maturityDate', event.target.value)}
             />
           </div>
         </div>
@@ -219,7 +330,7 @@ export default function InvestmentForm() {
             className="form-input"
             placeholder="e.g., 7.5"
             value={form.interestRate}
-            onChange={(e) => handleChange('interestRate', e.target.value)}
+            onChange={(event) => handleChange('interestRate', event.target.value)}
           />
         </div>
 
@@ -229,7 +340,7 @@ export default function InvestmentForm() {
             type="date"
             className="form-input"
             value={form.snapshotDate}
-            onChange={(e) => handleChange('snapshotDate', e.target.value)}
+            onChange={(event) => handleChange('snapshotDate', event.target.value)}
           />
           <p className="form-helper-text">
             Each save records a history snapshot for this date so monthly and yearly progress can be tracked.
@@ -242,7 +353,7 @@ export default function InvestmentForm() {
             className="form-input form-textarea"
             placeholder="Any additional details..."
             value={form.notes}
-            onChange={(e) => handleChange('notes', e.target.value)}
+            onChange={(event) => handleChange('notes', event.target.value)}
             rows={3}
           />
         </div>
@@ -253,7 +364,7 @@ export default function InvestmentForm() {
             {isEdit ? 'Update Investment' : 'Add Investment'}
           </button>
 
-          {isEdit && (
+          {isEdit ? (
             <>
               {!showDelete ? (
                 <button type="button" className="btn-danger-outline" onClick={() => setShowDelete(true)}>
@@ -274,9 +385,52 @@ export default function InvestmentForm() {
                 </div>
               )}
             </>
-          )}
+          ) : null}
         </div>
       </form>
+
+      {showMemberModal ? (
+        <div className="form-modal-backdrop" role="presentation" onClick={() => setShowMemberModal(false)}>
+          <div className="form-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="form-modal-header">
+              <div>
+                <div className="form-modal-label">Family Member</div>
+                <h2 className="form-modal-title">Add family member</h2>
+                <p className="form-modal-context">You can assign this person to investments right away.</p>
+              </div>
+              <button type="button" className="form-modal-close" onClick={() => setShowMemberModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Member name *</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g., Mom"
+                value={memberModalName}
+                onChange={(event) => setMemberModalName(event.target.value)}
+                autoFocus
+              />
+            </div>
+
+            <div className="form-modal-actions">
+              <button type="button" className="btn-cancel" onClick={() => setShowMemberModal(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-primary form-modal-submit"
+                onClick={handleMemberModalSave}
+                disabled={!memberModalName.trim()}
+              >
+                Save member
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

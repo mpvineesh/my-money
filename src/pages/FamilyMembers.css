@@ -1,0 +1,374 @@
+.family-page {
+  padding: 20px 16px 96px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.family-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.family-back-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid #dbe4ee;
+  background: white;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.family-back-btn:hover {
+  border-color: #4f46e5;
+  color: #4338ca;
+}
+
+.family-header-copy {
+  min-width: 0;
+}
+
+.family-label,
+.family-panel-label,
+.family-hero-label {
+  margin: 0 0 4px;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #4f46e5;
+}
+
+.family-title {
+  margin: 0 0 4px;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.family-subtitle {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.family-hero-card,
+.family-panel,
+.family-member-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.05);
+}
+
+.family-hero-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #f8fafc, #eef2ff);
+}
+
+.family-hero-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #4338ca, #0f172a);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.family-hero-value {
+  display: block;
+  font-size: 1.6rem;
+  color: #0f172a;
+}
+
+.family-hero-note {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.family-panel {
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.family-panel-head h2 {
+  margin: 0 0 16px;
+  color: #0f172a;
+}
+
+.family-add-row,
+.family-edit-row {
+  display: flex;
+  gap: 10px;
+}
+
+.family-input {
+  width: 100%;
+  border: 1.5px solid #dbe4ee;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 0.92rem;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.family-input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.family-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.family-member-list {
+  display: grid;
+  gap: 14px;
+}
+
+.family-member-card {
+  padding: 18px;
+}
+
+.family-member-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.family-member-tag {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.family-member-name {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.15rem;
+}
+
+.family-card-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.family-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid #dbe4ee;
+  background: white;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.family-icon-btn:hover {
+  border-color: #4f46e5;
+  color: #4338ca;
+}
+
+.family-icon-btn.save {
+  background: #eef2ff;
+  color: #4338ca;
+  border-color: #c7d2fe;
+}
+
+.family-icon-btn.danger {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.family-icon-btn.danger:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.family-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.family-metrics-grid > div {
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.family-metrics-grid span {
+  font-size: 0.74rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.family-metrics-grid strong {
+  color: #0f172a;
+  font-size: 0.96rem;
+}
+
+.family-metrics-grid .positive {
+  color: #16a34a;
+}
+
+.family-metrics-grid .negative {
+  color: #dc2626;
+}
+
+.family-holdings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.family-holdings-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.family-link-btn {
+  border: none;
+  background: transparent;
+  color: #4338ca;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.family-link-btn:hover {
+  color: #312e81;
+}
+
+.family-holdings-list {
+  display: grid;
+  gap: 8px;
+}
+
+.family-holding-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.family-holding-item:hover {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+
+.family-holding-item strong {
+  display: block;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.family-holding-item span {
+  color: #475569;
+  font-size: 0.84rem;
+}
+
+.family-empty-holdings {
+  margin: 0;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px dashed #cbd5e1;
+  text-align: center;
+}
+
+.family-delete-note {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+}
+
+.family-delete-note p {
+  margin: 0 0 12px;
+  color: #b91c1c;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.family-delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .family-add-row,
+  .family-edit-row,
+  .family-delete-actions,
+  .family-holdings-head,
+  .family-member-top {
+    flex-direction: column;
+  }
+
+  .family-card-actions {
+    align-self: flex-end;
+  }
+
+  .family-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .family-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}

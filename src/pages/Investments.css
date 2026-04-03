@@ -35,6 +35,101 @@
   gap: 2px;
 }
 
+.inv-family-panel {
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.inv-family-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.inv-manage-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: #4338ca;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.inv-manage-link:hover {
+  color: #312e81;
+}
+
+.inv-member-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.inv-member-summary-card {
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 16px;
+  padding: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.inv-member-summary-card:hover {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+
+.inv-member-summary-card.active {
+  border-color: #6366f1;
+  background: #eef2ff;
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.08);
+}
+
+.inv-member-summary-top,
+.inv-member-summary-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.inv-member-summary-top span {
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.inv-member-summary-top strong {
+  color: #0f172a;
+}
+
+.inv-member-summary-meta {
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.inv-member-summary-meta .positive {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.inv-member-summary-meta .negative {
+  color: #dc2626;
+  font-weight: 700;
+}
+
 .inv-progress-panel {
   background: linear-gradient(180deg, #ffffff, #f8fafc);
   border: 1px solid #e2e8f0;
@@ -333,11 +428,16 @@
 }
 
 @media (max-width: 640px) {
-  .inv-progress-header {
+  .inv-progress-header,
+  .inv-family-panel-head {
     flex-direction: column;
   }
 
   .inv-progress-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .inv-member-summary-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -1,5 +1,6 @@
 const STORAGE_KEYS = {
   INVESTMENTS: 'myMoney_investments',
+  FAMILY_MEMBERS: 'myMoney_family_members',
   GOALS: 'myMoney_goals',
   LOANS: 'myMoney_loans',
   CASH: 'myMoney_cash',
@@ -27,6 +28,23 @@ export function loadInvestments() {
 
 export function saveInvestments(investments) {
   localStorage.setItem(STORAGE_KEYS.INVESTMENTS, JSON.stringify(investments));
+}
+
+export function loadFamilyMembers() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.FAMILY_MEMBERS);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveFamilyMembers(familyMembers) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.FAMILY_MEMBERS, JSON.stringify(familyMembers));
+  } catch {
+    // ignore
+  }
 }
 
 export function loadGoals() {

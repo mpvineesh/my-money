@@ -60,7 +60,8 @@ export const EXPENSE_PAYMENT_METHODS = [
   { value: 'other', label: 'Other' },
 ];
 
-export const DEFAULT_EXPENSE_PAYER = { id: 'me', name: 'Me' };
+export const DEFAULT_FAMILY_MEMBER = { id: 'me', name: 'Me' };
+export const DEFAULT_EXPENSE_PAYER = DEFAULT_FAMILY_MEMBER;
 
 function slugifyExpenseValue(value) {
   return String(value || '')

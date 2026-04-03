@@ -1,4 +1,4 @@
-import { getTypeInfo, formatCurrency, calculateReturns, formatDate } from '../utils/constants';
+import { DEFAULT_FAMILY_MEMBER, getTypeInfo, formatCurrency, calculateReturns, formatDate } from '../utils/constants';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import {
   LineChart,
@@ -17,6 +17,7 @@ export default function InvestmentCard({ investment, onClick }) {
   const isPositive = gain > 0;
   const isNeutral = gain === 0;
   const historyCount = Array.isArray(investment.history) ? investment.history.length : 0;
+  const memberName = investment.memberName || DEFAULT_FAMILY_MEMBER.name;
 
   // Projection: compute future values for next N years using interestRate (annual %)
   const years = 5;
@@ -40,6 +41,7 @@ export default function InvestmentCard({ investment, onClick }) {
         </div>
       </div>
       <h3 className="inv-card-name">{investment.name}</h3>
+      <div className="inv-card-member">{memberName}</div>
       <div className="inv-card-amounts">
         <div className="inv-amount-group">
           <span className="inv-amount-label">Current Value</span>

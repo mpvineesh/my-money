@@ -20,6 +20,7 @@ import AiInsights from './pages/AiInsights';
 import Recurring from './pages/Recurring';
 import Reminders from './pages/Reminders';
 import Settings from './pages/Settings';
+import FamilyMembers from './pages/FamilyMembers';
 import './App.css';
 
 export default function App() {
@@ -51,6 +52,7 @@ export default function App() {
                 <Route path="/reminders" element={<RequireAuth><Reminders /></RequireAuth>} />
                 <Route path="/ai-insights" element={<RequireAuth><AiInsights /></RequireAuth>} />
                 <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+                <Route path="/family-members" element={<RequireAuth><FamilyMembers /></RequireAuth>} />
               </Routes>
             </main>
             <BottomNav />

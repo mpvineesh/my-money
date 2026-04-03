@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
-import { INVESTMENT_TYPES, getTypeInfo, formatCurrency } from '../utils/constants';
+import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency } from '../utils/constants';
 import InvestmentCard from '../components/InvestmentCard';
-import { Search, SlidersHorizontal, Briefcase, CalendarRange } from 'lucide-react';
+import { Briefcase, CalendarRange, Search, SlidersHorizontal, Users } from 'lucide-react';
 import { LineChart, Line, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import './Investments.css';
 
@@ -41,9 +41,7 @@ function buildProgressSeries(investments, range) {
     };
   });
 
-  const allPeriodKeys = [...new Set(
-    sortedInvestments.flatMap((investment) => [...investment.periodSnapshots.keys()]),
-  )].sort();
+  const allPeriodKeys = [...new Set(sortedInvestments.flatMap((investment) => [...investment.periodSnapshots.keys()]))].sort();
   const visiblePeriodKeys = allPeriodKeys.slice(range === 'year' ? -6 : -12);
   const latestByInvestment = new Map();
 
@@ -72,6 +70,67 @@ function buildProgressSeries(investments, range) {
   });
 }
 
+function buildMemberOptions(familyMembers, investments) {
+  const options = new Map([[DEFAULT_FAMILY_MEMBER.id, DEFAULT_FAMILY_MEMBER]]);
+
+  familyMembers.forEach((member) => {
+    options.set(member.id, member);
+  });
+
+  investments.forEach((investment) => {
+    const memberId = investment.memberId || DEFAULT_FAMILY_MEMBER.id;
+    const memberName = investment.memberName || DEFAULT_FAMILY_MEMBER.name;
+    options.set(memberId, { id: memberId, name: memberName });
+  });
+
+  return [...options.values()].sort((left, right) => {
+    if (left.id === DEFAULT_FAMILY_MEMBER.id) return -1;
+    if (right.id === DEFAULT_FAMILY_MEMBER.id) return 1;
+    return left.name.localeCompare(right.name);
+  });
+}
+
+function buildMemberSummaries(investments, memberOptions) {
+  const summaryMap = new Map(
+    memberOptions.map((member) => [
+      member.id,
+      {
+        ...member,
+        investedAmount: 0,
+        currentValue: 0,
+        gain: 0,
+        count: 0,
+      },
+    ]),
+  );
+
+  investments.forEach((investment) => {
+    const memberId = investment.memberId || DEFAULT_FAMILY_MEMBER.id;
+    const memberName = investment.memberName || DEFAULT_FAMILY_MEMBER.name;
+    const currentSummary = summaryMap.get(memberId) || {
+      id: memberId,
+      name: memberName,
+      investedAmount: 0,
+      currentValue: 0,
+      gain: 0,
+      count: 0,
+    };
+
+    currentSummary.investedAmount += Number(investment.investedAmount) || 0;
+    currentSummary.currentValue += Number(investment.currentValue) || 0;
+    currentSummary.gain += (Number(investment.currentValue) || 0) - (Number(investment.investedAmount) || 0);
+    currentSummary.count += 1;
+
+    summaryMap.set(memberId, currentSummary);
+  });
+
+  return [...summaryMap.values()].sort((left, right) => {
+    if (left.id === DEFAULT_FAMILY_MEMBER.id) return -1;
+    if (right.id === DEFAULT_FAMILY_MEMBER.id) return 1;
+    return right.currentValue - left.currentValue || left.name.localeCompare(right.name);
+  });
+}
+
 function ProgressTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
 
@@ -89,68 +148,82 @@ function ProgressTooltip({ active, payload, label }) {
 }
 
 export default function Investments() {
-  const { investments } = useApp();
+  const { investments, familyMembers } = useApp();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [filterMember, setFilterMember] = useState('all');
   const [sortBy, setSortBy] = useState('value');
   const [showFilters, setShowFilters] = useState(false);
   const [progressRange, setProgressRange] = useState('month');
 
+  const memberOptions = useMemo(() => buildMemberOptions(familyMembers, investments), [familyMembers, investments]);
+  const memberSummaries = useMemo(() => buildMemberSummaries(investments, memberOptions), [investments, memberOptions]);
+
+  const memberScopedInvestments = useMemo(() => {
+    if (filterMember === 'all') return investments;
+    return investments.filter((investment) => (investment.memberId || DEFAULT_FAMILY_MEMBER.id) === filterMember);
+  }, [filterMember, investments]);
+
   const activeTypes = useMemo(() => {
-    const types = new Set(investments.map((i) => i.type));
-    return INVESTMENT_TYPES.filter((t) => types.has(t.value));
-  }, [investments]);
+    const types = new Set(memberScopedInvestments.map((investment) => investment.type));
+    return INVESTMENT_TYPES.filter((type) => types.has(type.value));
+  }, [memberScopedInvestments]);
 
   const filtered = useMemo(() => {
-    let result = [...investments];
+    let result = [...memberScopedInvestments];
 
     if (search) {
-      const q = search.toLowerCase();
+      const query = search.toLowerCase();
       result = result.filter(
-        (i) =>
-          i.name.toLowerCase().includes(q) ||
-          getTypeInfo(i.type).label.toLowerCase().includes(q)
+        (investment) =>
+          investment.name.toLowerCase().includes(query) ||
+          getTypeInfo(investment.type).label.toLowerCase().includes(query) ||
+          (investment.memberName || DEFAULT_FAMILY_MEMBER.name).toLowerCase().includes(query),
       );
     }
 
     if (filterType !== 'all') {
-      result = result.filter((i) => i.type === filterType);
+      result = result.filter((investment) => investment.type === filterType);
     }
 
     switch (sortBy) {
       case 'value':
-        result.sort((a, b) => (Number(b.currentValue) || 0) - (Number(a.currentValue) || 0));
+        result.sort((left, right) => (Number(right.currentValue) || 0) - (Number(left.currentValue) || 0));
         break;
       case 'invested':
-        result.sort((a, b) => (Number(b.investedAmount) || 0) - (Number(a.investedAmount) || 0));
+        result.sort((left, right) => (Number(right.investedAmount) || 0) - (Number(left.investedAmount) || 0));
         break;
       case 'returns':
-        result.sort((a, b) => {
-          const ra = ((Number(a.currentValue) - Number(a.investedAmount)) / Number(a.investedAmount)) || 0;
-          const rb = ((Number(b.currentValue) - Number(b.investedAmount)) / Number(b.investedAmount)) || 0;
-          return rb - ra;
+        result.sort((left, right) => {
+          const leftReturns =
+            ((Number(left.currentValue) - Number(left.investedAmount)) / Number(left.investedAmount)) || 0;
+          const rightReturns =
+            ((Number(right.currentValue) - Number(right.investedAmount)) / Number(right.investedAmount)) || 0;
+          return rightReturns - leftReturns;
         });
         break;
       case 'name':
-        result.sort((a, b) => a.name.localeCompare(b.name));
+        result.sort((left, right) => left.name.localeCompare(right.name));
         break;
       default:
         break;
     }
 
     return result;
-  }, [investments, search, filterType, sortBy]);
+  }, [filterType, memberScopedInvestments, search, sortBy]);
 
+  const selectedMember = memberOptions.find((member) => member.id === filterMember);
   const totalValue = useMemo(
-    () => investments.reduce((sum, i) => sum + (Number(i.currentValue) || 0), 0),
-    [investments]
+    () => filtered.reduce((sum, investment) => sum + (Number(investment.currentValue) || 0), 0),
+    [filtered],
   );
 
-  const progressSeries = useMemo(() => buildProgressSeries(investments, progressRange), [investments, progressRange]);
+  const progressSeries = useMemo(() => buildProgressSeries(filtered, progressRange), [filtered, progressRange]);
   const latestProgress = progressSeries[progressSeries.length - 1];
   const previousProgress = progressSeries[progressSeries.length - 2];
   const periodGainChange = latestProgress && previousProgress ? latestProgress.gain - previousProgress.gain : 0;
+  const totalLabel = search || filterType !== 'all' || filterMember !== 'all' ? 'Showing' : 'Total';
 
   return (
     <div className="investments-page">
@@ -160,17 +233,56 @@ export default function Investments() {
           <h1 className="inv-page-title">My Investments</h1>
         </div>
         <div className="inv-page-total">
-          <span className="inv-total-label">Total</span>
+          <span className="inv-total-label">{totalLabel}</span>
           <span className="inv-total-value">{formatCurrency(totalValue)}</span>
         </div>
       </header>
 
-      {investments.length > 0 && (
+      {investments.length > 0 ? (
+        <section className="inv-family-panel">
+          <div className="inv-family-panel-head">
+            <div>
+              <p className="inv-progress-label">Family Split</p>
+              <h2 className="inv-progress-title">Investments by member</h2>
+            </div>
+            <button type="button" className="inv-manage-link" onClick={() => navigate('/family-members')}>
+              <Users size={16} />
+              Manage members
+            </button>
+          </div>
+
+          <div className="inv-member-summary-grid">
+            {memberSummaries.map((member) => (
+              <button
+                key={member.id}
+                type="button"
+                className={`inv-member-summary-card ${filterMember === member.id ? 'active' : ''}`}
+                onClick={() => setFilterMember((current) => (current === member.id ? 'all' : member.id))}
+              >
+                <div className="inv-member-summary-top">
+                  <span>{member.name}</span>
+                  <strong>{formatCurrency(member.currentValue)}</strong>
+                </div>
+                <div className="inv-member-summary-meta">
+                  <span>{member.count} holding{member.count === 1 ? '' : 's'}</span>
+                  <span className={member.gain >= 0 ? 'positive' : 'negative'}>
+                    {member.gain >= 0 ? '+' : ''}{formatCurrency(member.gain)}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {filtered.length > 0 ? (
         <section className="inv-progress-panel">
           <div className="inv-progress-header">
             <div>
               <p className="inv-progress-label">Tracked Progress</p>
-              <h2 className="inv-progress-title">Portfolio trend</h2>
+              <h2 className="inv-progress-title">
+                Portfolio trend{selectedMember ? ` · ${selectedMember.name}` : ''}
+              </h2>
             </div>
             <div className="inv-progress-actions">
               <div className="inv-progress-toggle">
@@ -234,18 +346,19 @@ export default function Investments() {
             <span>Each investment edit records a dated snapshot. Older investments start building trend history from the snapshots you save.</span>
           </div>
         </section>
-      )}
+      ) : null}
 
       <div className="inv-search-bar">
         <Search size={18} className="inv-search-icon" />
         <input
           type="text"
-          placeholder="Search investments..."
+          placeholder="Search investments or members..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(event) => setSearch(event.target.value)}
           className="inv-search-input"
         />
         <button
+          type="button"
           className={`inv-filter-toggle ${showFilters ? 'active' : ''}`}
           onClick={() => setShowFilters(!showFilters)}
         >
@@ -253,32 +366,62 @@ export default function Investments() {
         </button>
       </div>
 
-      {showFilters && (
+      {showFilters ? (
         <div className="inv-filters">
+          <div className="inv-filter-group">
+            <label className="inv-filter-label">Family Member</label>
+            <div className="inv-filter-chips">
+              <button
+                type="button"
+                className={`filter-chip ${filterMember === 'all' ? 'active' : ''}`}
+                onClick={() => setFilterMember('all')}
+              >
+                All members
+              </button>
+              {memberOptions.map((member) => (
+                <button
+                  key={member.id}
+                  type="button"
+                  className={`filter-chip ${filterMember === member.id ? 'active' : ''}`}
+                  onClick={() => setFilterMember(member.id)}
+                >
+                  {member.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="inv-filter-group">
             <label className="inv-filter-label">Type</label>
             <div className="inv-filter-chips">
               <button
+                type="button"
                 className={`filter-chip ${filterType === 'all' ? 'active' : ''}`}
                 onClick={() => setFilterType('all')}
               >
                 All
               </button>
-              {activeTypes.map((t) => (
+              {activeTypes.map((type) => (
                 <button
-                  key={t.value}
-                  className={`filter-chip ${filterType === t.value ? 'active' : ''}`}
-                  style={filterType === t.value ? { backgroundColor: t.color + '18', color: t.color, borderColor: t.color + '40' } : {}}
-                  onClick={() => setFilterType(t.value)}
+                  key={type.value}
+                  type="button"
+                  className={`filter-chip ${filterType === type.value ? 'active' : ''}`}
+                  style={
+                    filterType === type.value
+                      ? { backgroundColor: `${type.color}18`, color: type.color, borderColor: `${type.color}40` }
+                      : {}
+                  }
+                  onClick={() => setFilterType(type.value)}
                 >
-                  {t.label}
+                  {type.label}
                 </button>
               ))}
             </div>
           </div>
+
           <div className="inv-filter-group">
             <label className="inv-filter-label">Sort by</label>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="inv-sort-select">
+            <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="inv-sort-select">
               <option value="value">Current Value</option>
               <option value="invested">Invested Amount</option>
               <option value="returns">Returns %</option>
@@ -286,34 +429,39 @@ export default function Investments() {
             </select>
           </div>
         </div>
-      )}
+      ) : null}
 
       <div className="inv-count">
         {filtered.length} investment{filtered.length !== 1 ? 's' : ''}
-        {filterType !== 'all' && ` in ${getTypeInfo(filterType).label}`}
+        {selectedMember ? ` for ${selectedMember.name}` : ''}
+        {filterType !== 'all' ? ` in ${getTypeInfo(filterType).label}` : ''}
       </div>
 
       <div className="inv-cards-list">
-        {filtered.map((inv) => (
+        {filtered.map((investment) => (
           <InvestmentCard
-            key={inv.id}
-            investment={inv}
-            onClick={() => navigate(`/investments/edit/${inv.id}`)}
+            key={investment.id}
+            investment={investment}
+            onClick={() => navigate(`/investments/edit/${investment.id}`)}
           />
         ))}
       </div>
 
-      {filtered.length === 0 && (
+      {filtered.length === 0 ? (
         <div className="inv-empty">
           <Briefcase size={40} strokeWidth={1} />
-          <p>{search || filterType !== 'all' ? 'No investments match your filters' : 'No investments yet'}</p>
-          {!search && filterType === 'all' && (
-            <button className="btn-primary" onClick={() => navigate('/add')}>
+          <p>
+            {search || filterType !== 'all' || filterMember !== 'all'
+              ? 'No investments match your current member and filter selection'
+              : 'No investments yet'}
+          </p>
+          {!search && filterType === 'all' && filterMember === 'all' ? (
+            <button type="button" className="btn-primary" onClick={() => navigate('/add')}>
               Add Investment
             </button>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

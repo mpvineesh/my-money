@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   loadInvestments,
   saveInvestments,
+  loadFamilyMembers,
+  saveFamilyMembers,
   loadGoals,
   saveGoals,
   loadLoans,
@@ -38,6 +40,7 @@ import {
   getDemoLoans,
   getDemoCash,
   getDemoExpenses,
+  DEFAULT_FAMILY_MEMBER,
   DEFAULT_EXPENSE_PAYER,
   getExpenseCategoryInfo,
   getExpenseCategoryOptions,
@@ -369,6 +372,16 @@ function normalizeInvestment(investment) {
   const interestRate = investment?.interestRate === '' || investment?.interestRate === null || investment?.interestRate === undefined
     ? ''
     : Number(investment.interestRate) || 0;
+  const memberName = String(
+    investment?.memberName || investment?.ownerName || investment?.familyMemberName || DEFAULT_FAMILY_MEMBER.name,
+  ).trim() || DEFAULT_FAMILY_MEMBER.name;
+  const fallbackMemberId =
+    memberName === DEFAULT_FAMILY_MEMBER.name
+      ? DEFAULT_FAMILY_MEMBER.id
+      : `member:${memberName.toLowerCase().replace(/\s+/g, '-')}`;
+  const memberId = String(
+    investment?.memberId || investment?.ownerId || investment?.familyMemberId || fallbackMemberId,
+  ).trim() || fallbackMemberId;
   const history = normalizeInvestmentHistory(investment?.history, {
     ...investment,
     investedAmount,
@@ -382,6 +395,8 @@ function normalizeInvestment(investment) {
     investedAmount,
     currentValue,
     interestRate,
+    memberId,
+    memberName,
     history,
     lastUpdated: normalizeHistoryDate(investment?.lastUpdated || latestSnapshot?.date, getTodayDateValue()),
   };
@@ -426,6 +441,26 @@ function normalizeExpensePayers(payers) {
   return payers
     .filter((payer) => payer?.name && payer.id !== DEFAULT_EXPENSE_PAYER.id)
     .map((payer) => ({ id: payer.id, name: payer.name.trim() }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function normalizeFamilyMembers(familyMembers) {
+  const seenIds = new Set();
+  const seenNames = new Set();
+
+  return familyMembers
+    .map((member) => ({
+      id: String(member?.id || '').trim(),
+      name: String(member?.name || '').trim(),
+    }))
+    .filter((member) => {
+      const normalizedName = member.name.toLowerCase();
+      if (!member.id || !member.name || member.id === DEFAULT_FAMILY_MEMBER.id) return false;
+      if (seenIds.has(member.id) || seenNames.has(normalizedName)) return false;
+      seenIds.add(member.id);
+      seenNames.add(normalizedName);
+      return true;
+    })
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
@@ -510,6 +545,10 @@ function loadPersistedInvestments() {
   return isSameDemoData(stored, getDemoInvestments()) ? [] : stored;
 }
 
+function loadPersistedFamilyMembers() {
+  return normalizeFamilyMembers(loadFamilyMembers());
+}
+
 function loadPersistedGoals() {
   const stored = loadGoals();
   return isSameDemoData(stored, getDemoGoals()) ? [] : stored;
@@ -579,6 +618,7 @@ export function AppProvider({ children }) {
   const { user } = useAuth();
 
   const [investments, setInvestments] = useState(() => loadPersistedInvestments().map((investment) => normalizeInvestment(investment)));
+  const [familyMembers, setFamilyMembers] = useState(loadPersistedFamilyMembers);
   const [goals, setGoals] = useState(loadPersistedGoals);
   const [loans, setLoans] = useState(loadPersistedLoans);
   const [cash, setCashState] = useState(loadCash);
@@ -603,6 +643,7 @@ export function AppProvider({ children }) {
     if (!user) return undefined;
 
     const invCol = collection(db, 'users', user.uid, 'investments');
+    const familyMembersCol = collection(db, 'users', user.uid, 'familyMembers');
     const goalsCol = collection(db, 'users', user.uid, 'goals');
     const loansCol = collection(db, 'users', user.uid, 'loans');
 
@@ -611,6 +652,12 @@ export function AppProvider({ children }) {
       setInvestments(items);
       // also persist locally for offline fallback
       saveInvestments(items);
+    });
+
+    const unsubFamilyMembers = onSnapshot(familyMembersCol, (snap) => {
+      const items = normalizeFamilyMembers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setFamilyMembers(items);
+      saveFamilyMembers(items);
     });
 
     const unsubGoals = onSnapshot(goalsCol, (snap) => {
@@ -716,6 +763,7 @@ export function AppProvider({ children }) {
 
     return () => {
       unsubInv();
+      unsubFamilyMembers();
       unsubGoals();
       unsubLoans();
       unsubExpenses();
@@ -767,6 +815,112 @@ export function AppProvider({ children }) {
       return updated;
     });
   }, [user]);
+
+  const addFamilyMember = useCallback((member) => {
+    const trimmedName = String(member?.name || '').trim();
+    if (!trimmedName) return null;
+
+    if (trimmedName.toLowerCase() === DEFAULT_FAMILY_MEMBER.name.toLowerCase()) return DEFAULT_FAMILY_MEMBER;
+
+    const existingMember = familyMembers.find((item) => item.name.toLowerCase() === trimmedName.toLowerCase());
+    if (existingMember) return existingMember;
+
+    const newMember = { id: uuidv4(), name: trimmedName };
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'familyMembers', newMember.id);
+      setDoc(ref, newMember);
+      return newMember;
+    }
+
+    setFamilyMembers((prev) => {
+      const updated = normalizeFamilyMembers([...prev, newMember]);
+      saveFamilyMembers(updated);
+      return updated;
+    });
+
+    return newMember;
+  }, [familyMembers, user]);
+
+  const updateFamilyMember = useCallback((id, member) => {
+    if (!id || id === DEFAULT_FAMILY_MEMBER.id) return null;
+
+    const currentMember = familyMembers.find((item) => item.id === id);
+    if (!currentMember) return null;
+
+    const trimmedName = String(member?.name || '').trim();
+    if (!trimmedName) return null;
+
+    const duplicateMember = familyMembers.find(
+      (item) => item.id !== id && item.name.toLowerCase() === trimmedName.toLowerCase(),
+    );
+    if (duplicateMember) return duplicateMember;
+
+    const nextMember = { ...currentMember, name: trimmedName };
+    const linkedInvestments = investments.filter((investment) => investment.memberId === id);
+
+    if (user) {
+      const memberRef = doc(db, 'users', user.uid, 'familyMembers', id);
+      setDoc(memberRef, nextMember, { merge: true });
+      linkedInvestments.forEach((investment) => {
+        const investmentRef = doc(db, 'users', user.uid, 'investments', investment.id);
+        updateDoc(investmentRef, { memberId: id, memberName: trimmedName });
+      });
+      return nextMember;
+    }
+
+    setFamilyMembers((prev) => {
+      const updated = normalizeFamilyMembers(prev.map((item) => (item.id === id ? nextMember : item)));
+      saveFamilyMembers(updated);
+      return updated;
+    });
+
+    if (linkedInvestments.length) {
+      setInvestments((prev) => {
+        const updated = prev.map((investment) =>
+          investment.memberId === id ? normalizeInvestment({ ...investment, memberId: id, memberName: trimmedName }) : investment,
+        );
+        saveInvestments(updated);
+        return updated;
+      });
+    }
+
+    return nextMember;
+  }, [familyMembers, investments, user]);
+
+  const deleteFamilyMember = useCallback((id) => {
+    if (!id || id === DEFAULT_FAMILY_MEMBER.id) return;
+
+    const fallbackMember = DEFAULT_FAMILY_MEMBER;
+    const linkedInvestments = investments.filter((investment) => investment.memberId === id);
+
+    if (user) {
+      const memberRef = doc(db, 'users', user.uid, 'familyMembers', id);
+      deleteDoc(memberRef);
+      linkedInvestments.forEach((investment) => {
+        const investmentRef = doc(db, 'users', user.uid, 'investments', investment.id);
+        updateDoc(investmentRef, { memberId: fallbackMember.id, memberName: fallbackMember.name });
+      });
+      return;
+    }
+
+    setFamilyMembers((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      saveFamilyMembers(updated);
+      return updated;
+    });
+
+    if (linkedInvestments.length) {
+      setInvestments((prev) => {
+        const updated = prev.map((investment) =>
+          investment.memberId === id
+            ? normalizeInvestment({ ...investment, memberId: fallbackMember.id, memberName: fallbackMember.name })
+            : investment,
+        );
+        saveInvestments(updated);
+        return updated;
+      });
+    }
+  }, [investments, user]);
 
   const addLoan = useCallback((loan) => {
     const newItem = { ...loan, id: uuidv4() };
@@ -1398,6 +1552,7 @@ export function AppProvider({ children }) {
     const demoCash = getDemoCash();
     const demoExpenses = getDemoExpenses();
     setInvestments(demoInv);
+    setFamilyMembers([]);
     setGoals(demoGoals);
     setLoans(demoLoans);
     setCashState(demoCash);
@@ -1405,6 +1560,7 @@ export function AppProvider({ children }) {
     setExpensePayers([]);
     setExpenseProjects([]);
     saveInvestments(demoInv);
+    saveFamilyMembers([]);
     saveGoals(demoGoals);
     saveLoans(demoLoans);
     saveCash(demoCash);
@@ -1431,6 +1587,7 @@ export function AppProvider({ children }) {
 
   const value = {
     investments,
+    familyMembers,
     goals,
     loans,
     cash,
@@ -1448,6 +1605,9 @@ export function AppProvider({ children }) {
     addInvestment,
     updateInvestment,
     deleteInvestment,
+    addFamilyMember,
+    updateFamilyMember,
+    deleteFamilyMember,
     addGoal,
     updateGoal,
     deleteGoal,

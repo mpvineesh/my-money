@@ -1,4 +1,5 @@
-import { SlidersHorizontal } from 'lucide-react';
+import { ChevronRight, SlidersHorizontal, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
 import './Settings.css';
 
@@ -31,6 +32,7 @@ const DASHBOARD_TOGGLES = [
 ];
 
 export default function Settings() {
+  const navigate = useNavigate();
   const { appSettings, updateAppSettings } = useApp();
   const dashboardSections = appSettings?.dashboardSections || {};
 
@@ -82,6 +84,26 @@ export default function Settings() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="settings-panel settings-panel-secondary">
+        <div className="settings-panel-head">
+          <div>
+            <p className="settings-panel-label">Household</p>
+            <h2>Family members</h2>
+          </div>
+        </div>
+
+        <button type="button" className="settings-link-card" onClick={() => navigate('/family-members')}>
+          <div className="settings-link-icon">
+            <Users size={20} />
+          </div>
+          <div className="settings-link-copy">
+            <strong>Manage members and holdings</strong>
+            <p>Add family members once, then assign and review their investments from one place.</p>
+          </div>
+          <ChevronRight size={18} />
+        </button>
       </section>
     </div>
   );
