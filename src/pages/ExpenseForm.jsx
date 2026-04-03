@@ -457,7 +457,7 @@ export default function ExpenseForm() {
           />
         </div>
 
-        <div className="form-row">
+        <div className="form-row expense-form-primary-row">
           <div className="form-group">
             <label className="form-label">Amount (₹) *</label>
             <input
@@ -476,7 +476,7 @@ export default function ExpenseForm() {
             <label className="form-label">Date & Time *</label>
             <input
               type="datetime-local"
-              className="form-input"
+              className="form-input expense-form-datetime"
               value={form.dateTime}
               onChange={(event) => handleChange('dateTime', event.target.value)}
               required

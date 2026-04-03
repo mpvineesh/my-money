@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Briefcase, Target, TrendingUp, Wallet, Repeat } from 'lucide-react';
+import { BellRing, Briefcase, Target, TrendingUp, Wallet, Repeat } from 'lucide-react';
 import './AddPage.css';
 
 export default function AddPage() {
@@ -53,6 +53,16 @@ export default function AddPage() {
           <div className="add-option-text">
             <h3>Recurring Entry</h3>
             <p>Set up SIPs, rent, subscriptions, insurance, and other repeatable entries</p>
+          </div>
+        </button>
+
+        <button className="add-option-card" onClick={() => navigate('/reminders')}>
+          <div className="add-option-icon" style={{ background: '#eef2ff', color: '#4f46e5' }}>
+            <BellRing size={28} />
+          </div>
+          <div className="add-option-text">
+            <h3>Reminder</h3>
+            <p>Track bill payments and debt repayments before they become overdue</p>
           </div>
         </button>
       </div>

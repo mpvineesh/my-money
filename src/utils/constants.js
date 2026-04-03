@@ -25,7 +25,6 @@ export const RISK_LEVELS = [
 
 export const EXPENSE_CATEGORIES = [
   { value: 'groceries', label: 'Groceries', color: '#22c55e' },
-  { value: 'construction', label: 'House Construction', color: '#e20f5d' },
   { value: 'utilities', label: 'Utilities', color: '#3b82f6' },
   { value: 'transport', label: 'Transport', color: '#f97316' },
   { value: 'food', label: 'Food & Dining', color: '#ec4899' },

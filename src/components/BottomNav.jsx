@@ -10,6 +10,7 @@ import {
   Wallet,
   Sparkles,
   Repeat,
+  BellRing,
   Settings as SettingsIcon,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
@@ -70,6 +71,9 @@ function MoreMenu() {
           </button>
           <button className="more-item" onClick={() => { setOpen(false); navigate('/recurring'); }}>
             <Repeat size={16} style={{ marginRight: 8 }} /> Recurring
+          </button>
+          <button className="more-item" onClick={() => { setOpen(false); navigate('/reminders'); }}>
+            <BellRing size={16} style={{ marginRight: 8 }} /> Reminders
           </button>
           <button className="more-item" onClick={() => { setOpen(false); navigate('/ai-insights'); }}>
             <Sparkles size={16} style={{ marginRight: 8 }} /> AI Insights

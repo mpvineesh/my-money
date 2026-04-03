@@ -25,6 +25,8 @@ import {
   saveExpenseBudgets,
   loadRecurringEntries,
   saveRecurringEntries,
+  loadReminders,
+  saveReminders,
   loadAppSettings,
   saveAppSettings,
   loadAiReports,
@@ -229,6 +231,37 @@ function normalizeRecurringEntries(recurringEntries, customCategories = [], cust
     .map((entry) => normalizeRecurringEntry(entry, customCategories, customSubcategories))
     .filter((entry) => entry.title && entry.amount > 0)
     .sort((left, right) => left.nextDueDate.localeCompare(right.nextDueDate) || left.title.localeCompare(right.title));
+}
+
+function normalizeReminder(reminder) {
+  const frequency = ['once', 'monthly', 'quarterly', 'yearly'].includes(reminder?.frequency)
+    ? reminder.frequency
+    : 'monthly';
+  const status = reminder?.status === 'completed' && frequency === 'once' ? 'completed' : 'active';
+
+  return {
+    id: reminder?.id || uuidv4(),
+    title: String(reminder?.title || reminder?.name || '').trim(),
+    kind: reminder?.kind === 'debt_repayment' ? 'debt_repayment' : 'payment',
+    amount: Number(reminder?.amount) || 0,
+    frequency,
+    nextDueDate: normalizeHistoryDate(reminder?.nextDueDate || reminder?.dueDate, getTodayDateValue()),
+    lastCompletedDate: normalizeHistoryDate(reminder?.lastCompletedDate || reminder?.completedDate, ''),
+    status,
+    linkedLoanId: String(reminder?.linkedLoanId || '').trim(),
+    linkedLoanName: String(reminder?.linkedLoanName || reminder?.loanName || '').trim(),
+    notes: String(reminder?.notes || '').trim(),
+  };
+}
+
+function normalizeReminders(reminders) {
+  return reminders
+    .map((reminder) => normalizeReminder(reminder))
+    .filter((reminder) => reminder.title && reminder.amount > 0)
+    .sort((left, right) => {
+      if (left.status !== right.status) return left.status === 'completed' ? 1 : -1;
+      return left.nextDueDate.localeCompare(right.nextDueDate) || left.title.localeCompare(right.title);
+    });
 }
 
 const DEFAULT_APP_SETTINGS = {
@@ -521,6 +554,10 @@ function loadPersistedRecurringEntries() {
   );
 }
 
+function loadPersistedReminders() {
+  return normalizeReminders(loadReminders());
+}
+
 function loadPersistedAppSettings() {
   return normalizeAppSettings(loadAppSettings());
 }
@@ -534,6 +571,7 @@ const INITIAL_EXPENSE_SUBCATEGORIES = loadPersistedExpenseSubcategories();
 const INITIAL_EXPENSE_TYPES = loadPersistedExpenseTypes();
 const INITIAL_EXPENSE_BUDGETS = loadPersistedExpenseBudgets();
 const INITIAL_RECURRING_ENTRIES = loadPersistedRecurringEntries();
+const INITIAL_REMINDERS = loadPersistedReminders();
 const INITIAL_APP_SETTINGS = loadPersistedAppSettings();
 const INITIAL_AI_REPORTS = loadPersistedAiReports();
 
@@ -556,6 +594,7 @@ export function AppProvider({ children }) {
   const [expenseTypes, setExpenseTypes] = useState(INITIAL_EXPENSE_TYPES);
   const [expenseBudgets, setExpenseBudgets] = useState(INITIAL_EXPENSE_BUDGETS);
   const [recurringEntries, setRecurringEntries] = useState(INITIAL_RECURRING_ENTRIES);
+  const [reminders, setReminders] = useState(INITIAL_REMINDERS);
   const [appSettings, setAppSettings] = useState(INITIAL_APP_SETTINGS);
   const [aiReports, setAiReports] = useState(INITIAL_AI_REPORTS);
 
@@ -654,6 +693,13 @@ export function AppProvider({ children }) {
       saveRecurringEntries(items);
     });
 
+    const remindersCol = collection(db, 'users', user.uid, 'reminders');
+    const unsubReminders = onSnapshot(remindersCol, (snap) => {
+      const items = normalizeReminders(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setReminders(items);
+      saveReminders(items);
+    });
+
     const appSettingsRef = doc(db, 'users', user.uid, 'settings', 'preferences');
     const unsubAppSettings = onSnapshot(appSettingsRef, (snap) => {
       const nextSettings = normalizeAppSettings(snap.exists() ? snap.data() : {});
@@ -680,6 +726,7 @@ export function AppProvider({ children }) {
       unsubExpenseTypes();
       unsubExpenseBudgets();
       unsubRecurringEntries();
+      unsubReminders();
       unsubAppSettings();
       unsubAiReports();
     };
@@ -1126,6 +1173,101 @@ export function AppProvider({ children }) {
     return updatedEntry;
   }, [expenseCategories, expenseSubcategories, recurringEntries, user]);
 
+  const addReminder = useCallback((reminder) => {
+    const newReminder = normalizeReminder({ ...reminder, id: uuidv4() });
+    if (!newReminder.title || newReminder.amount <= 0) return null;
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'reminders', newReminder.id);
+      setDoc(ref, newReminder);
+      return newReminder;
+    }
+
+    setReminders((prev) => {
+      const updated = normalizeReminders([...prev, newReminder]);
+      saveReminders(updated);
+      return updated;
+    });
+
+    return newReminder;
+  }, [user]);
+
+  const updateReminder = useCallback((id, reminder) => {
+    const currentReminder = reminders.find((item) => item.id === id);
+    const normalizedReminder = normalizeReminder({ ...currentReminder, ...reminder, id });
+    if (!normalizedReminder.title || normalizedReminder.amount <= 0) return null;
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'reminders', id);
+      updateDoc(ref, { ...normalizedReminder });
+      return normalizedReminder;
+    }
+
+    setReminders((prev) => {
+      const updated = normalizeReminders(
+        prev.map((item) => (item.id === id ? normalizedReminder : item)),
+      );
+      saveReminders(updated);
+      return updated;
+    });
+
+    return normalizedReminder;
+  }, [reminders, user]);
+
+  const deleteReminder = useCallback((id) => {
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'reminders', id);
+      deleteDoc(ref);
+      return;
+    }
+
+    setReminders((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      saveReminders(updated);
+      return updated;
+    });
+  }, [user]);
+
+  const markReminderDone = useCallback((id, completedDate = getTodayDateValue()) => {
+    const reminder = reminders.find((item) => item.id === id);
+    if (!reminder) return null;
+
+    const doneDate = normalizeHistoryDate(completedDate, getTodayDateValue());
+    const updatedReminder = reminder.frequency === 'once'
+      ? {
+          ...reminder,
+          status: 'completed',
+          lastCompletedDate: doneDate,
+          nextDueDate: doneDate,
+        }
+      : {
+          ...reminder,
+          status: 'active',
+          lastCompletedDate: doneDate,
+          nextDueDate: addFrequencyToDate(doneDate, reminder.frequency),
+        };
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'reminders', id);
+      updateDoc(ref, {
+        status: updatedReminder.status,
+        lastCompletedDate: updatedReminder.lastCompletedDate,
+        nextDueDate: updatedReminder.nextDueDate,
+      });
+      return updatedReminder;
+    }
+
+    setReminders((prev) => {
+      const updated = normalizeReminders(
+        prev.map((item) => (item.id === id ? updatedReminder : item)),
+      );
+      saveReminders(updated);
+      return updated;
+    });
+
+    return updatedReminder;
+  }, [reminders, user]);
+
   const updateAppSettings = useCallback((nextSettings) => {
     const normalizedSettings = normalizeAppSettings({
       ...appSettings,
@@ -1274,6 +1416,7 @@ export function AppProvider({ children }) {
     saveExpenseTypes([]);
     saveExpenseBudgets([]);
     saveRecurringEntries([]);
+    saveReminders([]);
     saveAppSettings(DEFAULT_APP_SETTINGS);
     saveAiReports([]);
     setExpenseCategories([]);
@@ -1281,6 +1424,7 @@ export function AppProvider({ children }) {
     setExpenseTypes([]);
     setExpenseBudgets([]);
     setRecurringEntries([]);
+    setReminders([]);
     setAppSettings(DEFAULT_APP_SETTINGS);
     setAiReports([]);
   }, []);
@@ -1298,6 +1442,7 @@ export function AppProvider({ children }) {
     expenseTypes,
     expenseBudgets,
     recurringEntries,
+    reminders,
     appSettings,
     aiReports,
     addInvestment,
@@ -1325,6 +1470,10 @@ export function AppProvider({ children }) {
     updateRecurringEntry,
     deleteRecurringEntry,
     markRecurringEntryRecorded,
+    addReminder,
+    updateReminder,
+    deleteReminder,
+    markReminderDone,
     updateAppSettings,
     generateMonthlyAiReport,
     askAi,

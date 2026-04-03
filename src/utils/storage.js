@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   EXPENSE_TYPES: 'myMoney_expense_types',
   EXPENSE_BUDGETS: 'myMoney_expense_budgets',
   RECURRING_ENTRIES: 'myMoney_recurring_entries',
+  REMINDERS: 'myMoney_reminders',
   APP_SETTINGS: 'myMoney_app_settings',
   AI_REPORTS: 'myMoney_ai_reports',
 };
@@ -202,6 +203,23 @@ export function loadRecurringEntries() {
 export function saveRecurringEntries(recurringEntries) {
   try {
     localStorage.setItem(STORAGE_KEYS.RECURRING_ENTRIES, JSON.stringify(recurringEntries));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadReminders() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.REMINDERS);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveReminders(reminders) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.REMINDERS, JSON.stringify(reminders));
   } catch {
     // ignore
   }

@@ -9,6 +9,86 @@
   margin-bottom: 20px;
 }
 
+.dash-hero-widget {
+  margin-bottom: 18px;
+  padding: 22px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.32), transparent 34%),
+    linear-gradient(135deg, #0f172a 0%, #312e81 45%, #0f766e 100%);
+  color: white;
+  box-shadow: 0 20px 42px rgba(15, 23, 42, 0.22);
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(190px, 0.85fr);
+  gap: 16px;
+  align-items: end;
+}
+
+.dash-hero-main {
+  min-width: 0;
+}
+
+.dash-hero-label {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+.dash-hero-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.dash-hero-value {
+  display: block;
+  max-width: 100%;
+  font-size: clamp(1.9rem, 5.6vw, 2.8rem);
+  line-height: 0.98;
+  font-weight: 900;
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.dash-hero-copy {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 0.92rem;
+  max-width: 34ch;
+}
+
+.dash-hero-side {
+  display: grid;
+  gap: 10px;
+}
+
+.dash-hero-chip {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+}
+
+.dash-hero-chip span {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.66);
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.dash-hero-chip strong {
+  font-size: 1rem;
+  color: white;
+}
+
 .dash-greeting {
   font-size: 0.8rem;
   color: #6366f1;
@@ -480,11 +560,15 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .dash-networth-header,
   .dash-networth-chart-summary {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .dash-hero-widget {
+    grid-template-columns: 1fr;
   }
 
   .dash-networth-summary,

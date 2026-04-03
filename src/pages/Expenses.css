@@ -83,6 +83,8 @@
   flex-direction: column;
   gap: 6px;
   min-width: 180px;
+  max-width: 220px;
+  width: 100%;
 }
 
 .expense-budget-month span,
@@ -100,12 +102,14 @@
 .expense-budget-field select {
   width: 100%;
   min-height: 44px;
+  max-width: 100%;
   border-radius: 14px;
   border: 1px solid #dbeafe;
   background: #fff;
   color: #0f172a;
   padding: 0 14px;
   font-size: 0.95rem;
+  box-sizing: border-box;
 }
 
 .expense-budget-month input:focus,
@@ -652,5 +656,10 @@
   .expense-budget-action {
     flex: 1;
     justify-content: center;
+  }
+
+  .expense-budget-month {
+    min-width: 0;
+    max-width: none;
   }
 }

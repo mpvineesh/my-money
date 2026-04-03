@@ -182,6 +182,43 @@ export default function Dashboard() {
   const previousNetWorth = netWorthSeries[netWorthSeries.length - 2];
   const netWorthChange = latestNetWorth && previousNetWorth ? latestNetWorth.netWorth - previousNetWorth.netWorth : 0;
   const isPositive = stats.totalGain >= 0;
+  const assetAllocationSection = dashboardSections.assetAllocation && stats.pieData.length > 0 ? (
+    <section className="dash-section">
+      <h2 className="dash-section-title">Asset Allocation</h2>
+      <div className="dash-chart-card">
+        <div className="dash-pie-container">
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie
+                data={stats.pieData}
+                cx="50%"
+                cy="50%"
+                innerRadius={55}
+                outerRadius={85}
+                paddingAngle={3}
+                dataKey="value"
+                stroke="none"
+              >
+                {stats.pieData.map((entry, index) => (
+                  <Cell key={index} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip content={<ChartTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="dash-legend">
+          {stats.pieData.map((item, i) => (
+            <div key={i} className="legend-item">
+              <span className="legend-dot" style={{ backgroundColor: item.color }} />
+              <span className="legend-label">{item.name}</span>
+              <span className="legend-value">{formatCurrency(item.value)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  ) : null;
 
   return (
     <div className="dashboard">
@@ -193,87 +230,118 @@ export default function Dashboard() {
       </header>
 
       {dashboardSections.netWorth ? (
-      <section className="dash-networth-panel">
-        <div className="dash-networth-header">
-          <div>
-            <p className="dash-networth-label">Balance Sheet</p>
-            <h2 className="dash-networth-title">Net worth snapshot</h2>
-            <p className="dash-networth-subtitle">Investments drive the trend line. Cash, loans, and goal funding use the latest recorded totals.</p>
-          </div>
-          <div className="dash-networth-toggle">
-            <button
-              type="button"
-              className={netWorthRange === 'month' ? 'active' : ''}
-              onClick={() => setNetWorthRange('month')}
-            >
-              Monthly
-            </button>
-            <button
-              type="button"
-              className={netWorthRange === 'year' ? 'active' : ''}
-              onClick={() => setNetWorthRange('year')}
-            >
-              Yearly
-            </button>
-          </div>
-        </div>
-
-        <div className="dash-networth-summary">
-          <article className="dash-networth-stat dash-networth-primary">
-            <span className="dash-networth-stat-label">Net worth</span>
-            <strong>{formatCurrency(stats.netWorth)}</strong>
-            <span>{stats.netWorth >= 0 ? 'Assets minus liabilities' : 'Liabilities exceed current assets'}</span>
-          </article>
-          <article className="dash-networth-stat">
-            <span className="dash-networth-stat-label">Liquid assets</span>
-            <strong>{formatCurrency(stats.liquidAssets)}</strong>
-            <span>Cash + portfolio value</span>
-          </article>
-          <article className="dash-networth-stat">
-            <span className="dash-networth-stat-label">Loan liability</span>
-            <strong>{formatCurrency(stats.totalLoanPrincipal)}</strong>
-            <span>{stats.totalMonthlyEmi ? `EMI outflow ${formatCurrency(stats.totalMonthlyEmi)}/mo` : 'No EMI tracked'}</span>
-          </article>
-          <article className="dash-networth-stat">
-            <span className="dash-networth-stat-label">Goal funding</span>
-            <strong>{formatCurrency(stats.totalGoalCurrent)}</strong>
-            <span>{stats.totalGoalTarget ? `${Math.round(stats.goalCoverage)}% of ${formatCurrency(stats.totalGoalTarget)}` : 'No goal target set yet'}</span>
-          </article>
-        </div>
-
-        <div className="dash-networth-chart-card">
-          <div className="dash-networth-chart-summary">
-            <div>
-              <span className="dash-networth-chart-label">Current net worth</span>
-              <strong>{formatCurrency(latestNetWorth?.netWorth ?? stats.netWorth)}</strong>
+        <>
+          <section className="dash-hero-widget">
+            <div className="dash-hero-main">
+              <h2 className="dash-hero-title">Net worth</h2>
+              <strong className="dash-hero-value">{formatCurrency(stats.netWorth)}</strong>
+              <p className="dash-hero-copy">
+                {stats.netWorth >= 0 ? 'Assets minus liabilities' : 'Liabilities currently exceed liquid assets'}
+              </p>
             </div>
-            <div>
-              <span className="dash-networth-chart-label">{netWorthRange === 'month' ? 'Month-on-month' : 'Year-on-year'}</span>
-              <strong className={netWorthChange >= 0 ? 'dash-positive' : 'dash-negative'}>
-                {netWorthChange >= 0 ? '+' : ''}{formatCurrency(netWorthChange)}
-              </strong>
+
+            <div className="dash-hero-side">
+              <article className="dash-hero-chip">
+                <span>{netWorthRange === 'month' ? 'Month-on-month' : 'Year-on-year'}</span>
+                <strong className={netWorthChange >= 0 ? 'dash-positive' : 'dash-negative'}>
+                  {netWorthChange >= 0 ? '+' : ''}{formatCurrency(netWorthChange)}
+                </strong>
+              </article>
+              <article className="dash-hero-chip">
+                <span>Liquid assets</span>
+                <strong>{formatCurrency(stats.liquidAssets)}</strong>
+              </article>
+              <article className="dash-hero-chip">
+                <span>Loan liability</span>
+                <strong>{formatCurrency(stats.totalLoanPrincipal)}</strong>
+              </article>
             </div>
-          </div>
+          </section>
 
-          <div className="dash-networth-chart">
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={netWorthSeries} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <YAxis tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => formatCurrency(value)} />
-                <Tooltip content={<NetWorthTooltip />} />
-                <Line type="monotone" dataKey="portfolioValue" stroke="#14b8a6" strokeWidth={2.5} dot={{ r: 3 }} name="Portfolio" />
-                <Line type="monotone" dataKey="netWorth" stroke="#6366f1" strokeWidth={3} dot={{ r: 3 }} name="Net worth" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {assetAllocationSection}
 
-          <div className="dash-networth-footnote">
-            <CalendarRange size={14} />
-            <span>Trend is built from investment snapshots. Add more dated investment updates for a richer monthly and yearly balance-sheet view.</span>
-          </div>
-        </div>
-      </section>
+          <section className="dash-networth-panel">
+            <div className="dash-networth-header">
+              <div>
+                <p className="dash-networth-label">Balance Sheet</p>
+                <h2 className="dash-networth-title">Net worth snapshot</h2>
+                <p className="dash-networth-subtitle">Investments drive the trend line. Cash, loans, and goal funding use the latest recorded totals.</p>
+              </div>
+              <div className="dash-networth-toggle">
+                <button
+                  type="button"
+                  className={netWorthRange === 'month' ? 'active' : ''}
+                  onClick={() => setNetWorthRange('month')}
+                >
+                  Monthly
+                </button>
+                <button
+                  type="button"
+                  className={netWorthRange === 'year' ? 'active' : ''}
+                  onClick={() => setNetWorthRange('year')}
+                >
+                  Yearly
+                </button>
+              </div>
+            </div>
+
+            <div className="dash-networth-summary">
+              <article className="dash-networth-stat dash-networth-primary">
+                <span className="dash-networth-stat-label">Net worth</span>
+                <strong>{formatCurrency(stats.netWorth)}</strong>
+                <span>{stats.netWorth >= 0 ? 'Assets minus liabilities' : 'Liabilities exceed current assets'}</span>
+              </article>
+              <article className="dash-networth-stat">
+                <span className="dash-networth-stat-label">Liquid assets</span>
+                <strong>{formatCurrency(stats.liquidAssets)}</strong>
+                <span>Cash + portfolio value</span>
+              </article>
+              <article className="dash-networth-stat">
+                <span className="dash-networth-stat-label">Loan liability</span>
+                <strong>{formatCurrency(stats.totalLoanPrincipal)}</strong>
+                <span>{stats.totalMonthlyEmi ? `EMI outflow ${formatCurrency(stats.totalMonthlyEmi)}/mo` : 'No EMI tracked'}</span>
+              </article>
+              <article className="dash-networth-stat">
+                <span className="dash-networth-stat-label">Goal funding</span>
+                <strong>{formatCurrency(stats.totalGoalCurrent)}</strong>
+                <span>{stats.totalGoalTarget ? `${Math.round(stats.goalCoverage)}% of ${formatCurrency(stats.totalGoalTarget)}` : 'No goal target set yet'}</span>
+              </article>
+            </div>
+
+            <div className="dash-networth-chart-card">
+              <div className="dash-networth-chart-summary">
+                <div>
+                  <span className="dash-networth-chart-label">Current net worth</span>
+                  <strong>{formatCurrency(latestNetWorth?.netWorth ?? stats.netWorth)}</strong>
+                </div>
+                <div>
+                  <span className="dash-networth-chart-label">{netWorthRange === 'month' ? 'Month-on-month' : 'Year-on-year'}</span>
+                  <strong className={netWorthChange >= 0 ? 'dash-positive' : 'dash-negative'}>
+                    {netWorthChange >= 0 ? '+' : ''}{formatCurrency(netWorthChange)}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="dash-networth-chart">
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={netWorthSeries} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                    <YAxis tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => formatCurrency(value)} />
+                    <Tooltip content={<NetWorthTooltip />} />
+                    <Line type="monotone" dataKey="portfolioValue" stroke="#14b8a6" strokeWidth={2.5} dot={{ r: 3 }} name="Portfolio" />
+                    <Line type="monotone" dataKey="netWorth" stroke="#6366f1" strokeWidth={3} dot={{ r: 3 }} name="Net worth" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="dash-networth-footnote">
+                <CalendarRange size={14} />
+                <span>Trend is built from investment snapshots. Add more dated investment updates for a richer monthly and yearly balance-sheet view.</span>
+              </div>
+            </div>
+          </section>
+        </>
       ) : null}
 
       {dashboardSections.portfolioStats ? (
@@ -313,43 +381,7 @@ export default function Dashboard() {
       </div>
       ) : null}
 
-      {dashboardSections.assetAllocation && stats.pieData.length > 0 && (
-        <section className="dash-section">
-          <h2 className="dash-section-title">Asset Allocation</h2>
-          <div className="dash-chart-card">
-            <div className="dash-pie-container">
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={stats.pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={3}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {stats.pieData.map((entry, index) => (
-                      <Cell key={index} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<ChartTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="dash-legend">
-              {stats.pieData.map((item, i) => (
-                <div key={i} className="legend-item">
-                  <span className="legend-dot" style={{ backgroundColor: item.color }} />
-                  <span className="legend-label">{item.name}</span>
-                  <span className="legend-value">{formatCurrency(item.value)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {!dashboardSections.netWorth ? assetAllocationSection : null}
 
       {dashboardSections.goalProgress && goals.length > 0 && (
         <section className="dash-section">
