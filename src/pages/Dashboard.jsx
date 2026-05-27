@@ -399,11 +399,8 @@ export default function Dashboard() {
       {attentionItems.length ? (
         <section className="dash-attention">
           <div className="dash-attention-head">
-            <div>
-              <p className="dash-attention-label">Needs attention</p>
-              <h2>Today&apos;s money queue</h2>
-            </div>
-            <button type="button" className="dash-see-all" onClick={() => navigate('/monthly-review')}>
+            <p className="dash-attention-label">Needs attention</p>
+            <button type="button" className="dash-attention-cta" onClick={() => navigate('/monthly-review')}>
               Monthly review <ChevronRight size={14} />
             </button>
           </div>
@@ -417,7 +414,7 @@ export default function Dashboard() {
                   className={`dash-attention-card ${item.tone}`}
                   onClick={() => navigate(item.to)}
                 >
-                  <span className="dash-attention-icon"><Icon size={18} /></span>
+                  <span className="dash-attention-icon"><Icon size={16} /></span>
                   <span className="dash-attention-copy">
                     <strong>{item.title}</strong>
                     <span>{item.copy}</span>
