@@ -45,6 +45,56 @@ input, textarea, select, button {
   font-family: inherit;
 }
 
+input[type="date"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="time"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@supports (-webkit-touch-callout: none) {
+  /* Let iOS WebKit's native date/time fields shrink inside narrow layouts. */
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="time"] {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="datetime-local"]::-webkit-datetime-edit,
+  input[type="month"]::-webkit-datetime-edit,
+  input[type="time"]::-webkit-datetime-edit {
+    min-width: 0;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+  input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper,
+  input[type="month"]::-webkit-datetime-edit-fields-wrapper,
+  input[type="time"]::-webkit-datetime-edit-fields-wrapper,
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="datetime-local"]::-webkit-date-and-time-value,
+  input[type="month"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="month"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+  }
+}
+
 /* Remove spinner from number inputs */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {

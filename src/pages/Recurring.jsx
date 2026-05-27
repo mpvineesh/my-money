@@ -66,6 +66,7 @@ export default function Recurring() {
     addRecurringEntry,
     updateRecurringEntry,
     deleteRecurringEntry,
+    recordRecurringEntryNow,
   } = useApp();
   const [form, setForm] = useState(getEmptyForm);
 
@@ -90,6 +91,10 @@ export default function Recurring() {
       estimatedMonthly,
     };
   }, [recurringEntries]);
+  const dueEntries = useMemo(
+    () => recurringEntries.filter((entry) => getDueStatus(entry.nextDueDate).tone !== 'neutral'),
+    [recurringEntries],
+  );
 
   function handleChange(field, value) {
     setForm((prev) => ({
@@ -190,6 +195,14 @@ export default function Recurring() {
     });
   }
 
+  function handleRecordDue(entry) {
+    recordRecurringEntryNow(entry.id, entry.nextDueDate);
+  }
+
+  function handleRecordAllDue() {
+    dueEntries.forEach((entry) => recordRecurringEntryNow(entry.id, entry.nextDueDate));
+  }
+
   return (
     <div className="recurring-page">
       <header className="recurring-header">
@@ -217,6 +230,18 @@ export default function Recurring() {
           <span>Estimated monthly equivalent across all templates</span>
         </article>
       </section>
+
+      {dueEntries.length ? (
+        <section className="recurring-due-panel">
+          <div>
+            <p className="recurring-list-label">Due Queue</p>
+            <h2>{dueEntries.length} recurring entr{dueEntries.length === 1 ? 'y' : 'ies'} need recording</h2>
+          </div>
+          <button type="button" className="btn-primary" onClick={handleRecordAllDue}>
+            Record all due
+          </button>
+        </section>
+      ) : null}
 
       <section className="recurring-layout">
         <form className="recurring-form" onSubmit={handleSubmit}>
@@ -400,6 +425,12 @@ export default function Recurring() {
                         <Sparkles size={16} />
                         <span>Record Now</span>
                       </button>
+                      {status.tone !== 'neutral' ? (
+                        <button type="button" className="recurring-primary-btn recurring-record-due" onClick={() => handleRecordDue(entry)}>
+                          <Save size={16} />
+                          <span>Record Due</span>
+                        </button>
+                      ) : null}
                       <button type="button" className="recurring-icon-btn" onClick={() => handleEdit(entry)}>
                         <Pencil size={16} />
                       </button>

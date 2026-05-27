@@ -61,6 +61,7 @@ export const EXPENSE_PAYMENT_METHODS = [
 ];
 
 export const DEFAULT_FAMILY_MEMBER = { id: 'me', name: 'Me' };
+export const FAMILY_GOAL_SCOPE = { id: 'all', name: 'Whole family' };
 export const DEFAULT_EXPENSE_PAYER = DEFAULT_FAMILY_MEMBER;
 
 function slugifyExpenseValue(value) {

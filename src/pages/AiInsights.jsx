@@ -1,5 +1,6 @@
 import { createElement, useEffect, useMemo, useState } from 'react';
 import { Sparkles, RefreshCcw, CalendarRange, TrendingUp, AlertTriangle, CircleDollarSign, BriefcaseBusiness, PieChart, Target } from 'lucide-react';
+import NativePickerField from '../components/NativePickerField';
 import { useApp } from '../context/useApp';
 import { formatCurrency, formatDateTime } from '../utils/constants';
 import './AiInsights.css';
@@ -20,6 +21,12 @@ function getCurrentMonthValue() {
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   return `${year}-${month}`;
+}
+
+function formatInsightMonthLabel(periodKey) {
+  if (!/^\d{4}-\d{2}$/.test(periodKey)) return 'Select month';
+  const [year, month] = periodKey.split('-').map(Number);
+  return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1, 1));
 }
 
 function createAskFormState() {
@@ -170,15 +177,17 @@ export default function AiInsights() {
         </div>
 
         <div className="ai-controls">
-          <label className="ai-period-picker">
-            <CalendarRange size={18} />
-            <input
-              type="month"
-              value={periodKey}
-              max={getCurrentMonthValue()}
-              onChange={(event) => setPeriodKey(event.target.value)}
-            />
-          </label>
+          <NativePickerField
+            type="month"
+            className="ai-period-picker"
+            value={periodKey}
+            max={getCurrentMonthValue()}
+            onChange={(event) => setPeriodKey(event.target.value)}
+            displayValue={formatInsightMonthLabel(periodKey)}
+            placeholder="Select month"
+            ariaLabel="Report month"
+            leading={<CalendarRange size={18} />}
+          />
           <div className="ai-provider-toggle" role="tablist" aria-label="AI provider">
             {AI_PROVIDER_OPTIONS.map((option) => (
               <button

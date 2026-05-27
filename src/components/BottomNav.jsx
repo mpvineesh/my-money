@@ -11,6 +11,7 @@ import {
   Sparkles,
   Repeat,
   BellRing,
+  CalendarRange,
   Settings as SettingsIcon,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
@@ -77,6 +78,9 @@ function MoreMenu() {
           </button>
           <button className="more-item" onClick={() => { setOpen(false); navigate('/ai-insights'); }}>
             <Sparkles size={16} style={{ marginRight: 8 }} /> AI Insights
+          </button>
+          <button className="more-item" onClick={() => { setOpen(false); navigate('/monthly-review'); }}>
+            <CalendarRange size={16} style={{ marginRight: 8 }} /> Monthly Review
           </button>
           <button className="more-item" onClick={() => { setOpen(false); navigate('/settings'); }}>
             <SettingsIcon size={16} style={{ marginRight: 8 }} /> Settings

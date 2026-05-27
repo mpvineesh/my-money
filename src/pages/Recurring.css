@@ -38,6 +38,24 @@
   margin-bottom: 16px;
 }
 
+.recurring-due-panel {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.recurring-due-panel h2 {
+  margin: 2px 0 0;
+  color: #9a3412;
+  font-size: 1rem;
+}
+
 .recurring-stat {
   background: white;
   border: 1px solid #e2e8f0;
@@ -294,6 +312,11 @@
   color: #c2410c;
 }
 
+.recurring-record-due {
+  background: #ecfdf5;
+  color: #047857;
+}
+
 .recurring-icon-btn {
   background: #f8fafc;
   color: #475569;
@@ -336,6 +359,7 @@
 
   .recurring-card-top,
   .recurring-card-actions,
+  .recurring-due-panel,
   .recurring-form-head,
   .recurring-list-head {
     flex-direction: column;

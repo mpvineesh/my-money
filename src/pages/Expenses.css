@@ -97,10 +97,12 @@
   font-weight: 700;
 }
 
+.expense-budget-picker,
 .expense-budget-month input,
 .expense-budget-field input,
 .expense-budget-field select {
   width: 100%;
+  min-width: 0;
   min-height: 44px;
   max-width: 100%;
   border-radius: 14px;
@@ -112,6 +114,7 @@
   box-sizing: border-box;
 }
 
+.expense-budget-picker:focus-within,
 .expense-budget-month input:focus,
 .expense-budget-field input:focus,
 .expense-budget-field select:focus {

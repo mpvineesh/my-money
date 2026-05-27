@@ -1,4 +1,4 @@
-import { formatCurrency } from '../utils/constants';
+import { FAMILY_GOAL_SCOPE, formatCurrency } from '../utils/constants';
 import './GoalCard.css';
 
 export default function GoalCard({ goal, onClick }) {
@@ -18,11 +18,16 @@ export default function GoalCard({ goal, onClick }) {
   };
 
   const progressColor = progress >= 75 ? '#22c55e' : progress >= 40 ? '#f59e0b' : '#6366f1';
+  const memberName = goal.memberName || FAMILY_GOAL_SCOPE.name;
+  const hasAllocations = Array.isArray(goal.allocations) && goal.allocations.length > 0;
 
   return (
     <div className="goal-card" onClick={onClick}>
       <div className="goal-card-header">
-        <h3 className="goal-card-name">{goal.name}</h3>
+        <div>
+          <h3 className="goal-card-name">{goal.name}</h3>
+          <span className="goal-member-name">{memberName}</span>
+        </div>
         {goal.priority && (
           <span
             className="goal-priority-badge"
@@ -55,7 +60,7 @@ export default function GoalCard({ goal, onClick }) {
 
       <div className="goal-card-amounts">
         <div className="goal-amount-group">
-          <span className="goal-amount-label">Saved</span>
+          <span className="goal-amount-label">{hasAllocations ? 'Allocated' : 'Assets'}</span>
           <span className="goal-amount-value">{formatCurrency(goal.currentAmount)}</span>
         </div>
         <div className="goal-amount-group" style={{ textAlign: 'right' }}>

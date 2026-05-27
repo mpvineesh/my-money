@@ -117,6 +117,23 @@
   color: #cbd5e1;
 }
 
+.form-picker-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-picker-field:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-picker-field .native-picker-display.is-placeholder {
+  color: #cbd5e1;
+  opacity: 1;
+}
+
 .form-textarea {
   resize: vertical;
   min-height: 80px;
@@ -126,6 +143,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .form-inline-btn {
@@ -147,6 +165,25 @@
   border-color: #6366f1;
   color: #6366f1;
   background: #eef2ff;
+}
+
+.form-inline-btn.danger {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+
+.goal-allocation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.goal-allocation-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(130px, 0.8fr) 44px;
+  gap: 8px;
+  align-items: center;
 }
 
 .form-input-prefix {
@@ -180,6 +217,11 @@
 
 .expense-form-datetime {
   min-width: 0;
+  overflow: hidden;
+}
+
+.expense-form-datetime .native-picker-display {
+  text-align: center;
 }
 
 .form-type-grid {
@@ -410,6 +452,14 @@
 }
 
 @media (max-width: 520px) {
+  .goal-allocation-row {
+    grid-template-columns: 1fr 44px;
+  }
+
+  .goal-allocation-row > select {
+    grid-column: 1 / -1;
+  }
+
   .form-inline-select,
   .form-modal-actions,
   .delete-confirm-actions {

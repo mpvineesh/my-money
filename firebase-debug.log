@@ -1,0 +1,162 @@
+[debug] [2026-05-27T05:33:58.702Z] ----------------------------------------------------------------------
+[debug] [2026-05-27T05:33:58.703Z] Command:       /Users/vineesh/.nvm/versions/node/v24.14.0/bin/node /Users/vineesh/.nvm/versions/node/v24.14.0/bin/firebase deploy
+[debug] [2026-05-27T05:33:58.703Z] CLI Version:   15.11.0
+[debug] [2026-05-27T05:33:58.703Z] Platform:      darwin
+[debug] [2026-05-27T05:33:58.703Z] Node Version:  v24.14.0
+[debug] [2026-05-27T05:33:58.703Z] Time:          Wed May 27 2026 11:03:58 GMT+0530 (India Standard Time)
+[debug] [2026-05-27T05:33:58.703Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-05-27T05:33:58.704Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-05-27T05:33:59.695Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-27T05:33:59.696Z] > authorizing via signed-in user (vneesh@gmail.com)
+[debug] [2026-05-27T05:33:59.696Z] [iam] checking project my-money-2c1e3 for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-05-27T05:33:59.696Z] Checked if tokens are valid: false, expires at: 1778966490208
+[debug] [2026-05-27T05:33:59.696Z] Checked if tokens are valid: false, expires at: 1778966490208
+[debug] [2026-05-27T05:33:59.696Z] > refreshing access token with scopes: []
+[debug] [2026-05-27T05:33:59.697Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-05-27T05:33:59.697Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-27T05:33:59.988Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-05-27T05:33:59.989Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-27T05:34:00.002Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/my-money-2c1e3:testIamPermissions [none]
+[debug] [2026-05-27T05:34:00.003Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/my-money-2c1e3:testIamPermissions  x-goog-user-project=my-money-2c1e3
+[debug] [2026-05-27T05:34:00.003Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/my-money-2c1e3:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-05-27T05:34:00.400Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-05-27T05:34:00.400Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2026-05-27T05:34:02.129Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/my-money-2c1e3:testIamPermissions 200
+[debug] [2026-05-27T05:34:02.129Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/my-money-2c1e3:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-05-27T05:34:02.130Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:02.130Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:02.132Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/my-money-2c1e3 [none]
+[debug] [2026-05-27T05:34:03.066Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/my-money-2c1e3 200
+[debug] [2026-05-27T05:34:03.067Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/my-money-2c1e3 {"projectId":"my-money-2c1e3","projectNumber":"157502519220","displayName":"my-money","name":"projects/my-money-2c1e3","resources":{"hostingSite":"my-money-2c1e3"},"state":"ACTIVE","etag":"1_5a686e1b-7512-4c84-b3e7-05023f00b62b"}
+[info] 
+[info] === Deploying to 'my-money-2c1e3'...
+[info] 
+[info] i  deploying firestore, hosting 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-05-27T05:34:03.076Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:03.076Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:03.077Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/my-money-2c1e3/databases/(default) [none]
+[debug] [2026-05-27T05:34:05.024Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/my-money-2c1e3/databases/(default) 200
+[debug] [2026-05-27T05:34:05.024Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/my-money-2c1e3/databases/(default) {"name":"projects/my-money-2c1e3/databases/(default)","uid":"1c165f1d-0d10-4892-8e77-73db9d898190","createTime":"2026-03-26T11:43:38.855109Z","updateTime":"2026-03-26T11:43:38.855109Z","locationId":"nam5","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-05-27T04:34:04.873951Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"s","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"IKv75a3f2JQDMKmMrvC/vZMD"}
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2026-05-27T05:34:05.025Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:05.025Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:05.025Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3:test [none]
+[debug] [2026-05-27T05:34:05.025Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3:test [omitted]
+[debug] [2026-05-27T05:34:06.647Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3:test 200
+[debug] [2026-05-27T05:34:06.647Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3:test {}
+[info] ✔  cloud.firestore: rules file firestore.rules compiled successfully 
+[debug] [2026-05-27T05:34:06.649Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:06.649Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:06.649Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/my-money-2c1e3/versions [none]
+[debug] [2026-05-27T05:34:06.649Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/my-money-2c1e3/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2026-05-27T05:34:08.302Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/my-money-2c1e3/versions 200
+[debug] [2026-05-27T05:34:08.302Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/my-money-2c1e3/versions {"name":"projects/157502519220/sites/my-money-2c1e3/versions/99613c96f5c0e16d","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2026-05-27T05:34:08.303Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:08.303Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:08.304Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3/releases pageSize=10&pageToken=
+[debug] [2026-05-27T05:34:09.651Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3/releases 200
+[debug] [2026-05-27T05:34:09.652Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3/releases {"releases":[{"name":"projects/my-money-2c1e3/releases/cloud.firestore","rulesetName":"projects/my-money-2c1e3/rulesets/99bc193b-b143-4111-afbc-e0cd6ef0eb24","createTime":"2026-03-26T11:43:44.104699Z","updateTime":"2026-04-08T10:17:33.281697Z"}]}
+[debug] [2026-05-27T05:34:09.652Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:09.652Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:09.653Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3/rulesets/99bc193b-b143-4111-afbc-e0cd6ef0eb24 [none]
+[debug] [2026-05-27T05:34:09.991Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3/rulesets/99bc193b-b143-4111-afbc-e0cd6ef0eb24 200
+[debug] [2026-05-27T05:34:09.991Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3/rulesets/99bc193b-b143-4111-afbc-e0cd6ef0eb24 [omitted]
+[info] i  firestore: latest version of firestore.rules already up to date, skipping upload... 
+[info] i  firestore: deploying indexes... 
+[info] i  hosting[my-money-2c1e3]: beginning deploy... 
+[info] i  hosting[my-money-2c1e3]: found 10 files in dist 
+[debug] [2026-05-27T05:34:10.008Z] [hosting] uploading with 200 concurrency
+[debug] [2026-05-27T05:34:10.044Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:10.044Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:10.044Z] [hosting] hash cache [ZGlzdA] stored for 10 files
+[debug] [2026-05-27T05:34:10.044Z] [hosting][hash queue][FINAL] {"max":32,"min":3,"avg":6.1,"active":0,"complete":10,"success":10,"errored":0,"retried":0,"total":10,"elapsed":35}
+[debug] [2026-05-27T05:34:10.044Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/157502519220/sites/my-money-2c1e3/versions/99613c96f5c0e16d:populateFiles [none]
+[debug] [2026-05-27T05:34:10.044Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/157502519220/sites/my-money-2c1e3/versions/99613c96f5c0e16d:populateFiles {"files":{"/sw.js":"df8d3c88d3b4535cf986ce4b6413759bb22412c5bc2605bea4edb33df8fdd971","/manifest.webmanifest":"d969b52bcea30cce3122c1310a4d82b31c0c078ce79bc90c3ac50b847771abea","/favicon.svg":"788edd6150d134e492c161322ce727cbe86416ba61b8e132f332bd0772c804a5","/icons.svg":"cc5ba1c58a9496115441b46650182deb0169982e8a98d605d965ce966ff37184","/pwa-icon.svg":"7ac2a70d9f68a326f3bb0318bbe633fdefc038ccd3a069a97b321ebfaea478a2","/index.html":"77e2e651c5176995ab28e960c8342b2d73a7876228d1a6859de3a8f64badbf0d","/workbox-8c29f6e4.js":"c1360d97831a7585ba8f5c2631c0b3b78258637b50e1329c8f7fc0837604e59a","/assets/workbox-window.prod.es5-Bq4GJJid.js":"63c587acdca5564501931dbc9e65d35f6cfa4743b3194c2bd221d164ef9f778c","/assets/index-GGZHgJeO.css":"dbfef27e9e973c0cbb8bd999f59febe2d30949d00e10741432e1e4f27f34ce0c","/assets/index-Dz2XK27h.js":"d45e5916037aefd44ece7eff32333670e4133abeb8499f9c2b000c08941d311b"}}
+[debug] [2026-05-27T05:34:10.898Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/157502519220/sites/my-money-2c1e3/versions/99613c96f5c0e16d:populateFiles 200
+[debug] [2026-05-27T05:34:10.898Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/157502519220/sites/my-money-2c1e3/versions/99613c96f5c0e16d:populateFiles {"uploadRequiredHashes":["77e2e651c5176995ab28e960c8342b2d73a7876228d1a6859de3a8f64badbf0d","dbfef27e9e973c0cbb8bd999f59febe2d30949d00e10741432e1e4f27f34ce0c","df8d3c88d3b4535cf986ce4b6413759bb22412c5bc2605bea4edb33df8fdd971","d45e5916037aefd44ece7eff32333670e4133abeb8499f9c2b000c08941d311b"],"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files"}
+[debug] [2026-05-27T05:34:10.899Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:10.899Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:10.899Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:10.899Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:10.900Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:10.900Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:10.900Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:10.900Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:10.901Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/77e2e651c5176995ab28e960c8342b2d73a7876228d1a6859de3a8f64badbf0d [none]
+[debug] [2026-05-27T05:34:10.901Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/77e2e651c5176995ab28e960c8342b2d73a7876228d1a6859de3a8f64badbf0d [stream]
+[debug] [2026-05-27T05:34:10.902Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/dbfef27e9e973c0cbb8bd999f59febe2d30949d00e10741432e1e4f27f34ce0c [none]
+[debug] [2026-05-27T05:34:10.902Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/dbfef27e9e973c0cbb8bd999f59febe2d30949d00e10741432e1e4f27f34ce0c [stream]
+[debug] [2026-05-27T05:34:10.904Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/df8d3c88d3b4535cf986ce4b6413759bb22412c5bc2605bea4edb33df8fdd971 [none]
+[debug] [2026-05-27T05:34:10.904Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/df8d3c88d3b4535cf986ce4b6413759bb22412c5bc2605bea4edb33df8fdd971 [stream]
+[debug] [2026-05-27T05:34:10.904Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/d45e5916037aefd44ece7eff32333670e4133abeb8499f9c2b000c08941d311b [none]
+[debug] [2026-05-27T05:34:10.904Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/d45e5916037aefd44ece7eff32333670e4133abeb8499f9c2b000c08941d311b [stream]
+[debug] [2026-05-27T05:34:10.905Z] [hosting][populate queue][FINAL] {"max":857,"min":857,"avg":857,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":861}
+[debug] [2026-05-27T05:34:10.905Z] [hosting] uploads queued: 4
+[info] i  hosting: uploading new files [0/4] (0%) 
+[debug] [2026-05-27T05:34:12.794Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/dbfef27e9e973c0cbb8bd999f59febe2d30949d00e10741432e1e4f27f34ce0c 200
+[debug] [2026-05-27T05:34:12.794Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/dbfef27e9e973c0cbb8bd999f59febe2d30949d00e10741432e1e4f27f34ce0c [stream]
+[debug] [2026-05-27T05:34:12.796Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/77e2e651c5176995ab28e960c8342b2d73a7876228d1a6859de3a8f64badbf0d 200
+[debug] [2026-05-27T05:34:12.796Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/77e2e651c5176995ab28e960c8342b2d73a7876228d1a6859de3a8f64badbf0d [stream]
+[debug] [2026-05-27T05:34:12.796Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/df8d3c88d3b4535cf986ce4b6413759bb22412c5bc2605bea4edb33df8fdd971 200
+[debug] [2026-05-27T05:34:12.796Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/df8d3c88d3b4535cf986ce4b6413759bb22412c5bc2605bea4edb33df8fdd971 [stream]
+[debug] [2026-05-27T05:34:13.069Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/d45e5916037aefd44ece7eff32333670e4133abeb8499f9c2b000c08941d311b 200
+[debug] [2026-05-27T05:34:13.069Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/my-money-2c1e3/versions/99613c96f5c0e16d/files/d45e5916037aefd44ece7eff32333670e4133abeb8499f9c2b000c08941d311b [stream]
+[debug] [2026-05-27T05:34:13.070Z] [hosting][upload queue][FINAL] {"max":2169,"min":1895,"avg":1964.5,"active":0,"complete":4,"success":4,"errored":0,"retried":0,"total":4,"elapsed":2172}
+[info] i  hosting: upload complete 
+[info] ✔  hosting[my-money-2c1e3]: file upload complete 
+[debug] [2026-05-27T05:34:13.070Z] [hosting] deploy completed after 3074ms
+[debug] [2026-05-27T05:34:13.070Z] [rules] releasing cloud.firestore/(default) with ruleset projects/my-money-2c1e3/rulesets/99bc193b-b143-4111-afbc-e0cd6ef0eb24
+[debug] [2026-05-27T05:34:13.071Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:13.071Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:13.071Z] >>> [apiv2][query] PATCH https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3/releases/cloud.firestore/(default) [none]
+[debug] [2026-05-27T05:34:13.071Z] >>> [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3/releases/cloud.firestore/(default) {"release":{"name":"projects/my-money-2c1e3/releases/cloud.firestore/(default)","rulesetName":"projects/my-money-2c1e3/rulesets/99bc193b-b143-4111-afbc-e0cd6ef0eb24"}}
+[debug] [2026-05-27T05:34:14.566Z] <<< [apiv2][status] PATCH https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3/releases/cloud.firestore/(default) 200
+[debug] [2026-05-27T05:34:14.566Z] <<< [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/my-money-2c1e3/releases/cloud.firestore/(default) {"name":"projects/my-money-2c1e3/releases/cloud.firestore","rulesetName":"projects/my-money-2c1e3/rulesets/99bc193b-b143-4111-afbc-e0cd6ef0eb24","createTime":"2026-03-26T11:43:44.104699Z","updateTime":"2026-05-27T05:34:14.463383Z"}
+[debug] [2026-05-27T05:34:14.566Z] [rules] updated release projects/my-money-2c1e3/releases/cloud.firestore
+[info] ✔  firestore: released rules firestore.rules to cloud.firestore 
+[debug] [2026-05-27T05:34:14.567Z] [
+  {
+    "config": {
+      "public": "dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ],
+      "site": "my-money-2c1e3"
+    },
+    "version": "projects/157502519220/sites/my-money-2c1e3/versions/99613c96f5c0e16d"
+  }
+]
+[info] i  hosting[my-money-2c1e3]: finalizing version... 
+[debug] [2026-05-27T05:34:14.568Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:14.569Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:14.569Z] >>> [apiv2][query] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/my-money-2c1e3/versions/99613c96f5c0e16d updateMask=status%2Cconfig
+[debug] [2026-05-27T05:34:14.569Z] >>> [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/my-money-2c1e3/versions/99613c96f5c0e16d {"status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]}}
+[debug] [2026-05-27T05:34:15.448Z] <<< [apiv2][status] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/my-money-2c1e3/versions/99613c96f5c0e16d 200
+[debug] [2026-05-27T05:34:15.448Z] <<< [apiv2][body] PATCH https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/my-money-2c1e3/versions/99613c96f5c0e16d {"name":"projects/157502519220/sites/my-money-2c1e3/versions/99613c96f5c0e16d","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-05-27T05:34:07.649682Z","createUser":{"email":"Vneesh@gmail.com"},"finalizeTime":"2026-05-27T05:34:15.226612Z","finalizeUser":{"email":"Vneesh@gmail.com"}}
+[debug] [2026-05-27T05:34:15.448Z] [hosting] finalized version for my-money-2c1e3:[object Object]
+[info] ✔  hosting[my-money-2c1e3]: version finalized 
+[info] i  hosting[my-money-2c1e3]: releasing new version... 
+[debug] [2026-05-27T05:34:15.449Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:15.449Z] Checked if tokens are valid: true, expires at: 1779863638989
+[debug] [2026-05-27T05:34:15.449Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/my-money-2c1e3/channels/live/releases versionName=projects%2F157502519220%2Fsites%2Fmy-money-2c1e3%2Fversions%2F99613c96f5c0e16d
+[debug] [2026-05-27T05:34:15.449Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/my-money-2c1e3/channels/live/releases {}
+[debug] [2026-05-27T05:34:16.721Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/my-money-2c1e3/channels/live/releases 200
+[debug] [2026-05-27T05:34:16.721Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/my-money-2c1e3/channels/live/releases {"name":"projects/157502519220/sites/my-money-2c1e3/channels/live/releases/1779860055624000","version":{"name":"projects/157502519220/sites/my-money-2c1e3/versions/99613c96f5c0e16d","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-05-27T05:34:07.649682Z","createUser":{"email":"Vneesh@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocLbhJq8ofNZTyhPR9rWSJb7j0chueftFiLlwEcWmezH7F02RQmy"},"finalizeTime":"2026-05-27T05:34:15.226612Z","finalizeUser":{"email":"Vneesh@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocLbhJq8ofNZTyhPR9rWSJb7j0chueftFiLlwEcWmezH7F02RQmy"}},"type":"DEPLOY","releaseTime":"2026-05-27T05:34:15.624Z","releaseUser":{"email":"Vneesh@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocLbhJq8ofNZTyhPR9rWSJb7j0chueftFiLlwEcWmezH7F02RQmy"}}
+[debug] [2026-05-27T05:34:16.721Z] [hosting] release: {"name":"projects/157502519220/sites/my-money-2c1e3/channels/live/releases/1779860055624000","version":{"name":"projects/157502519220/sites/my-money-2c1e3/versions/99613c96f5c0e16d","status":"FINALIZED","config":{"rewrites":[{"glob":"**","path":"/index.html"}]},"labels":{"deployment-tool":"cli-firebase"},"createTime":"2026-05-27T05:34:07.649682Z","createUser":{"email":"Vneesh@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocLbhJq8ofNZTyhPR9rWSJb7j0chueftFiLlwEcWmezH7F02RQmy"},"finalizeTime":"2026-05-27T05:34:15.226612Z","finalizeUser":{"email":"Vneesh@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocLbhJq8ofNZTyhPR9rWSJb7j0chueftFiLlwEcWmezH7F02RQmy"}},"type":"DEPLOY","releaseTime":"2026-05-27T05:34:15.624Z","releaseUser":{"email":"Vneesh@gmail.com","imageUrl":"https://lh3.googleusercontent.com/a/ACg8ocLbhJq8ofNZTyhPR9rWSJb7j0chueftFiLlwEcWmezH7F02RQmy"}}
+[info] ✔  hosting[my-money-2c1e3]: release complete 
+[info] 
+[info] ✔  Deploy complete! 
+[info] 
+[info] Project Console: https://console.firebase.google.com/project/my-money-2c1e3/overview
+[info] Hosting URL: https://my-money-2c1e3.web.app

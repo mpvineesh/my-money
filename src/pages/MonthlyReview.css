@@ -1,0 +1,190 @@
+.monthly-review-page {
+  padding: 16px;
+  padding-bottom: 90px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.monthly-review-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.monthly-review-label {
+  margin: 0 0 4px;
+  color: #0f766e;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.monthly-review-header h1 {
+  margin: 0 0 4px;
+  color: #0f172a;
+  font-size: 1.7rem;
+}
+
+.monthly-review-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.94rem;
+}
+
+.monthly-review-picker {
+  min-width: 190px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #334155;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.monthly-review-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.monthly-review-stat,
+.monthly-review-panel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+}
+
+.monthly-review-stat {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.monthly-review-stat.highlight {
+  background: linear-gradient(135deg, #ecfeff, #f0fdf4);
+}
+
+.monthly-review-stat.danger {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.monthly-review-stat svg {
+  color: #0f766e;
+}
+
+.monthly-review-stat.danger svg {
+  color: #dc2626;
+}
+
+.monthly-review-stat span {
+  color: #64748b;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.monthly-review-stat strong {
+  color: #0f172a;
+  font-size: 1.35rem;
+}
+
+.monthly-review-stat p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.monthly-review-panels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.monthly-review-panel {
+  padding: 16px;
+}
+
+.monthly-review-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.monthly-review-panel-head h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.monthly-review-panel-head a {
+  color: #4f46e5;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.monthly-review-row,
+.monthly-review-due {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid #f1f5f9;
+}
+
+.monthly-review-row span,
+.monthly-review-due span {
+  color: #475569;
+  font-size: 0.86rem;
+}
+
+.monthly-review-row strong {
+  color: #0f172a;
+  font-size: 0.86rem;
+  text-align: right;
+}
+
+.monthly-review-row.danger strong {
+  color: #dc2626;
+}
+
+.monthly-review-due {
+  justify-content: flex-start;
+}
+
+.monthly-review-due svg {
+  color: #0f766e;
+  flex-shrink: 0;
+}
+
+.monthly-review-empty {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 820px) {
+  .monthly-review-header,
+  .monthly-review-panel-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .monthly-review-grid,
+  .monthly-review-panels {
+    grid-template-columns: 1fr;
+  }
+}

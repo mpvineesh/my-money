@@ -40,7 +40,7 @@ export default function Goals() {
 
   const totalTarget = goals.reduce((sum, g) => sum + (Number(g.targetAmount) || 0), 0);
   const totalSaved = goals.reduce((sum, g) => sum + (Number(g.currentAmount) || 0), 0);
-  const overallProgress = totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0;
+  const overallProgress = totalTarget > 0 ? Math.min(100, Math.round((totalSaved / totalTarget) * 100)) : 0;
 
   return (
     <div className="goals-page">
@@ -96,7 +96,7 @@ export default function Goals() {
             </div>
             <div className="goals-info-row">
               <span className="goals-info-label">Remaining</span>
-              <span className="goals-info-value">{formatCurrency(totalTarget - totalSaved)}</span>
+              <span className="goals-info-value">{formatCurrency(Math.max(0, totalTarget - totalSaved))}</span>
             </div>
           </div>
         </div>

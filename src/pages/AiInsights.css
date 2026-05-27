@@ -95,14 +95,13 @@
   color: #0f172a;
   padding: 0 14px;
   min-height: 48px;
+  min-width: 0;
+  max-width: 100%;
 }
 
-.ai-period-picker input {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  outline: none;
+.ai-period-picker:focus-within {
+  border-color: rgba(15, 118, 110, 0.42);
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.08);
 }
 
 .ai-primary-btn,

@@ -41,6 +41,7 @@ import {
   getDemoCash,
   getDemoExpenses,
   DEFAULT_FAMILY_MEMBER,
+  FAMILY_GOAL_SCOPE,
   DEFAULT_EXPENSE_PAYER,
   getExpenseCategoryInfo,
   getExpenseCategoryOptions,
@@ -432,6 +433,46 @@ function normalizeInvestment(investment) {
   };
 }
 
+function normalizeGoal(goal) {
+  const rawMemberId = String(goal?.memberId || goal?.scopeMemberId || '').trim();
+  const memberName = String(goal?.memberName || goal?.scopeMemberName || '').trim();
+  const memberId = rawMemberId || (memberName ? `member:${memberName.toLowerCase().replace(/\s+/g, '-')}` : FAMILY_GOAL_SCOPE.id);
+  const isFamilyGoal = memberId === FAMILY_GOAL_SCOPE.id;
+  const allocations = Array.isArray(goal?.allocations)
+    ? goal.allocations
+        .map((allocation) => ({
+          assetId: String(allocation?.assetId || '').trim(),
+          assetName: String(allocation?.assetName || '').trim(),
+          assetType: allocation?.assetType === 'cash' ? 'cash' : 'investment',
+          amount: Number(allocation?.amount) || 0,
+        }))
+        .filter((allocation) => allocation.assetId && allocation.amount > 0)
+    : [];
+
+  return {
+    ...(goal || {}),
+    targetAmount: Number(goal?.targetAmount) || 0,
+    currentAmount: Number(goal?.currentAmount) || 0,
+    memberId: isFamilyGoal ? FAMILY_GOAL_SCOPE.id : memberId,
+    memberName: isFamilyGoal ? FAMILY_GOAL_SCOPE.name : (memberName || DEFAULT_FAMILY_MEMBER.name),
+    allocations,
+  };
+}
+
+function calculateGoalCurrentAmount(goal, investments = [], cash = 0) {
+  if (Array.isArray(goal?.allocations) && goal.allocations.length) {
+    return goal.allocations.reduce((sum, allocation) => sum + (Number(allocation.amount) || 0), 0);
+  }
+
+  const memberId = goal?.memberId || FAMILY_GOAL_SCOPE.id;
+  const scopedInvestments = memberId === FAMILY_GOAL_SCOPE.id
+    ? investments
+    : investments.filter((investment) => (investment.memberId || DEFAULT_FAMILY_MEMBER.id) === memberId);
+  const investmentValue = scopedInvestments.reduce((sum, investment) => sum + (Number(investment.currentValue) || 0), 0);
+
+  return memberId === FAMILY_GOAL_SCOPE.id ? investmentValue + (Number(cash) || 0) : investmentValue;
+}
+
 function buildInvestmentForSave(investment, previousInvestment = null) {
   const mergedInvestment = normalizeInvestment({
     ...(previousInvestment || {}),
@@ -649,7 +690,7 @@ export function AppProvider({ children }) {
 
   const [investments, setInvestments] = useState(() => loadPersistedInvestments().map((investment) => normalizeInvestment(investment)));
   const [familyMembers, setFamilyMembers] = useState(loadPersistedFamilyMembers);
-  const [goals, setGoals] = useState(loadPersistedGoals);
+  const [storedGoals, setStoredGoals] = useState(() => loadPersistedGoals().map((goal) => normalizeGoal(goal)));
   const [loans, setLoans] = useState(loadPersistedLoans);
   const [cash, setCashState] = useState(loadCash);
   const [expenses, setExpenses] = useState(() =>
@@ -690,6 +731,14 @@ export function AppProvider({ children }) {
         : investments.filter((investment) => (investment.memberId || DEFAULT_FAMILY_MEMBER.id) === investmentVisibilityMemberId),
     [investmentVisibilityMemberId, investments],
   );
+  const goals = useMemo(
+    () =>
+      storedGoals.map((goal) => ({
+        ...normalizeGoal(goal),
+        currentAmount: calculateGoalCurrentAmount(goal, investments, cash),
+      })),
+    [cash, investments, storedGoals],
+  );
 
   useEffect(() => {
     // If user is signed in, listen to their Firestore collections and sync locally
@@ -714,8 +763,8 @@ export function AppProvider({ children }) {
     });
 
     const unsubGoals = onSnapshot(goalsCol, (snap) => {
-      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setGoals(items);
+      const items = snap.docs.map((d) => normalizeGoal({ id: d.id, ...d.data() }));
+      setStoredGoals(items);
       saveGoals(items);
     });
 
@@ -1380,6 +1429,36 @@ export function AppProvider({ children }) {
     return updatedEntry;
   }, [expenseCategories, expenseSubcategories, recurringEntries, user]);
 
+  const recordRecurringEntryNow = useCallback((id, recordedDate = getTodayDateValue()) => {
+    const entry = recurringEntries.find((item) => item.id === id);
+    if (!entry) return null;
+
+    const nextRecordedDate = normalizeHistoryDate(recordedDate, getTodayDateValue());
+    if (entry.kind === 'investment') {
+      addInvestment({
+        name: entry.title,
+        type: entry.investmentType,
+        investedAmount: entry.amount,
+        currentValue: entry.amount,
+        snapshotDate: nextRecordedDate,
+        notes: entry.notes,
+      });
+    } else {
+      addExpense({
+        name: entry.title,
+        amount: entry.amount,
+        dateTime: `${nextRecordedDate}T09:00`,
+        category: entry.categoryValue,
+        categoryLabel: entry.categoryLabel,
+        subcategory: entry.subcategoryValue,
+        subcategoryLabel: entry.subcategoryLabel,
+        notes: entry.notes,
+      });
+    }
+
+    return markRecurringEntryRecorded(id, nextRecordedDate);
+  }, [addExpense, addInvestment, markRecurringEntryRecorded, recurringEntries]);
+
   const addReminder = useCallback((reminder) => {
     const newReminder = normalizeReminder({ ...reminder, id: uuidv4() });
     if (!newReminder.title || newReminder.amount <= 0) return null;
@@ -1559,13 +1638,13 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const addGoal = useCallback((goal) => {
-    const newItem = { ...goal, id: uuidv4() };
+    const newItem = normalizeGoal({ ...goal, id: uuidv4() });
     if (user) {
       const ref = doc(db, 'users', user.uid, 'goals', newItem.id);
       setDoc(ref, newItem);
       return;
     }
-    setGoals((prev) => {
+    setStoredGoals((prev) => {
       const updated = [...prev, newItem];
       saveGoals(updated);
       return updated;
@@ -1573,13 +1652,14 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const updateGoal = useCallback((id, goal) => {
+    const normalizedGoal = normalizeGoal({ ...goal, id });
     if (user) {
       const ref = doc(db, 'users', user.uid, 'goals', id);
-      updateDoc(ref, { ...goal });
+      updateDoc(ref, { ...normalizedGoal });
       return;
     }
-    setGoals((prev) => {
-      const updated = prev.map((g) => (g.id === id ? { ...g, ...goal } : g));
+    setStoredGoals((prev) => {
+      const updated = prev.map((g) => (g.id === id ? normalizeGoal({ ...g, ...normalizedGoal }) : g));
       saveGoals(updated);
       return updated;
     });
@@ -1591,7 +1671,7 @@ export function AppProvider({ children }) {
       deleteDoc(ref);
       return;
     }
-    setGoals((prev) => {
+    setStoredGoals((prev) => {
       const updated = prev.filter((g) => g.id !== id);
       saveGoals(updated);
       return updated;
@@ -1600,13 +1680,13 @@ export function AppProvider({ children }) {
 
   const resetToDemo = useCallback(() => {
     const demoInv = getDemoInvestments().map((investment) => normalizeInvestment(investment));
-    const demoGoals = getDemoGoals();
+    const demoGoals = getDemoGoals().map((goal) => normalizeGoal(goal));
     const demoLoans = getDemoLoans();
     const demoCash = getDemoCash();
     const demoExpenses = getDemoExpenses();
     setInvestments(demoInv);
     setFamilyMembers([]);
-    setGoals(demoGoals);
+    setStoredGoals(demoGoals);
     setLoans(demoLoans);
     setCashState(demoCash);
     setExpenses(demoExpenses.map(normalizeExpense));
@@ -1687,6 +1767,7 @@ export function AppProvider({ children }) {
     updateRecurringEntry,
     deleteRecurringEntry,
     markRecurringEntryRecorded,
+    recordRecurringEntryNow,
     addReminder,
     updateReminder,
     deleteReminder,

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Pencil, Trash2, X } from 'lucide-react';
+import NativePickerField from '../components/NativePickerField';
 import { useApp } from '../context/useApp';
 import {
   formatCurrency,
@@ -366,14 +367,18 @@ export default function Expenses() {
             <h2 className="expense-panel-title">Monthly budget planner</h2>
             <p className="expense-budget-subtitle">Set category or subcategory caps and compare them against actual spend for {formatMonthLabel(budgetMonth)}.</p>
           </div>
-          <label className="expense-budget-month">
+          <div className="expense-budget-month">
             <span>Month</span>
-            <input
+            <NativePickerField
               type="month"
+              className="expense-budget-picker"
               value={budgetMonth}
               onChange={(event) => setBudgetMonth(event.target.value)}
+              displayValue={formatMonthLabel(budgetMonth)}
+              placeholder="Select month"
+              ariaLabel="Month"
             />
-          </label>
+          </div>
         </div>
 
         <div className="expense-budget-top">

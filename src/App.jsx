@@ -3,6 +3,7 @@ import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
+import ScrollToTop from './components/ScrollToTop';
 import Dashboard from './pages/Dashboard';
 import Investments from './pages/Investments';
 import InvestmentForm from './pages/InvestmentForm';
@@ -17,6 +18,7 @@ import Expenses from './pages/Expenses';
 import ExpenseList from './pages/ExpenseList';
 import ExpenseForm from './pages/ExpenseForm';
 import AiInsights from './pages/AiInsights';
+import MonthlyReview from './pages/MonthlyReview';
 import Recurring from './pages/Recurring';
 import Reminders from './pages/Reminders';
 import Settings from './pages/Settings';
@@ -28,6 +30,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppProvider>
+          <ScrollToTop />
           <div className="app-container">
             <Header />
             <main className="app-main">
@@ -51,6 +54,7 @@ export default function App() {
                 <Route path="/recurring" element={<RequireAuth><Recurring /></RequireAuth>} />
                 <Route path="/reminders" element={<RequireAuth><Reminders /></RequireAuth>} />
                 <Route path="/ai-insights" element={<RequireAuth><AiInsights /></RequireAuth>} />
+                <Route path="/monthly-review" element={<RequireAuth><MonthlyReview /></RequireAuth>} />
                 <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
                 <Route path="/family-members" element={<RequireAuth><FamilyMembers /></RequireAuth>} />
               </Routes>

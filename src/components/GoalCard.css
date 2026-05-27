@@ -33,6 +33,14 @@
   line-height: 1.3;
 }
 
+.goal-member-name {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 .goal-priority-badge {
   padding: 3px 10px;
   border-radius: 20px;

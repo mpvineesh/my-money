@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Save, Trash2, X } from 'lucide-react';
+import NativePickerField from '../components/NativePickerField';
 import { useApp } from '../context/useApp';
 import {
   DEFAULT_EXPENSE_PAYER,
   EXPENSE_PAYMENT_METHODS,
+  formatDateTime,
   getExpenseCategoryInfo,
   getExpenseCategoryOptions,
   getExpenseSubcategories,
@@ -58,6 +60,11 @@ function toDateTimeInputValue(value) {
   if (!value) return getCurrentDateTimeValue();
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${value}T09:00`;
   return String(value).slice(0, 16);
+}
+
+function formatExpenseDateTimeLabel(value) {
+  const label = formatDateTime(value);
+  return label === '-' ? 'Select date & time' : label.replace(',', ' at');
 }
 
 function getInitialForm(expenses, id, expenseCategories = [], expenseSubcategories = [], prefill = null) {
@@ -474,11 +481,14 @@ export default function ExpenseForm() {
 
           <div className="form-group">
             <label className="form-label">Date & Time *</label>
-            <input
+            <NativePickerField
               type="datetime-local"
-              className="form-input expense-form-datetime"
+              className="form-input form-picker-field expense-form-datetime"
               value={form.dateTime}
               onChange={(event) => handleChange('dateTime', event.target.value)}
+              displayValue={formatExpenseDateTimeLabel(form.dateTime)}
+              placeholder="Select date & time"
+              ariaLabel="Date and time"
               required
             />
           </div>

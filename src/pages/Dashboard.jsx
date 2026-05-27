@@ -5,7 +5,7 @@ import { getTypeInfo, formatCurrency, calculateReturns } from '../utils/constant
 import InvestmentCard from '../components/InvestmentCard';
 import GoalCard from '../components/GoalCard';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { TrendingUp, TrendingDown, Wallet, Target, ChevronRight, Landmark, CreditCard, CalendarRange } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Target, ChevronRight, Landmark, CreditCard, CalendarRange, BellRing, Repeat, AlertTriangle } from 'lucide-react';
 import './Dashboard.css';
 
 function getPeriodKey(dateValue, range) {
@@ -27,6 +27,27 @@ function getCurrentPeriodKey(range) {
   return range === 'year'
     ? String(now.getFullYear())
     : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function getTodayDateValue() {
+  const now = new Date();
+  const timezoneAdjusted = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return timezoneAdjusted.toISOString().slice(0, 10);
+}
+
+function getCurrentMonthValue() {
+  return getTodayDateValue().slice(0, 7);
+}
+
+function getDaysUntil(dateValue) {
+  const today = new Date(`${getTodayDateValue()}T00:00:00`);
+  const dueDate = new Date(`${dateValue}T00:00:00`);
+  return Math.round((dueDate.getTime() - today.getTime()) / 86400000);
+}
+
+function getExpensePeriodKey(expense) {
+  const value = String(expense?.dateTime || expense?.date || '').trim();
+  return /^\d{4}-\d{2}/.test(value) ? value.slice(0, 7) : '';
 }
 
 function buildNetWorthSeries(investments, range, cash, loanPrincipal, goalSaved) {
@@ -114,7 +135,19 @@ function NetWorthTooltip({ active, payload, label }) {
 }
 
 export default function Dashboard() {
-  const { investments, visibleInvestments, investmentVisibilityMember, goals, loans, cash, appSettings } = useApp();
+  const {
+    investments,
+    visibleInvestments,
+    investmentVisibilityMember,
+    goals,
+    loans,
+    cash,
+    expenses,
+    expenseBudgets,
+    recurringEntries,
+    reminders,
+    appSettings,
+  } = useApp();
   const navigate = useNavigate();
   const [netWorthRange, setNetWorthRange] = useState('month');
   const dashboardSections = appSettings?.dashboardSections || {};
@@ -174,6 +207,76 @@ export default function Dashboard() {
   const topGoals = useMemo(() => {
     return [...goals].slice(0, 2);
   }, [goals]);
+  const attentionItems = useMemo(() => {
+    const items = [];
+    const dueReminders = reminders.filter((reminder) => reminder.status !== 'completed' && getDaysUntil(reminder.nextDueDate) <= 7);
+    const dueRecurring = recurringEntries.filter((entry) => getDaysUntil(entry.nextDueDate) <= 7);
+    const staleInvestments = visibleInvestments.filter((investment) => getDaysUntil(investment.lastUpdated) < -30);
+    const currentMonth = getCurrentMonthValue();
+    const currentMonthExpenses = expenses.filter((expense) => getExpensePeriodKey(expense) === currentMonth);
+    const overBudgetItems = expenseBudgets
+      .filter((budget) => budget.periodKey === currentMonth)
+      .map((budget) => {
+        const actual = currentMonthExpenses.reduce((sum, expense) => {
+          if (expense.category !== budget.categoryValue) return sum;
+          if (!budget.subcategoryValue) return sum + (Number(expense.amount) || 0);
+          return expense.subcategory === budget.subcategoryValue ? sum + (Number(expense.amount) || 0) : sum;
+        }, 0);
+
+        return { ...budget, actual, overBy: actual - budget.amount };
+      })
+      .filter((budget) => budget.overBy > 0);
+
+    if (dueReminders.length) {
+      items.push({
+        key: 'reminders',
+        icon: BellRing,
+        tone: dueReminders.some((reminder) => getDaysUntil(reminder.nextDueDate) < 0) ? 'danger' : 'warning',
+        title: `${dueReminders.length} reminder${dueReminders.length === 1 ? '' : 's'} due`,
+        copy: dueReminders[0].title,
+        action: 'Open',
+        to: '/reminders',
+      });
+    }
+
+    if (dueRecurring.length) {
+      items.push({
+        key: 'recurring',
+        icon: Repeat,
+        tone: dueRecurring.some((entry) => getDaysUntil(entry.nextDueDate) < 0) ? 'danger' : 'warning',
+        title: `${dueRecurring.length} recurring entr${dueRecurring.length === 1 ? 'y' : 'ies'} due`,
+        copy: dueRecurring[0].title,
+        action: 'Record',
+        to: '/recurring',
+      });
+    }
+
+    if (overBudgetItems.length) {
+      items.push({
+        key: 'budgets',
+        icon: AlertTriangle,
+        tone: 'danger',
+        title: `${overBudgetItems.length} budget overrun${overBudgetItems.length === 1 ? '' : 's'}`,
+        copy: `Top over by ${formatCurrency(Math.max(...overBudgetItems.map((budget) => budget.overBy)))}`,
+        action: 'Review',
+        to: '/expenses',
+      });
+    }
+
+    if (staleInvestments.length) {
+      items.push({
+        key: 'stale',
+        icon: CalendarRange,
+        tone: 'neutral',
+        title: `${staleInvestments.length} stale investment${staleInvestments.length === 1 ? '' : 's'}`,
+        copy: 'Update values for better trends',
+        action: 'Update',
+        to: '/investments',
+      });
+    }
+
+    return items;
+  }, [expenseBudgets, expenses, recurringEntries, reminders, visibleInvestments]);
 
   const netWorthSeries = useMemo(
     () => buildNetWorthSeries(visibleInvestments, netWorthRange, Number(cash) || 0, stats.totalLoanPrincipal, stats.totalGoalCurrent),
@@ -230,6 +333,40 @@ export default function Dashboard() {
           <p className="dash-subtitle">Investment view: {portfolioScopeLabel}</p>
         </div>
       </header>
+
+      {attentionItems.length ? (
+        <section className="dash-attention">
+          <div className="dash-attention-head">
+            <div>
+              <p className="dash-attention-label">Needs attention</p>
+              <h2>Today&apos;s money queue</h2>
+            </div>
+            <button type="button" className="dash-see-all" onClick={() => navigate('/monthly-review')}>
+              Monthly review <ChevronRight size={14} />
+            </button>
+          </div>
+          <div className="dash-attention-grid">
+            {attentionItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`dash-attention-card ${item.tone}`}
+                  onClick={() => navigate(item.to)}
+                >
+                  <span className="dash-attention-icon"><Icon size={18} /></span>
+                  <span className="dash-attention-copy">
+                    <strong>{item.title}</strong>
+                    <span>{item.copy}</span>
+                  </span>
+                  <span className="dash-attention-action">{item.action}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       {dashboardSections.netWorth ? (
         <>
