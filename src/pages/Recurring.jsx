@@ -31,6 +31,7 @@ function getEmptyForm() {
     categoryValue: 'other',
     subcategoryValue: '',
     investmentType: INVESTMENT_TYPES[1]?.value || INVESTMENT_TYPES[0].value,
+    autoCreate: false,
     notes: '',
   };
 }
@@ -126,6 +127,7 @@ export default function Recurring() {
       categoryValue: form.kind === 'expense' ? form.categoryValue : '',
       subcategoryValue: form.kind === 'expense' ? form.subcategoryValue : '',
       investmentType: form.kind === 'investment' ? form.investmentType : '',
+      autoCreate: form.autoCreate,
       notes: form.notes.trim(),
     };
 
@@ -148,6 +150,7 @@ export default function Recurring() {
       categoryValue: entry.categoryValue || 'other',
       subcategoryValue: entry.subcategoryValue || '',
       investmentType: entry.investmentType || INVESTMENT_TYPES[0].value,
+      autoCreate: Boolean(entry.autoCreate),
       notes: entry.notes || '',
     });
   }
@@ -209,7 +212,6 @@ export default function Recurring() {
         <div>
           <p className="recurring-label">Planner</p>
           <h1 className="recurring-title">Recurring Entries</h1>
-          <p className="recurring-subtitle">Manage repeatable expenses and investments, then record them with one tap.</p>
         </div>
       </header>
 
@@ -355,6 +357,18 @@ export default function Recurring() {
                 </select>
               </label>
             )}
+
+            <label className="recurring-field recurring-field-wide">
+              <span>Automation</span>
+              <label className="recurring-check-row">
+                <input
+                  type="checkbox"
+                  checked={form.autoCreate}
+                  onChange={(event) => handleChange('autoCreate', event.target.checked)}
+                />
+                <span>Auto-create records when due</span>
+              </label>
+            </label>
 
             <label className="recurring-field recurring-field-wide">
               <span>Notes</span>

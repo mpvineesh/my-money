@@ -4,7 +4,7 @@ import './InvestmentCard.css';
 
 export default function LoanCard({ loan }) {
   const navigate = useNavigate();
-  const { id, name, principal, annualRate, termMonths, monthlyEMI, startDate, notes } = loan;
+  const { id, name, principal, outstandingBalance, annualRate, termMonths, monthlyEMI, startDate, notes } = loan;
 
   return (
     <div className="inv-card" onClick={() => navigate(`/loans/edit/${id}`)}>
@@ -19,12 +19,16 @@ export default function LoanCard({ loan }) {
             <div className="inv-value">{formatCurrency(principal)}</div>
           </div>
           <div>
-            <div className="inv-label">EMI</div>
-            <div className="inv-value">{formatCurrency(monthlyEMI || 0)}</div>
+            <div className="inv-label">Outstanding</div>
+            <div className="inv-value">{formatCurrency(outstandingBalance ?? principal)}</div>
           </div>
         </div>
 
         <div className="inv-row">
+          <div>
+            <div className="inv-label">EMI</div>
+            <div className="inv-value">{formatCurrency(monthlyEMI || 0)}</div>
+          </div>
           <div>
             <div className="inv-label">Rate</div>
             <div className="inv-value">{annualRate ? `${annualRate}%` : '-'}</div>

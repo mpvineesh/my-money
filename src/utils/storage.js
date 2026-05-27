@@ -4,6 +4,8 @@ const STORAGE_KEYS = {
   GOALS: 'myMoney_goals',
   LOANS: 'myMoney_loans',
   CASH: 'myMoney_cash',
+  CASH_HISTORY: 'myMoney_cash_history',
+  NET_WORTH_SNAPSHOTS: 'myMoney_net_worth_snapshots',
   EXPENSES: 'myMoney_expenses',
   EXPENSE_PAYERS: 'myMoney_expense_payers',
   EXPENSE_PROJECTS: 'myMoney_expense_projects',
@@ -85,6 +87,40 @@ export function loadCash() {
 export function saveCash(amount) {
   try {
     localStorage.setItem(STORAGE_KEYS.CASH, JSON.stringify(Number(amount) || 0));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadCashHistory() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.CASH_HISTORY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCashHistory(history) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.CASH_HISTORY, JSON.stringify(history));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadNetWorthSnapshots() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.NET_WORTH_SNAPSHOTS);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveNetWorthSnapshots(snapshots) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.NET_WORTH_SNAPSHOTS, JSON.stringify(snapshots));
   } catch {
     // ignore
   }

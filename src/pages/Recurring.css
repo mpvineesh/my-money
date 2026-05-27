@@ -179,6 +179,20 @@
   grid-column: 1 / -1;
 }
 
+.recurring-check-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.recurring-check-row input {
+  width: 16px;
+  height: 16px;
+}
+
 .recurring-field input,
 .recurring-field select,
 .recurring-field textarea {

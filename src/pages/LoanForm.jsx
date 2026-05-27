@@ -11,6 +11,8 @@ function getInitialForm(loans, id) {
       return {
         name: l.name || '',
         principal: l.principal || '',
+        outstandingBalance: l.outstandingBalance ?? l.principal ?? '',
+        balanceDate: l.balanceDate || new Date().toISOString().slice(0, 10),
         annualRate: l.annualRate || '',
         termMonths: l.termMonths || '',
         startDate: l.startDate || '',
@@ -22,6 +24,8 @@ function getInitialForm(loans, id) {
   return {
     name: '',
     principal: '',
+    outstandingBalance: '',
+    balanceDate: new Date().toISOString().slice(0, 10),
     annualRate: '',
     termMonths: '',
     startDate: '',
@@ -55,6 +59,8 @@ export default function LoanForm() {
     const data = {
       ...form,
       principal: Number(form.principal) || 0,
+      outstandingBalance: form.outstandingBalance === '' ? Number(form.principal) || 0 : Number(form.outstandingBalance) || 0,
+      balanceDate: form.balanceDate,
       annualRate: Number(form.annualRate) || 0,
       termMonths: Number(form.termMonths) || 0,
       monthlyEMI: form.monthlyEMI ? Number(form.monthlyEMI) : null,
@@ -125,6 +131,33 @@ export default function LoanForm() {
               placeholder="e.g., 8.5"
               value={form.annualRate}
               onChange={(e) => handleChange('annualRate', e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">Outstanding Balance</label>
+            <div className="form-input-prefix">
+              <span className="form-prefix">₹</span>
+              <input
+                type="number"
+                className="form-input"
+                placeholder="0"
+                value={form.outstandingBalance}
+                onChange={(e) => handleChange('outstandingBalance', e.target.value)}
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Balance As Of</label>
+            <input
+              type="date"
+              className="form-input"
+              value={form.balanceDate}
+              onChange={(e) => handleChange('balanceDate', e.target.value)}
             />
           </div>
         </div>

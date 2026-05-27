@@ -42,7 +42,6 @@ export default function ExpenseList() {
         <div>
           <p className="expense-list-label">Expense Browser</p>
           <h1 className="expense-list-title">All Expenses</h1>
-          <p className="expense-list-subtitle">Browse every recorded expense without stretching the analytics page.</p>
         </div>
 
         <div className="expense-list-actions">

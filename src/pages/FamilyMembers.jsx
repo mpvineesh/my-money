@@ -100,7 +100,6 @@ export default function FamilyMembers() {
         <div className="family-header-copy">
           <p className="family-label">Household</p>
           <h1 className="family-title">Family Members</h1>
-          <p className="family-subtitle">Add members once, then assign investments to the right person across the app.</p>
         </div>
       </header>
 

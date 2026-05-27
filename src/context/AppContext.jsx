@@ -11,6 +11,10 @@ import {
   saveLoans,
   loadCash,
   saveCash,
+  loadCashHistory,
+  saveCashHistory,
+  loadNetWorthSnapshots,
+  saveNetWorthSnapshots,
   loadExpenses,
   saveExpenses,
   loadExpensePayers,
@@ -77,6 +81,46 @@ function getTodayDateValue() {
 
 function normalizeHistoryDate(value, fallbackDate = getTodayDateValue()) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(value || '').trim()) ? String(value).trim() : fallbackDate;
+}
+
+function normalizeAmountHistory(history, currentAmount = 0, fallbackDate = getTodayDateValue()) {
+  const entries = Array.isArray(history) ? history : [];
+  const byDate = new Map();
+
+  entries.forEach((entry) => {
+    const date = normalizeHistoryDate(entry?.date, fallbackDate);
+    byDate.set(date, {
+      date,
+      amount: Number(entry?.amount ?? entry?.value) || 0,
+    });
+  });
+
+  if (!byDate.size || currentAmount > 0) {
+    byDate.set(fallbackDate, {
+      date: fallbackDate,
+      amount: Number(currentAmount) || 0,
+    });
+  }
+
+  return [...byDate.values()].sort((left, right) => left.date.localeCompare(right.date));
+}
+
+function appendAmountSnapshot(history, amount, date = getTodayDateValue()) {
+  const snapshotDate = normalizeHistoryDate(date, getTodayDateValue());
+  const byDate = new Map((Array.isArray(history) ? history : []).map((entry) => [
+    normalizeHistoryDate(entry?.date, snapshotDate),
+    {
+      date: normalizeHistoryDate(entry?.date, snapshotDate),
+      amount: Number(entry?.amount ?? entry?.value) || 0,
+    },
+  ]));
+
+  byDate.set(snapshotDate, {
+    date: snapshotDate,
+    amount: Number(amount) || 0,
+  });
+
+  return [...byDate.values()].sort((left, right) => left.date.localeCompare(right.date));
 }
 
 function normalizeExpenseCategories(categories) {
@@ -221,6 +265,7 @@ function normalizeRecurringEntry(entry, customCategories = [], customSubcategori
     frequency: ['monthly', 'quarterly', 'yearly'].includes(entry?.frequency) ? entry.frequency : 'monthly',
     nextDueDate: normalizeHistoryDate(entry?.nextDueDate || entry?.dueDate, getTodayDateValue()),
     lastRecordedDate: normalizeHistoryDate(entry?.lastRecordedDate || '', ''),
+    autoCreate: Boolean(entry?.autoCreate),
     categoryValue: category?.value || '',
     categoryLabel: category?.label || '',
     subcategoryValue: subcategory?.value || '',
@@ -448,14 +493,16 @@ function normalizeGoal(goal) {
         }))
         .filter((allocation) => allocation.assetId && allocation.amount > 0)
     : [];
+  const currentAmount = Number(goal?.currentAmount) || allocations.reduce((sum, allocation) => sum + allocation.amount, 0);
 
   return {
     ...(goal || {}),
     targetAmount: Number(goal?.targetAmount) || 0,
-    currentAmount: Number(goal?.currentAmount) || 0,
+    currentAmount,
     memberId: isFamilyGoal ? FAMILY_GOAL_SCOPE.id : memberId,
     memberName: isFamilyGoal ? FAMILY_GOAL_SCOPE.name : (memberName || DEFAULT_FAMILY_MEMBER.name),
     allocations,
+    history: normalizeAmountHistory(goal?.history, currentAmount, normalizeHistoryDate(goal?.snapshotDate || goal?.updatedAt, getTodayDateValue())),
   };
 }
 
@@ -508,6 +555,39 @@ function buildInvestmentForSave(investment, previousInvestment = null) {
   return normalizeInvestment(rest);
 }
 
+function normalizeLoan(loan) {
+  const principal = Number(loan?.principal || loan?.loanAmount || loan?.principalAmount) || 0;
+  const outstandingBalance = Number(
+    loan?.outstandingBalance ?? loan?.outstandingPrincipal ?? loan?.balance ?? principal,
+  ) || 0;
+  const balanceDate = normalizeHistoryDate(loan?.balanceDate || loan?.snapshotDate || loan?.startDate, getTodayDateValue());
+
+  return {
+    ...(loan || {}),
+    principal,
+    outstandingBalance,
+    balanceDate,
+    annualRate: Number(loan?.annualRate) || 0,
+    termMonths: Number(loan?.termMonths) || 0,
+    monthlyEMI: loan?.monthlyEMI || loan?.monthlyEmi ? Number(loan.monthlyEMI || loan.monthlyEmi) || 0 : null,
+    history: normalizeAmountHistory(loan?.history, outstandingBalance || principal, balanceDate),
+  };
+}
+
+function buildLoanForSave(loan, previousLoan = null) {
+  const mergedLoan = normalizeLoan({
+    ...(previousLoan || {}),
+    ...(loan || {}),
+    history: previousLoan?.history || loan?.history,
+  });
+  const balanceDate = normalizeHistoryDate(loan?.balanceDate || mergedLoan.balanceDate, getTodayDateValue());
+
+  return {
+    ...mergedLoan,
+    history: appendAmountSnapshot(mergedLoan.history, mergedLoan.outstandingBalance, balanceDate),
+  };
+}
+
 function normalizeExpensePayers(payers) {
   return payers
     .filter((payer) => payer?.name && payer.id !== DEFAULT_EXPENSE_PAYER.id)
@@ -533,6 +613,28 @@ function normalizeFamilyMembers(familyMembers) {
       return true;
     })
     .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function normalizeCashHistory(history, currentCash = 0) {
+  return normalizeAmountHistory(history, Number(currentCash) || 0, getTodayDateValue());
+}
+
+function normalizeNetWorthSnapshots(snapshots) {
+  if (!Array.isArray(snapshots)) return [];
+  return snapshots
+    .map((snapshot) => {
+      const periodKey = String(snapshot?.periodKey || '').trim();
+      return {
+        periodKey: /^\d{4}-\d{2}$/.test(periodKey) ? periodKey : normalizeHistoryDate(snapshot?.date, getTodayDateValue()).slice(0, 7),
+        date: normalizeHistoryDate(snapshot?.date, getTodayDateValue()),
+        portfolioValue: Number(snapshot?.portfolioValue) || 0,
+        cashReserve: Number(snapshot?.cashReserve) || 0,
+        loanPrincipal: Number(snapshot?.loanPrincipal) || 0,
+        goalSaved: Number(snapshot?.goalSaved) || 0,
+        netWorth: Number(snapshot?.netWorth) || 0,
+      };
+    })
+    .sort((left, right) => left.periodKey.localeCompare(right.periodKey));
 }
 
 function normalizeExpenseProjects(projects) {
@@ -691,8 +793,10 @@ export function AppProvider({ children }) {
   const [investments, setInvestments] = useState(() => loadPersistedInvestments().map((investment) => normalizeInvestment(investment)));
   const [familyMembers, setFamilyMembers] = useState(loadPersistedFamilyMembers);
   const [storedGoals, setStoredGoals] = useState(() => loadPersistedGoals().map((goal) => normalizeGoal(goal)));
-  const [loans, setLoans] = useState(loadPersistedLoans);
+  const [loans, setLoans] = useState(() => loadPersistedLoans().map((loan) => normalizeLoan(loan)));
   const [cash, setCashState] = useState(loadCash);
+  const [cashHistory, setCashHistory] = useState(() => normalizeCashHistory(loadCashHistory(), loadCash()));
+  const [netWorthSnapshots, setNetWorthSnapshots] = useState(() => normalizeNetWorthSnapshots(loadNetWorthSnapshots()));
   const [expenses, setExpenses] = useState(() =>
     loadPersistedExpenses().map((expense) =>
       normalizeExpense(expense, INITIAL_EXPENSE_CATEGORIES, INITIAL_EXPENSE_SUBCATEGORIES, INITIAL_EXPENSE_TYPES),
@@ -740,6 +844,49 @@ export function AppProvider({ children }) {
     [cash, investments, storedGoals],
   );
 
+  const currentNetWorthSnapshot = useMemo(() => {
+    const date = getTodayDateValue();
+    const periodKey = date.slice(0, 7);
+    const portfolioValue = investments.reduce((sum, investment) => sum + (Number(investment.currentValue) || 0), 0);
+    const loanPrincipal = loans.reduce((sum, loan) => sum + (Number(loan.outstandingBalance ?? loan.principal) || 0), 0);
+    const goalSaved = goals.reduce((sum, goal) => sum + (Number(goal.currentAmount) || 0), 0);
+    const cashReserve = Number(cash) || 0;
+    return {
+      periodKey,
+      date,
+      portfolioValue,
+      cashReserve,
+      loanPrincipal,
+      goalSaved,
+      netWorth: portfolioValue + cashReserve - loanPrincipal,
+    };
+  }, [cash, goals, investments, loans]);
+  const derivedNetWorthSnapshots = useMemo(
+    () => normalizeNetWorthSnapshots([
+      ...netWorthSnapshots.filter((item) => item.periodKey !== currentNetWorthSnapshot.periodKey),
+      currentNetWorthSnapshot,
+    ]),
+    [currentNetWorthSnapshot, netWorthSnapshots],
+  );
+
+  useEffect(() => {
+    const storedSnapshot = netWorthSnapshots.find((item) => item.periodKey === currentNetWorthSnapshot.periodKey);
+    const isSameSnapshot = storedSnapshot
+      && storedSnapshot.portfolioValue === currentNetWorthSnapshot.portfolioValue
+      && storedSnapshot.cashReserve === currentNetWorthSnapshot.cashReserve
+      && storedSnapshot.loanPrincipal === currentNetWorthSnapshot.loanPrincipal
+      && storedSnapshot.goalSaved === currentNetWorthSnapshot.goalSaved
+      && storedSnapshot.netWorth === currentNetWorthSnapshot.netWorth;
+
+    if (isSameSnapshot) return;
+
+    saveNetWorthSnapshots(derivedNetWorthSnapshots);
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'netWorthSnapshots', currentNetWorthSnapshot.periodKey);
+      setDoc(ref, currentNetWorthSnapshot);
+    }
+  }, [currentNetWorthSnapshot, derivedNetWorthSnapshots, netWorthSnapshots, user]);
+
   useEffect(() => {
     // If user is signed in, listen to their Firestore collections and sync locally
     if (!user) return undefined;
@@ -748,6 +895,8 @@ export function AppProvider({ children }) {
     const familyMembersCol = collection(db, 'users', user.uid, 'familyMembers');
     const goalsCol = collection(db, 'users', user.uid, 'goals');
     const loansCol = collection(db, 'users', user.uid, 'loans');
+    const cashHistoryCol = collection(db, 'users', user.uid, 'cashHistory');
+    const netWorthSnapshotsCol = collection(db, 'users', user.uid, 'netWorthSnapshots');
 
     const unsubInv = onSnapshot(invCol, (snap) => {
       const items = snap.docs.map((d) => normalizeInvestment({ id: d.id, ...d.data() }));
@@ -769,9 +918,26 @@ export function AppProvider({ children }) {
     });
 
     const unsubLoans = onSnapshot(loansCol, (snap) => {
-      const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const items = snap.docs.map((d) => normalizeLoan({ id: d.id, ...d.data() }));
       setLoans(items);
       saveLoans(items);
+    });
+
+    const unsubCashHistory = onSnapshot(cashHistoryCol, (snap) => {
+      const items = normalizeCashHistory(snap.docs.map((d) => ({ id: d.id, ...d.data() })), loadCash());
+      setCashHistory(items);
+      saveCashHistory(items);
+      const latest = items[items.length - 1];
+      if (latest) {
+        setCashState(latest.amount);
+        saveCash(latest.amount);
+      }
+    });
+
+    const unsubNetWorthSnapshots = onSnapshot(netWorthSnapshotsCol, (snap) => {
+      const items = normalizeNetWorthSnapshots(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setNetWorthSnapshots(items);
+      saveNetWorthSnapshots(items);
     });
 
     const expensesCol = collection(db, 'users', user.uid, 'expenses');
@@ -868,6 +1034,8 @@ export function AppProvider({ children }) {
       unsubFamilyMembers();
       unsubGoals();
       unsubLoans();
+      unsubCashHistory();
+      unsubNetWorthSnapshots();
       unsubExpenses();
       unsubExpensePayers();
       unsubExpenseProjects();
@@ -1025,7 +1193,7 @@ export function AppProvider({ children }) {
   }, [investments, user]);
 
   const addLoan = useCallback((loan) => {
-    const newItem = { ...loan, id: uuidv4() };
+    const newItem = buildLoanForSave({ ...loan, id: uuidv4() });
     if (user) {
       const ref = doc(db, 'users', user.uid, 'loans', newItem.id);
       setDoc(ref, newItem);
@@ -1039,17 +1207,19 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const updateLoan = useCallback((id, loan) => {
+    const previousLoan = loans.find((item) => item.id === id);
+    const nextLoan = buildLoanForSave({ ...loan, id }, previousLoan);
     if (user) {
       const ref = doc(db, 'users', user.uid, 'loans', id);
-      updateDoc(ref, { ...loan });
+      updateDoc(ref, { ...nextLoan });
       return;
     }
     setLoans((prev) => {
-      const updated = prev.map((l) => (l.id === id ? { ...l, ...loan } : l));
+      const updated = prev.map((l) => (l.id === id ? nextLoan : l));
       saveLoans(updated);
       return updated;
     });
-  }, [user]);
+  }, [loans, user]);
 
   const deleteLoan = useCallback((id) => {
     if (user) {
@@ -1459,6 +1629,14 @@ export function AppProvider({ children }) {
     return markRecurringEntryRecorded(id, nextRecordedDate);
   }, [addExpense, addInvestment, markRecurringEntryRecorded, recurringEntries]);
 
+  useEffect(() => {
+    recurringEntries
+      .filter((entry) => entry.autoCreate && entry.nextDueDate <= getTodayDateValue())
+      .forEach((entry) => {
+        recordRecurringEntryNow(entry.id, entry.nextDueDate);
+      });
+  }, [recordRecurringEntryNow, recurringEntries]);
+
   const addReminder = useCallback((reminder) => {
     const newReminder = normalizeReminder({ ...reminder, id: uuidv4() });
     if (!newReminder.title || newReminder.amount <= 0) return null;
@@ -1573,9 +1751,17 @@ export function AppProvider({ children }) {
 
   const setCash = useCallback((amount) => {
     const value = Number(amount) || 0;
+    const date = getTodayDateValue();
+    const nextHistory = appendAmountSnapshot(cashHistory, value, date);
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'cashHistory', date);
+      setDoc(ref, { date, amount: value });
+    }
     setCashState(value);
+    setCashHistory(nextHistory);
     saveCash(value);
-  }, []);
+    saveCashHistory(nextHistory);
+  }, [cashHistory, user]);
 
   const generateMonthlyAiReport = useCallback(async (periodKey, options = {}) => {
     if (!user) throw new Error('Sign in is required to generate AI reports.');
@@ -1638,7 +1824,11 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const addGoal = useCallback((goal) => {
-    const newItem = normalizeGoal({ ...goal, id: uuidv4() });
+    const normalizedGoal = normalizeGoal({ ...goal, id: uuidv4() });
+    const newItem = {
+      ...normalizedGoal,
+      history: appendAmountSnapshot(normalizedGoal.history, normalizedGoal.currentAmount, goal?.snapshotDate || getTodayDateValue()),
+    };
     if (user) {
       const ref = doc(db, 'users', user.uid, 'goals', newItem.id);
       setDoc(ref, newItem);
@@ -1652,18 +1842,23 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const updateGoal = useCallback((id, goal) => {
-    const normalizedGoal = normalizeGoal({ ...goal, id });
+    const previousGoal = storedGoals.find((item) => item.id === id);
+    const normalizedGoal = normalizeGoal({ ...previousGoal, ...goal, id });
+    const nextGoal = {
+      ...normalizedGoal,
+      history: appendAmountSnapshot(normalizedGoal.history, normalizedGoal.currentAmount, goal?.snapshotDate || getTodayDateValue()),
+    };
     if (user) {
       const ref = doc(db, 'users', user.uid, 'goals', id);
-      updateDoc(ref, { ...normalizedGoal });
+      updateDoc(ref, { ...nextGoal });
       return;
     }
     setStoredGoals((prev) => {
-      const updated = prev.map((g) => (g.id === id ? normalizeGoal({ ...g, ...normalizedGoal }) : g));
+      const updated = prev.map((g) => (g.id === id ? nextGoal : g));
       saveGoals(updated);
       return updated;
     });
-  }, [user]);
+  }, [storedGoals, user]);
 
   const deleteGoal = useCallback((id) => {
     if (user) {
@@ -1683,20 +1878,25 @@ export function AppProvider({ children }) {
     const demoGoals = getDemoGoals().map((goal) => normalizeGoal(goal));
     const demoLoans = getDemoLoans();
     const demoCash = getDemoCash();
+    const demoCashHistory = normalizeCashHistory([], demoCash);
     const demoExpenses = getDemoExpenses();
     setInvestments(demoInv);
     setFamilyMembers([]);
     setStoredGoals(demoGoals);
-    setLoans(demoLoans);
+    setLoans(demoLoans.map((loan) => normalizeLoan(loan)));
     setCashState(demoCash);
+    setCashHistory(demoCashHistory);
+    setNetWorthSnapshots([]);
     setExpenses(demoExpenses.map(normalizeExpense));
     setExpensePayers([]);
     setExpenseProjects([]);
     saveInvestments(demoInv);
     saveFamilyMembers([]);
     saveGoals(demoGoals);
-    saveLoans(demoLoans);
+    saveLoans(demoLoans.map((loan) => normalizeLoan(loan)));
     saveCash(demoCash);
+    saveCashHistory(demoCashHistory);
+    saveNetWorthSnapshots([]);
     saveExpenses(demoExpenses.map(normalizeExpense));
     saveExpensePayers([]);
     saveExpenseProjects([]);
@@ -1728,6 +1928,8 @@ export function AppProvider({ children }) {
     goals,
     loans,
     cash,
+    cashHistory,
+    netWorthSnapshots: derivedNetWorthSnapshots,
     expenses,
     expensePayers,
     expenseProjects,

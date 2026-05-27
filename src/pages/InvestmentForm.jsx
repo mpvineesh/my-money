@@ -224,7 +224,6 @@ export default function InvestmentForm() {
             </button>
           </div>
 
-          <p className="form-helper-text">Use ownership to split the portfolio by person and manage family investments cleanly.</p>
         </div>
 
         <div className="form-group">

@@ -50,7 +50,17 @@ function getExpensePeriodKey(expense) {
   return /^\d{4}-\d{2}/.test(value) ? value.slice(0, 7) : '';
 }
 
-function buildNetWorthSeries(investments, range, cash, loanPrincipal, goalSaved) {
+function buildAmountSeries(history, range) {
+  const periodSnapshots = new Map();
+  (history || []).forEach((entry) => {
+    const periodKey = getPeriodKey(entry.date, range);
+    if (!periodKey) return;
+    periodSnapshots.set(periodKey, Number(entry.amount ?? entry.value) || 0);
+  });
+  return periodSnapshots;
+}
+
+function buildNetWorthSeries(investments, range, cashHistory, loans, goals, netWorthSnapshots, currentTotals) {
   const investmentSnapshots = investments.map((investment) => {
     const periodSnapshots = new Map();
 
@@ -65,11 +75,36 @@ function buildNetWorthSeries(investments, range, cash, loanPrincipal, goalSaved)
 
     return { id: investment.id, periodSnapshots };
   });
+  const cashSnapshots = buildAmountSeries(cashHistory, range);
+  const loanSnapshots = loans.map((loan) => ({
+    id: loan.id,
+    periodSnapshots: buildAmountSeries(loan.history, range),
+    fallbackAmount: Number(loan.outstandingBalance ?? loan.principal) || 0,
+  }));
+  const goalSnapshots = goals.map((goal) => ({
+    id: goal.id,
+    periodSnapshots: buildAmountSeries(goal.history, range),
+    fallbackAmount: Number(goal.currentAmount) || 0,
+  }));
+  const netWorthSnapshotMap = new Map(
+    (netWorthSnapshots || [])
+      .map((snapshot) => [range === 'year' ? String(snapshot.periodKey || '').slice(0, 4) : snapshot.periodKey, snapshot])
+      .filter(([periodKey]) => periodKey),
+  );
 
   const allPeriodKeys = [...new Set(
-    investmentSnapshots.flatMap((investment) => [...investment.periodSnapshots.keys()]),
+    [
+      ...investmentSnapshots.flatMap((investment) => [...investment.periodSnapshots.keys()]),
+      ...cashSnapshots.keys(),
+      ...loanSnapshots.flatMap((loan) => [...loan.periodSnapshots.keys()]),
+      ...goalSnapshots.flatMap((goal) => [...goal.periodSnapshots.keys()]),
+      ...netWorthSnapshotMap.keys(),
+    ],
   )].sort();
   const latestByInvestment = new Map();
+  const latestByLoan = new Map();
+  const latestByGoal = new Map();
+  let latestCash = Number(currentTotals.cashReserve) || 0;
   let visiblePeriodKeys = allPeriodKeys.slice(range === 'year' ? -6 : -12);
 
   if (!visiblePeriodKeys.length) visiblePeriodKeys = [getCurrentPeriodKey(range)];
@@ -93,16 +128,34 @@ function buildNetWorthSeries(investments, range, cash, loanPrincipal, goalSaved)
       investedAmount += activeSnapshot.investedAmount;
       portfolioValue += activeSnapshot.currentValue;
     });
+    const nextCash = cashSnapshots.get(periodKey);
+    if (nextCash !== undefined) latestCash = nextCash;
+
+    let loanPrincipal = 0;
+    loanSnapshots.forEach((loan) => {
+      const nextSnapshot = loan.periodSnapshots.get(periodKey);
+      if (nextSnapshot !== undefined) latestByLoan.set(loan.id, nextSnapshot);
+      loanPrincipal += latestByLoan.get(loan.id) ?? loan.fallbackAmount;
+    });
+
+    let goalSaved = 0;
+    goalSnapshots.forEach((goal) => {
+      const nextSnapshot = goal.periodSnapshots.get(periodKey);
+      if (nextSnapshot !== undefined) latestByGoal.set(goal.id, nextSnapshot);
+      goalSaved += latestByGoal.get(goal.id) ?? goal.fallbackAmount;
+    });
+
+    const savedSnapshot = netWorthSnapshotMap.get(periodKey);
 
     return {
       key: periodKey,
       label: formatPeriodLabel(periodKey, range),
-      investedAmount,
-      portfolioValue,
-      cashReserve: cash,
-      loanPrincipal,
-      goalSaved,
-      netWorth: portfolioValue + cash - loanPrincipal,
+      investedAmount: savedSnapshot?.investedAmount ?? investedAmount,
+      portfolioValue: savedSnapshot?.portfolioValue ?? portfolioValue,
+      cashReserve: savedSnapshot?.cashReserve ?? latestCash,
+      loanPrincipal: savedSnapshot?.loanPrincipal ?? loanPrincipal,
+      goalSaved: savedSnapshot?.goalSaved ?? goalSaved,
+      netWorth: savedSnapshot?.netWorth ?? (portfolioValue + latestCash - loanPrincipal),
     };
   });
 }
@@ -146,6 +199,9 @@ export default function Dashboard() {
     expenseBudgets,
     recurringEntries,
     reminders,
+    cashHistory,
+    netWorthSnapshots,
+    recordRecurringEntryNow,
     appSettings,
   } = useApp();
   const navigate = useNavigate();
@@ -178,7 +234,7 @@ export default function Dashboard() {
 
     const totalGoalTarget = goals.reduce((sum, g) => sum + (Number(g.targetAmount) || 0), 0);
     const totalGoalCurrent = goals.reduce((sum, g) => sum + (Number(g.currentAmount) || 0), 0);
-    const totalLoanPrincipal = loans.reduce((sum, loan) => sum + (Number(loan.loanAmount || loan.principalAmount || loan.principal) || 0), 0);
+    const totalLoanPrincipal = loans.reduce((sum, loan) => sum + (Number(loan.outstandingBalance ?? loan.loanAmount ?? loan.principalAmount ?? loan.principal) || 0), 0);
     const totalMonthlyEmi = loans.reduce((sum, loan) => sum + (Number(loan.monthlyEmi || loan.monthlyEMI) || 0), 0);
     const liquidAssets = totalCurrent + (Number(cash) || 0);
     const netWorth = liquidAssets - totalLoanPrincipal;
@@ -240,14 +296,16 @@ export default function Dashboard() {
     }
 
     if (dueRecurring.length) {
+      const dueImpact = dueRecurring.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0);
       items.push({
         key: 'recurring',
         icon: Repeat,
         tone: dueRecurring.some((entry) => getDaysUntil(entry.nextDueDate) < 0) ? 'danger' : 'warning',
         title: `${dueRecurring.length} recurring entr${dueRecurring.length === 1 ? 'y' : 'ies'} due`,
-        copy: dueRecurring[0].title,
-        action: 'Record',
+        copy: `${dueRecurring[0].title} · ${formatCurrency(dueImpact)} impact`,
+        action: 'Record all',
         to: '/recurring',
+        onAction: () => dueRecurring.forEach((entry) => recordRecurringEntryNow(entry.id, entry.nextDueDate)),
       });
     }
 
@@ -276,11 +334,15 @@ export default function Dashboard() {
     }
 
     return items;
-  }, [expenseBudgets, expenses, recurringEntries, reminders, visibleInvestments]);
+  }, [expenseBudgets, expenses, recordRecurringEntryNow, recurringEntries, reminders, visibleInvestments]);
 
   const netWorthSeries = useMemo(
-    () => buildNetWorthSeries(visibleInvestments, netWorthRange, Number(cash) || 0, stats.totalLoanPrincipal, stats.totalGoalCurrent),
-    [cash, netWorthRange, stats.totalGoalCurrent, stats.totalLoanPrincipal, visibleInvestments],
+    () => buildNetWorthSeries(visibleInvestments, netWorthRange, cashHistory, loans, goals, netWorthSnapshots, {
+      cashReserve: Number(cash) || 0,
+      loanPrincipal: stats.totalLoanPrincipal,
+      goalSaved: stats.totalGoalCurrent,
+    }),
+    [cash, cashHistory, goals, loans, netWorthRange, netWorthSnapshots, stats.totalGoalCurrent, stats.totalLoanPrincipal, visibleInvestments],
   );
   const latestNetWorth = netWorthSeries[netWorthSeries.length - 1];
   const previousNetWorth = netWorthSeries[netWorthSeries.length - 2];
@@ -360,7 +422,16 @@ export default function Dashboard() {
                     <strong>{item.title}</strong>
                     <span>{item.copy}</span>
                   </span>
-                  <span className="dash-attention-action">{item.action}</span>
+                  <span
+                    className="dash-attention-action"
+                    onClick={(event) => {
+                      if (!item.onAction) return;
+                      event.stopPropagation();
+                      item.onAction();
+                    }}
+                  >
+                    {item.action}
+                  </span>
                 </button>
               );
             })}
@@ -404,7 +475,6 @@ export default function Dashboard() {
               <div>
                 <p className="dash-networth-label">Balance Sheet</p>
                 <h2 className="dash-networth-title">Net worth snapshot</h2>
-                <p className="dash-networth-subtitle">Investments drive the trend line. Cash, loans, and goal funding use the latest recorded totals.</p>
               </div>
               <div className="dash-networth-toggle">
                 <button

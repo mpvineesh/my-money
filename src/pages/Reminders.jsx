@@ -150,7 +150,6 @@ export default function Reminders() {
         <div>
           <p className="reminders-label">Planner</p>
           <h1 className="reminders-title">Payment Reminders</h1>
-          <p className="reminders-subtitle">Stay ahead of bills, EMIs, and debt repayments with one place for due dates.</p>
         </div>
       </header>
 

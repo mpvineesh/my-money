@@ -293,7 +293,6 @@ export default function GoalForm() {
             </button>
           </div>
 
-          <p className="form-helper-text">Progress uses the current asset value for this person, or the whole portfolio for family goals.</p>
         </div>
 
         <div className="form-row">

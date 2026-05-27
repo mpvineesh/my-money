@@ -350,7 +350,6 @@ export default function Expenses() {
         <div>
           <p className="expense-home-label">My Money</p>
           <h1 className="expense-home-title">Expenses</h1>
-          <p className="expense-home-subtitle">Track where your money is going and set monthly budgets to control it.</p>
         </div>
         <div className="expense-home-actions">
           <Link to="/expenses/list" className="expense-home-link">
@@ -365,7 +364,6 @@ export default function Expenses() {
           <div>
             <p className="expense-panel-label">Budgets</p>
             <h2 className="expense-panel-title">Monthly budget planner</h2>
-            <p className="expense-budget-subtitle">Set category or subcategory caps and compare them against actual spend for {formatMonthLabel(budgetMonth)}.</p>
           </div>
           <div className="expense-budget-month">
             <span>Month</span>
