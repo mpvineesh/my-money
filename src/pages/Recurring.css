@@ -141,7 +141,6 @@
 }
 
 .recurring-kind-toggle button,
-.recurring-secondary-btn,
 .recurring-icon-btn,
 .recurring-primary-btn {
   border: none;
@@ -180,17 +179,39 @@
 }
 
 .recurring-check-row {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
   color: #475569;
   font-size: 0.9rem;
   font-weight: 700;
+  min-height: 46px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 0 14px;
+  cursor: pointer;
 }
 
-.recurring-check-row input {
-  width: 16px;
-  height: 16px;
+.recurring-check-row input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  border-radius: 6px;
+  accent-color: #ea580c;
+  cursor: pointer;
+}
+
+.recurring-check-row span {
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #475569;
 }
 
 .recurring-field input,
@@ -223,12 +244,25 @@
 
 .recurring-form-actions {
   margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.recurring-secondary-btn {
-  background: transparent;
-  color: #64748b;
+.recurring-cancel-btn {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #475569;
   font-weight: 700;
+  font-size: 0.9rem;
+  border-radius: 12px;
+  padding: 12px 24px;
+  cursor: pointer;
+}
+
+.recurring-cancel-btn:hover {
+  border-color: #cbd5e1;
+  color: #1e293b;
 }
 
 .recurring-list {

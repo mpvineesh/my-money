@@ -603,6 +603,8 @@ function normalizeFamilyMembers(familyMembers) {
     .map((member) => ({
       id: String(member?.id || '').trim(),
       name: String(member?.name || '').trim(),
+      relation: String(member?.relation || '').trim(),
+      email: String(member?.email || '').trim().toLowerCase(),
     }))
     .filter((member) => {
       const normalizedName = member.name.toLowerCase();
@@ -1095,7 +1097,12 @@ export function AppProvider({ children }) {
     const existingMember = familyMembers.find((item) => item.name.toLowerCase() === trimmedName.toLowerCase());
     if (existingMember) return existingMember;
 
-    const newMember = { id: uuidv4(), name: trimmedName };
+    const newMember = {
+      id: uuidv4(),
+      name: trimmedName,
+      relation: String(member?.relation || '').trim(),
+      email: String(member?.email || '').trim().toLowerCase(),
+    };
     if (user) {
       const ref = doc(db, 'users', user.uid, 'familyMembers', newMember.id);
       setDoc(ref, newMember);
@@ -1125,7 +1132,12 @@ export function AppProvider({ children }) {
     );
     if (duplicateMember) return duplicateMember;
 
-    const nextMember = { ...currentMember, name: trimmedName };
+    const nextMember = {
+      ...currentMember,
+      name: trimmedName,
+      relation: member?.relation !== undefined ? String(member.relation || '').trim() : currentMember.relation,
+      email: member?.email !== undefined ? String(member.email || '').trim().toLowerCase() : currentMember.email,
+    };
     const linkedInvestments = investments.filter((investment) => investment.memberId === id);
 
     if (user) {

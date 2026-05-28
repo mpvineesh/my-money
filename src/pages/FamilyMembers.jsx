@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Briefcase, Pencil, Plus, Save, Trash2, Users, X } from 'lucide-react';
+import { ArrowLeft, Briefcase, Mail, Pencil, Plus, Save, Trash2, Users, X } from 'lucide-react';
 import { useApp } from '../context/useApp';
-import { DEFAULT_FAMILY_MEMBER, formatCurrency } from '../utils/constants';
+import { DEFAULT_FAMILY_MEMBER, FAMILY_RELATIONS, formatCurrency, getRelationLabel } from '../utils/constants';
 import './FamilyMembers.css';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function buildMemberSummaries(familyMembers, investments) {
   const summaryMap = new Map();
@@ -48,8 +50,14 @@ export default function FamilyMembers() {
   const navigate = useNavigate();
   const { familyMembers, investments, addFamilyMember, updateFamilyMember, deleteFamilyMember } = useApp();
   const [newMemberName, setNewMemberName] = useState('');
+  const [newMemberRelation, setNewMemberRelation] = useState('');
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [addError, setAddError] = useState('');
   const [editingId, setEditingId] = useState('');
   const [editingName, setEditingName] = useState('');
+  const [editingRelation, setEditingRelation] = useState('');
+  const [editingEmail, setEditingEmail] = useState('');
+  const [editError, setEditError] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState('');
 
   const memberSummaries = useMemo(
@@ -63,24 +71,43 @@ export default function FamilyMembers() {
   );
 
   const handleAddMember = () => {
-    const nextMember = addFamilyMember({ name: newMemberName });
+    const email = newMemberEmail.trim();
+    if (email && !EMAIL_PATTERN.test(email)) {
+      setAddError('Enter a valid email address.');
+      return;
+    }
+    const nextMember = addFamilyMember({ name: newMemberName, relation: newMemberRelation, email });
     if (!nextMember) return;
     setNewMemberName('');
+    setNewMemberRelation('');
+    setNewMemberEmail('');
+    setAddError('');
   };
 
   const startEditing = (member) => {
     setEditingId(member.id);
     setEditingName(member.name);
+    setEditingRelation(member.relation || '');
+    setEditingEmail(member.email || '');
+    setEditError('');
     setPendingDeleteId('');
   };
 
   const stopEditing = () => {
     setEditingId('');
     setEditingName('');
+    setEditingRelation('');
+    setEditingEmail('');
+    setEditError('');
   };
 
   const handleSaveEdit = (memberId) => {
-    const nextMember = updateFamilyMember(memberId, { name: editingName });
+    const email = editingEmail.trim();
+    if (email && !EMAIL_PATTERN.test(email)) {
+      setEditError('Enter a valid email address.');
+      return;
+    }
+    const nextMember = updateFamilyMember(memberId, { name: editingName, relation: editingRelation, email });
     if (!nextMember) return;
     stopEditing();
   };
@@ -122,13 +149,38 @@ export default function FamilyMembers() {
           </div>
         </div>
 
-        <div className="family-add-row">
+        <div className="family-add-form">
+          <div className="family-field-grid">
+            <input
+              type="text"
+              className="family-input"
+              placeholder="Name e.g., Priya"
+              value={newMemberName}
+              onChange={(event) => setNewMemberName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handleAddMember();
+                }
+              }}
+            />
+            <select
+              className="family-input family-select"
+              value={newMemberRelation}
+              onChange={(event) => setNewMemberRelation(event.target.value)}
+            >
+              <option value="">Relation</option>
+              {FAMILY_RELATIONS.map((relation) => (
+                <option key={relation.value} value={relation.value}>{relation.label}</option>
+              ))}
+            </select>
+          </div>
           <input
-            type="text"
+            type="email"
             className="family-input"
-            placeholder="e.g., Mom, Dad, Spouse"
-            value={newMemberName}
-            onChange={(event) => setNewMemberName(event.target.value)}
+            placeholder="Email for login access (optional)"
+            value={newMemberEmail}
+            onChange={(event) => setNewMemberEmail(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
                 event.preventDefault();
@@ -136,9 +188,10 @@ export default function FamilyMembers() {
               }
             }}
           />
+          {addError ? <p className="family-form-error">{addError}</p> : null}
           <button type="button" className="btn-primary family-add-btn" onClick={handleAddMember} disabled={!newMemberName.trim()}>
             <Plus size={16} />
-            Add
+            Add member
           </button>
         </div>
       </section>
@@ -163,22 +216,60 @@ export default function FamilyMembers() {
                   <div>
                     <span className="family-member-tag">{isDefaultMember ? 'Default owner' : 'Family member'}</span>
                     {isEditing ? (
-                      <div className="family-edit-row">
+                      <div className="family-edit-form">
                         <input
                           type="text"
                           className="family-input"
+                          placeholder="Name"
                           value={editingName}
                           onChange={(event) => setEditingName(event.target.value)}
                         />
-                        <button type="button" className="family-icon-btn save" onClick={() => handleSaveEdit(member.id)}>
-                          <Save size={16} />
-                        </button>
-                        <button type="button" className="family-icon-btn" onClick={stopEditing}>
-                          <X size={16} />
-                        </button>
+                        <div className="family-field-grid">
+                          <select
+                            className="family-input family-select"
+                            value={editingRelation}
+                            onChange={(event) => setEditingRelation(event.target.value)}
+                          >
+                            <option value="">Relation</option>
+                            {FAMILY_RELATIONS.map((relation) => (
+                              <option key={relation.value} value={relation.value}>{relation.label}</option>
+                            ))}
+                          </select>
+                          <input
+                            type="email"
+                            className="family-input"
+                            placeholder="Email (optional)"
+                            value={editingEmail}
+                            onChange={(event) => setEditingEmail(event.target.value)}
+                          />
+                        </div>
+                        {editError ? <p className="family-form-error">{editError}</p> : null}
+                        <div className="family-edit-actions">
+                          <button type="button" className="family-icon-btn save" onClick={() => handleSaveEdit(member.id)}>
+                            <Save size={16} />
+                          </button>
+                          <button type="button" className="family-icon-btn" onClick={stopEditing}>
+                            <X size={16} />
+                          </button>
+                        </div>
                       </div>
                     ) : (
-                      <h3 className="family-member-name">{member.name}</h3>
+                      <>
+                        <h3 className="family-member-name">{member.name}</h3>
+                        {(member.relation || member.email) ? (
+                          <div className="family-member-meta">
+                            {member.relation ? (
+                              <span className="family-relation-pill">{getRelationLabel(member.relation)}</span>
+                            ) : null}
+                            {member.email ? (
+                              <span className="family-member-email">
+                                <Mail size={13} />
+                                {member.email}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </>
                     )}
                   </div>
 

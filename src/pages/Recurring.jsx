@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Repeat, Save, Sparkles, Trash2 } from 'lucide-react';
 import { useApp } from '../context/useApp';
@@ -70,6 +70,7 @@ export default function Recurring() {
     recordRecurringEntryNow,
   } = useApp();
   const [form, setForm] = useState(getEmptyForm);
+  const formRef = useRef(null);
 
   const categoryOptions = useMemo(
     () => getExpenseCategoryOptions(expenseCategories),
@@ -153,6 +154,7 @@ export default function Recurring() {
       autoCreate: Boolean(entry.autoCreate),
       notes: entry.notes || '',
     });
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function handleDelete(id) {
@@ -246,17 +248,12 @@ export default function Recurring() {
       ) : null}
 
       <section className="recurring-layout">
-        <form className="recurring-form" onSubmit={handleSubmit}>
+        <form className="recurring-form" ref={formRef} onSubmit={handleSubmit}>
           <div className="recurring-form-head">
             <div>
               <h2>{form.id ? 'Edit recurring entry' : 'Add recurring entry'}</h2>
               <p>Use this for SIPs, subscriptions, rent, insurance, and repeat purchases.</p>
             </div>
-            {form.id ? (
-              <button type="button" className="recurring-secondary-btn" onClick={resetForm}>
-                Reset
-              </button>
-            ) : null}
           </div>
 
           <div className="recurring-kind-toggle">
@@ -386,6 +383,11 @@ export default function Recurring() {
               <Save size={16} />
               <span>{form.id ? 'Update Entry' : 'Save Entry'}</span>
             </button>
+            {form.id ? (
+              <button type="button" className="recurring-cancel-btn" onClick={resetForm}>
+                Cancel
+              </button>
+            ) : null}
           </div>
         </form>
 
