@@ -20,6 +20,7 @@ import ExpenseForm from './pages/ExpenseForm';
 import AiInsights from './pages/AiInsights';
 import MonthlyReview from './pages/MonthlyReview';
 import Recurring from './pages/Recurring';
+import RecurringForm from './pages/RecurringForm';
 import Reminders from './pages/Reminders';
 import Settings from './pages/Settings';
 import FamilyMembers from './pages/FamilyMembers';
@@ -52,6 +53,8 @@ export default function App() {
                 <Route path="/expenses/new" element={<RequireAuth><ExpenseForm /></RequireAuth>} />
                 <Route path="/expenses/edit/:id" element={<RequireAuth><ExpenseForm /></RequireAuth>} />
                 <Route path="/recurring" element={<RequireAuth><Recurring /></RequireAuth>} />
+                <Route path="/recurring/new" element={<RequireAuth><RecurringForm /></RequireAuth>} />
+                <Route path="/recurring/edit/:id" element={<RequireAuth><RecurringForm /></RequireAuth>} />
                 <Route path="/reminders" element={<RequireAuth><Reminders /></RequireAuth>} />
                 <Route path="/ai-insights" element={<RequireAuth><AiInsights /></RequireAuth>} />
                 <Route path="/monthly-review" element={<RequireAuth><MonthlyReview /></RequireAuth>} />

@@ -6,7 +6,33 @@
 }
 
 .recurring-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
   margin-bottom: 18px;
+}
+
+.recurring-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 8px 18px rgba(234, 88, 12, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.recurring-add-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(234, 88, 12, 0.32);
 }
 
 .recurring-label {
@@ -72,8 +98,7 @@
 }
 
 .recurring-stat-label,
-.recurring-list-label,
-.recurring-field span {
+.recurring-list-label {
   font-size: 0.74rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -92,14 +117,6 @@
   font-size: 0.86rem;
 }
 
-.recurring-layout {
-  display: grid;
-  grid-template-columns: minmax(320px, 0.95fr) minmax(0, 1.05fr);
-  gap: 16px;
-  align-items: start;
-}
-
-.recurring-form,
 .recurring-list-panel {
   background: white;
   border: 1px solid #e2e8f0;
@@ -108,7 +125,6 @@
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05);
 }
 
-.recurring-form-head,
 .recurring-list-head {
   display: flex;
   align-items: flex-start;
@@ -117,152 +133,16 @@
   margin-bottom: 14px;
 }
 
-.recurring-form-head h2,
 .recurring-list-head h2 {
   margin: 0 0 4px;
   color: #0f172a;
   font-size: 1.05rem;
 }
 
-.recurring-form-head p {
-  margin: 0;
-  color: #64748b;
-  font-size: 0.88rem;
-}
-
-.recurring-kind-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: #fff7ed;
-  border-radius: 999px;
-  padding: 4px;
-  margin-bottom: 14px;
-}
-
-.recurring-kind-toggle button,
 .recurring-icon-btn,
 .recurring-primary-btn {
   border: none;
   cursor: pointer;
-}
-
-.recurring-kind-toggle button {
-  background: transparent;
-  color: #c2410c;
-  border-radius: 999px;
-  padding: 8px 12px;
-  font-weight: 700;
-  font-size: 0.84rem;
-}
-
-.recurring-kind-toggle button.active {
-  background: white;
-  color: #9a3412;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
-}
-
-.recurring-form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.recurring-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.recurring-field-wide {
-  grid-column: 1 / -1;
-}
-
-.recurring-check-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #475569;
-  font-size: 0.9rem;
-  font-weight: 700;
-  min-height: 46px;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  padding: 0 14px;
-  cursor: pointer;
-}
-
-.recurring-check-row input[type='checkbox'] {
-  width: 18px;
-  height: 18px;
-  min-height: 0;
-  flex-shrink: 0;
-  margin: 0;
-  padding: 0;
-  border-radius: 6px;
-  accent-color: #ea580c;
-  cursor: pointer;
-}
-
-.recurring-check-row span {
-  min-width: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0;
-  color: #475569;
-}
-
-.recurring-field input,
-.recurring-field select,
-.recurring-field textarea {
-  width: 100%;
-  min-height: 46px;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  color: #0f172a;
-  padding: 0 14px;
-  font-size: 0.95rem;
-}
-
-.recurring-field textarea {
-  padding-top: 12px;
-  padding-bottom: 12px;
-  min-height: 92px;
-  resize: vertical;
-}
-
-.recurring-field input:focus,
-.recurring-field select:focus,
-.recurring-field textarea:focus {
-  outline: none;
-  border-color: #fb923c;
-  box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.14);
-}
-
-.recurring-form-actions {
-  margin-top: 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.recurring-cancel-btn {
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #475569;
-  font-weight: 700;
-  font-size: 0.9rem;
-  border-radius: 12px;
-  padding: 12px 24px;
-  cursor: pointer;
-}
-
-.recurring-cancel-btn:hover {
-  border-color: #cbd5e1;
-  color: #1e293b;
 }
 
 .recurring-list {
@@ -399,16 +279,13 @@
 }
 
 @media (max-width: 720px) {
-  .recurring-summary-grid,
-  .recurring-layout,
-  .recurring-form-grid {
+  .recurring-summary-grid {
     grid-template-columns: 1fr;
   }
 
   .recurring-card-top,
   .recurring-card-actions,
   .recurring-due-panel,
-  .recurring-form-head,
   .recurring-list-head {
     flex-direction: column;
     align-items: stretch;

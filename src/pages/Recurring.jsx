@@ -1,14 +1,11 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Repeat, Save, Sparkles, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Repeat, Save, Sparkles, Trash2 } from 'lucide-react';
 import { useApp } from '../context/useApp';
 import {
-  INVESTMENT_TYPES,
   formatCurrency,
   formatDate,
   getExpenseCategoryInfo,
-  getExpenseCategoryOptions,
-  getExpenseSubcategories,
   getExpenseSubcategoryInfo,
   getTypeInfo,
 } from '../utils/constants';
@@ -18,22 +15,6 @@ function getTodayDateValue() {
   const now = new Date();
   const timezoneAdjusted = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
   return timezoneAdjusted.toISOString().slice(0, 10);
-}
-
-function getEmptyForm() {
-  return {
-    id: '',
-    title: '',
-    kind: 'expense',
-    amount: '',
-    frequency: 'monthly',
-    nextDueDate: getTodayDateValue(),
-    categoryValue: 'other',
-    subcategoryValue: '',
-    investmentType: INVESTMENT_TYPES[1]?.value || INVESTMENT_TYPES[0].value,
-    autoCreate: false,
-    notes: '',
-  };
 }
 
 function getMonthlyEquivalent(entry) {
@@ -64,23 +45,9 @@ export default function Recurring() {
     recurringEntries,
     expenseCategories,
     expenseSubcategories,
-    addRecurringEntry,
-    updateRecurringEntry,
     deleteRecurringEntry,
     recordRecurringEntryNow,
   } = useApp();
-  const [form, setForm] = useState(getEmptyForm);
-  const formRef = useRef(null);
-
-  const categoryOptions = useMemo(
-    () => getExpenseCategoryOptions(expenseCategories),
-    [expenseCategories],
-  );
-
-  const subcategoryOptions = useMemo(
-    () => (form.kind === 'expense' ? getExpenseSubcategories(form.categoryValue, expenseSubcategories) : []),
-    [expenseSubcategories, form.categoryValue, form.kind],
-  );
 
   const summary = useMemo(() => {
     const overdueCount = recurringEntries.filter((entry) => getDueStatus(entry.nextDueDate).tone === 'danger').length;
@@ -98,69 +65,13 @@ export default function Recurring() {
     [recurringEntries],
   );
 
-  function handleChange(field, value) {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-      ...(field === 'kind' && value === 'investment'
-        ? { categoryValue: 'other', subcategoryValue: '' }
-        : {}),
-      ...(field === 'kind' && value === 'expense'
-        ? { investmentType: INVESTMENT_TYPES[1]?.value || INVESTMENT_TYPES[0].value }
-        : {}),
-      ...(field === 'categoryValue' ? { subcategoryValue: '' } : {}),
-    }));
-  }
-
-  function resetForm() {
-    setForm(getEmptyForm());
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault();
-
-    const payload = {
-      title: form.title.trim(),
-      kind: form.kind,
-      amount: Number(form.amount) || 0,
-      frequency: form.frequency,
-      nextDueDate: form.nextDueDate,
-      categoryValue: form.kind === 'expense' ? form.categoryValue : '',
-      subcategoryValue: form.kind === 'expense' ? form.subcategoryValue : '',
-      investmentType: form.kind === 'investment' ? form.investmentType : '',
-      autoCreate: form.autoCreate,
-      notes: form.notes.trim(),
-    };
-
-    if (!payload.title || payload.amount <= 0) return;
-
-    if (form.id) updateRecurringEntry(form.id, payload);
-    else addRecurringEntry(payload);
-
-    resetForm();
-  }
-
   function handleEdit(entry) {
-    setForm({
-      id: entry.id,
-      title: entry.title,
-      kind: entry.kind,
-      amount: String(entry.amount),
-      frequency: entry.frequency,
-      nextDueDate: entry.nextDueDate,
-      categoryValue: entry.categoryValue || 'other',
-      subcategoryValue: entry.subcategoryValue || '',
-      investmentType: entry.investmentType || INVESTMENT_TYPES[0].value,
-      autoCreate: Boolean(entry.autoCreate),
-      notes: entry.notes || '',
-    });
-    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    navigate(`/recurring/edit/${entry.id}`);
   }
 
   function handleDelete(id) {
     if (!window.confirm('Delete this recurring entry?')) return;
     deleteRecurringEntry(id);
-    if (form.id === id) resetForm();
   }
 
   function handleRecordNow(entry) {
@@ -215,6 +126,10 @@ export default function Recurring() {
           <p className="recurring-label">Planner</p>
           <h1 className="recurring-title">Recurring Entries</h1>
         </div>
+        <button type="button" className="recurring-add-btn" onClick={() => navigate('/recurring/new')}>
+          <Plus size={18} />
+          <span>New Recurring</span>
+        </button>
       </header>
 
       <section className="recurring-summary-grid">
@@ -247,225 +162,83 @@ export default function Recurring() {
         </section>
       ) : null}
 
-      <section className="recurring-layout">
-        <form className="recurring-form" ref={formRef} onSubmit={handleSubmit}>
-          <div className="recurring-form-head">
-            <div>
-              <h2>{form.id ? 'Edit recurring entry' : 'Add recurring entry'}</h2>
-              <p>Use this for SIPs, subscriptions, rent, insurance, and repeat purchases.</p>
-            </div>
+      <section className="recurring-list-panel">
+        <div className="recurring-list-head">
+          <div>
+            <p className="recurring-list-label">Upcoming</p>
+            <h2>Planned entries</h2>
           </div>
+        </div>
 
-          <div className="recurring-kind-toggle">
-            <button
-              type="button"
-              className={form.kind === 'expense' ? 'active' : ''}
-              onClick={() => handleChange('kind', 'expense')}
-            >
-              Expense
-            </button>
-            <button
-              type="button"
-              className={form.kind === 'investment' ? 'active' : ''}
-              onClick={() => handleChange('kind', 'investment')}
-            >
-              Investment
-            </button>
-          </div>
+        {recurringEntries.length ? (
+          <div className="recurring-list">
+            {recurringEntries.map((entry) => {
+              const status = getDueStatus(entry.nextDueDate);
+              const category = entry.kind === 'expense'
+                ? getExpenseCategoryInfo(entry.categoryValue, expenseCategories, entry.categoryLabel)
+                : null;
+              const subcategory = entry.kind === 'expense' && entry.subcategoryValue
+                ? getExpenseSubcategoryInfo(
+                    entry.categoryValue,
+                    entry.subcategoryValue,
+                    expenseSubcategories,
+                    entry.subcategoryLabel,
+                  )
+                : null;
+              const scopeLabel = entry.kind === 'investment'
+                ? getTypeInfo(entry.investmentType).label
+                : [category?.label, subcategory?.label].filter(Boolean).join(' / ') || 'Expense';
 
-          <div className="recurring-form-grid">
-            <label className="recurring-field recurring-field-wide">
-              <span>Title</span>
-              <input
-                type="text"
-                value={form.title}
-                onChange={(event) => handleChange('title', event.target.value)}
-                placeholder={form.kind === 'investment' ? 'e.g., Monthly SIP - Index Fund' : 'e.g., House Rent'}
-                required
-              />
-            </label>
-
-            <label className="recurring-field">
-              <span>Amount</span>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.amount}
-                onChange={(event) => handleChange('amount', event.target.value)}
-                placeholder="0.00"
-                required
-              />
-            </label>
-
-            <label className="recurring-field">
-              <span>Frequency</span>
-              <select value={form.frequency} onChange={(event) => handleChange('frequency', event.target.value)}>
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="yearly">Yearly</option>
-              </select>
-            </label>
-
-            <label className="recurring-field">
-              <span>Next due date</span>
-              <input
-                type="date"
-                value={form.nextDueDate}
-                onChange={(event) => handleChange('nextDueDate', event.target.value)}
-                required
-              />
-            </label>
-
-            {form.kind === 'expense' ? (
-              <>
-                <label className="recurring-field">
-                  <span>Category</span>
-                  <select value={form.categoryValue} onChange={(event) => handleChange('categoryValue', event.target.value)}>
-                    {categoryOptions.map((category) => (
-                      <option key={category.value} value={category.value}>
-                        {category.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="recurring-field">
-                  <span>Subcategory</span>
-                  <select value={form.subcategoryValue} onChange={(event) => handleChange('subcategoryValue', event.target.value)}>
-                    <option value="">Optional</option>
-                    {subcategoryOptions.map((subcategory) => (
-                      <option key={`${subcategory.categoryValue}:${subcategory.value}`} value={subcategory.value}>
-                        {subcategory.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </>
-            ) : (
-              <label className="recurring-field recurring-field-wide">
-                <span>Investment type</span>
-                <select value={form.investmentType} onChange={(event) => handleChange('investmentType', event.target.value)}>
-                  {INVESTMENT_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-
-            <label className="recurring-field recurring-field-wide">
-              <span>Automation</span>
-              <label className="recurring-check-row">
-                <input
-                  type="checkbox"
-                  checked={form.autoCreate}
-                  onChange={(event) => handleChange('autoCreate', event.target.checked)}
-                />
-                <span>Auto-create records when due</span>
-              </label>
-            </label>
-
-            <label className="recurring-field recurring-field-wide">
-              <span>Notes</span>
-              <textarea
-                rows={3}
-                value={form.notes}
-                onChange={(event) => handleChange('notes', event.target.value)}
-                placeholder="Optional details"
-              />
-            </label>
-          </div>
-
-          <div className="recurring-form-actions">
-            <button type="submit" className="btn-primary">
-              <Save size={16} />
-              <span>{form.id ? 'Update Entry' : 'Save Entry'}</span>
-            </button>
-            {form.id ? (
-              <button type="button" className="recurring-cancel-btn" onClick={resetForm}>
-                Cancel
-              </button>
-            ) : null}
-          </div>
-        </form>
-
-        <section className="recurring-list-panel">
-          <div className="recurring-list-head">
-            <div>
-              <p className="recurring-list-label">Upcoming</p>
-              <h2>Planned entries</h2>
-            </div>
-          </div>
-
-          {recurringEntries.length ? (
-            <div className="recurring-list">
-              {recurringEntries.map((entry) => {
-                const status = getDueStatus(entry.nextDueDate);
-                const category = entry.kind === 'expense'
-                  ? getExpenseCategoryInfo(entry.categoryValue, expenseCategories, entry.categoryLabel)
-                  : null;
-                const subcategory = entry.kind === 'expense' && entry.subcategoryValue
-                  ? getExpenseSubcategoryInfo(
-                      entry.categoryValue,
-                      entry.subcategoryValue,
-                      expenseSubcategories,
-                      entry.subcategoryLabel,
-                    )
-                  : null;
-                const scopeLabel = entry.kind === 'investment'
-                  ? getTypeInfo(entry.investmentType).label
-                  : [category?.label, subcategory?.label].filter(Boolean).join(' / ') || 'Expense';
-
-                return (
-                  <article key={entry.id} className="recurring-card">
-                    <div className="recurring-card-top">
-                      <div>
-                        <div className="recurring-card-title-row">
-                          <strong>{entry.title}</strong>
-                          <span className={`recurring-status recurring-status-${status.tone}`}>{status.label}</span>
-                        </div>
-                        <p>{entry.kind === 'investment' ? 'Investment' : 'Expense'} · {formatFrequencyLabel(entry.frequency)} · {scopeLabel}</p>
+              return (
+                <article key={entry.id} className="recurring-card">
+                  <div className="recurring-card-top">
+                    <div>
+                      <div className="recurring-card-title-row">
+                        <strong>{entry.title}</strong>
+                        <span className={`recurring-status recurring-status-${status.tone}`}>{status.label}</span>
                       </div>
-                      <div className="recurring-card-amount">{formatCurrency(entry.amount)}</div>
+                      <p>{entry.kind === 'investment' ? 'Investment' : 'Expense'} · {formatFrequencyLabel(entry.frequency)} · {scopeLabel}</p>
                     </div>
+                    <div className="recurring-card-amount">{formatCurrency(entry.amount)}</div>
+                  </div>
 
-                    <div className="recurring-card-meta">
-                      <span>Next due: {formatDate(entry.nextDueDate)}</span>
-                      <span>Monthly impact: {formatCurrency(getMonthlyEquivalent(entry))}</span>
-                    </div>
+                  <div className="recurring-card-meta">
+                    <span>Next due: {formatDate(entry.nextDueDate)}</span>
+                    <span>Monthly impact: {formatCurrency(getMonthlyEquivalent(entry))}</span>
+                  </div>
 
-                    <div className="recurring-card-actions">
-                      <button type="button" className="recurring-primary-btn" onClick={() => handleRecordNow(entry)}>
-                        <Sparkles size={16} />
-                        <span>Record Now</span>
+                  <div className="recurring-card-actions">
+                    <button type="button" className="recurring-primary-btn" onClick={() => handleRecordNow(entry)}>
+                      <Sparkles size={16} />
+                      <span>Record Now</span>
+                    </button>
+                    {status.tone !== 'neutral' ? (
+                      <button type="button" className="recurring-primary-btn recurring-record-due" onClick={() => handleRecordDue(entry)}>
+                        <Save size={16} />
+                        <span>Record Due</span>
                       </button>
-                      {status.tone !== 'neutral' ? (
-                        <button type="button" className="recurring-primary-btn recurring-record-due" onClick={() => handleRecordDue(entry)}>
-                          <Save size={16} />
-                          <span>Record Due</span>
-                        </button>
-                      ) : null}
-                      <button type="button" className="recurring-icon-btn" onClick={() => handleEdit(entry)}>
-                        <Pencil size={16} />
-                      </button>
-                      <button type="button" className="recurring-icon-btn danger" onClick={() => handleDelete(entry.id)}>
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="recurring-empty">
-              <Repeat size={32} />
-              <h3>No recurring entries yet</h3>
-              <p>Create your first recurring template to speed up monthly tracking and keep due items visible.</p>
-            </div>
-          )}
-        </section>
+                    ) : null}
+                    <button type="button" className="recurring-icon-btn" onClick={() => handleEdit(entry)}>
+                      <Pencil size={16} />
+                    </button>
+                    <button type="button" className="recurring-icon-btn danger" onClick={() => handleDelete(entry.id)}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="recurring-empty">
+            <Repeat size={32} />
+            <h3>No recurring entries yet</h3>
+            <p>Create your first recurring template to speed up monthly tracking and keep due items visible.</p>
+            <button type="button" className="btn-primary" onClick={() => navigate('/recurring/new')}>
+              Add recurring entry
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );
