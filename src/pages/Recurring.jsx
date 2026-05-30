@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Plus, Repeat, Save, Sparkles, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, Repeat, Save, Trash2 } from 'lucide-react';
 import { useApp } from '../context/useApp';
 import {
   formatCurrency,
@@ -45,6 +45,7 @@ export default function Recurring() {
     recurringEntries,
     expenseCategories,
     expenseSubcategories,
+    investments,
     deleteRecurringEntry,
     recordRecurringEntryNow,
   } = useApp();
@@ -74,7 +75,11 @@ export default function Recurring() {
     deleteRecurringEntry(id);
   }
 
-  function handleRecordNow(entry) {
+  function handleRecord(entry) {
+    recordRecurringEntryNow(entry.id, entry.nextDueDate);
+  }
+
+  function handleReview(entry) {
     if (entry.kind === 'investment') {
       navigate('/investments/new', {
         state: {
@@ -109,10 +114,6 @@ export default function Recurring() {
         },
       },
     });
-  }
-
-  function handleRecordDue(entry) {
-    recordRecurringEntryNow(entry.id, entry.nextDueDate);
   }
 
   function handleRecordAllDue() {
@@ -185,8 +186,11 @@ export default function Recurring() {
                     entry.subcategoryLabel,
                   )
                 : null;
+              const linkedInvestment = entry.kind === 'investment' && entry.linkedInvestmentId
+                ? investments.find((inv) => inv.id === entry.linkedInvestmentId)
+                : null;
               const scopeLabel = entry.kind === 'investment'
-                ? getTypeInfo(entry.investmentType).label
+                ? (linkedInvestment ? `→ ${linkedInvestment.name}` : getTypeInfo(entry.investmentType).label)
                 : [category?.label, subcategory?.label].filter(Boolean).join(' / ') || 'Expense';
 
               return (
@@ -208,16 +212,16 @@ export default function Recurring() {
                   </div>
 
                   <div className="recurring-card-actions">
-                    <button type="button" className="recurring-primary-btn" onClick={() => handleRecordNow(entry)}>
-                      <Sparkles size={16} />
-                      <span>Record Now</span>
-                    </button>
-                    {status.tone !== 'neutral' ? (
-                      <button type="button" className="recurring-primary-btn recurring-record-due" onClick={() => handleRecordDue(entry)}>
-                        <Save size={16} />
-                        <span>Record Due</span>
+                    {linkedInvestment ? null : (
+                      <button type="button" className="recurring-review-btn" onClick={() => handleReview(entry)}>
+                        <Eye size={16} />
+                        <span>Review</span>
                       </button>
-                    ) : null}
+                    )}
+                    <button type="button" className="recurring-primary-btn" onClick={() => handleRecord(entry)}>
+                      <Save size={16} />
+                      <span>Record</span>
+                    </button>
                     <button type="button" className="recurring-icon-btn" onClick={() => handleEdit(entry)}>
                       <Pencil size={16} />
                     </button>

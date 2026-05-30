@@ -271,6 +271,7 @@ function normalizeRecurringEntry(entry, customCategories = [], customSubcategori
     subcategoryValue: subcategory?.value || '',
     subcategoryLabel: subcategory?.label || '',
     investmentType: String(entry?.investmentType || entry?.type || 'mutual_funds').trim().toLowerCase() || 'mutual_funds',
+    linkedInvestmentId: kind === 'investment' ? String(entry?.linkedInvestmentId || '').trim() : '',
     notes: String(entry?.notes || '').trim(),
   };
 }
@@ -1611,20 +1612,47 @@ export function AppProvider({ children }) {
     return updatedEntry;
   }, [expenseCategories, expenseSubcategories, recurringEntries, user]);
 
+  const updateInvestment = useCallback((id, investment) => {
+    const previousInvestment = investments.find((item) => item.id === id);
+    const normalizedInvestment = buildInvestmentForSave({ ...investment, id }, previousInvestment);
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'investments', id);
+      updateDoc(ref, { ...normalizedInvestment });
+      return;
+    }
+    setInvestments((prev) => {
+      const updated = prev.map((inv) => (inv.id === id ? normalizedInvestment : inv));
+      saveInvestments(updated);
+      return updated;
+    });
+  }, [investments, user]);
+
   const recordRecurringEntryNow = useCallback((id, recordedDate = getTodayDateValue()) => {
     const entry = recurringEntries.find((item) => item.id === id);
     if (!entry) return null;
 
     const nextRecordedDate = normalizeHistoryDate(recordedDate, getTodayDateValue());
     if (entry.kind === 'investment') {
-      addInvestment({
-        name: entry.title,
-        type: entry.investmentType,
-        investedAmount: entry.amount,
-        currentValue: entry.amount,
-        snapshotDate: nextRecordedDate,
-        notes: entry.notes,
-      });
+      const linkedInvestment = entry.linkedInvestmentId
+        ? investments.find((item) => item.id === entry.linkedInvestmentId)
+        : null;
+
+      if (linkedInvestment) {
+        updateInvestment(linkedInvestment.id, {
+          investedAmount: (Number(linkedInvestment.investedAmount) || 0) + entry.amount,
+          currentValue: (Number(linkedInvestment.currentValue) || 0) + entry.amount,
+          snapshotDate: nextRecordedDate,
+        });
+      } else {
+        addInvestment({
+          name: entry.title,
+          type: entry.investmentType,
+          investedAmount: entry.amount,
+          currentValue: entry.amount,
+          snapshotDate: nextRecordedDate,
+          notes: entry.notes,
+        });
+      }
     } else {
       addExpense({
         name: entry.title,
@@ -1639,7 +1667,7 @@ export function AppProvider({ children }) {
     }
 
     return markRecurringEntryRecorded(id, nextRecordedDate);
-  }, [addExpense, addInvestment, markRecurringEntryRecorded, recurringEntries]);
+  }, [addExpense, addInvestment, investments, markRecurringEntryRecorded, recurringEntries, updateInvestment]);
 
   useEffect(() => {
     recurringEntries
@@ -1806,21 +1834,6 @@ export function AppProvider({ children }) {
     if (!user) throw new Error('Sign in is required to ask AI.');
     return requestAiAsk(user, payload);
   }, [user]);
-
-  const updateInvestment = useCallback((id, investment) => {
-    const previousInvestment = investments.find((item) => item.id === id);
-    const normalizedInvestment = buildInvestmentForSave({ ...investment, id }, previousInvestment);
-    if (user) {
-      const ref = doc(db, 'users', user.uid, 'investments', id);
-      updateDoc(ref, { ...normalizedInvestment });
-      return;
-    }
-    setInvestments((prev) => {
-      const updated = prev.map((inv) => (inv.id === id ? normalizedInvestment : inv));
-      saveInvestments(updated);
-      return updated;
-    });
-  }, [investments, user]);
 
   const deleteInvestment = useCallback((id) => {
     if (user) {

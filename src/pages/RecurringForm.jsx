@@ -4,6 +4,7 @@ import { ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { useApp } from '../context/useApp';
 import {
   INVESTMENT_TYPES,
+  formatCurrency,
   getExpenseCategoryOptions,
   getExpenseSubcategories,
 } from '../utils/constants';
@@ -30,6 +31,7 @@ function getInitialForm(entries, id) {
         categoryValue: entry.categoryValue || 'other',
         subcategoryValue: entry.subcategoryValue || '',
         investmentType: entry.investmentType || fallbackInvestmentType,
+        linkedInvestmentId: entry.linkedInvestmentId || '',
         autoCreate: Boolean(entry.autoCreate),
         notes: entry.notes || '',
       };
@@ -45,6 +47,7 @@ function getInitialForm(entries, id) {
     categoryValue: 'other',
     subcategoryValue: '',
     investmentType: fallbackInvestmentType,
+    linkedInvestmentId: '',
     autoCreate: false,
     notes: '',
   };
@@ -55,6 +58,7 @@ export default function RecurringForm() {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const {
+    investments,
     recurringEntries,
     expenseCategories,
     expenseSubcategories,
@@ -76,18 +80,35 @@ export default function RecurringForm() {
     [expenseSubcategories, form.categoryValue, form.kind],
   );
 
+  const investmentOptions = useMemo(
+    () => [...investments].sort((left, right) => (Number(right.currentValue) || 0) - (Number(left.currentValue) || 0)),
+    [investments],
+  );
+
   function handleChange(field, value) {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-      ...(field === 'kind' && value === 'investment'
-        ? { categoryValue: 'other', subcategoryValue: '' }
-        : {}),
-      ...(field === 'kind' && value === 'expense'
-        ? { investmentType: INVESTMENT_TYPES[1]?.value || INVESTMENT_TYPES[0].value }
-        : {}),
-      ...(field === 'categoryValue' ? { subcategoryValue: '' } : {}),
-    }));
+    setForm((prev) => {
+      const next = {
+        ...prev,
+        [field]: value,
+        ...(field === 'kind' && value === 'investment'
+          ? { categoryValue: 'other', subcategoryValue: '' }
+          : {}),
+        ...(field === 'kind' && value === 'expense'
+          ? { investmentType: INVESTMENT_TYPES[1]?.value || INVESTMENT_TYPES[0].value, linkedInvestmentId: '' }
+          : {}),
+        ...(field === 'categoryValue' ? { subcategoryValue: '' } : {}),
+      };
+
+      if (field === 'linkedInvestmentId' && value) {
+        const linked = investments.find((inv) => inv.id === value);
+        if (linked) {
+          if (!prev.title.trim()) next.title = linked.name;
+          next.investmentType = linked.type || prev.investmentType;
+        }
+      }
+
+      return next;
+    });
   }
 
   function handleSubmit(event) {
@@ -102,6 +123,7 @@ export default function RecurringForm() {
       categoryValue: form.kind === 'expense' ? form.categoryValue : '',
       subcategoryValue: form.kind === 'expense' ? form.subcategoryValue : '',
       investmentType: form.kind === 'investment' ? form.investmentType : '',
+      linkedInvestmentId: form.kind === 'investment' ? form.linkedInvestmentId : '',
       autoCreate: form.autoCreate,
       notes: form.notes.trim(),
     };
@@ -229,16 +251,41 @@ export default function RecurringForm() {
             </div>
           </div>
         ) : (
-          <div className="form-group">
-            <label className="form-label">Investment type</label>
-            <select className="form-input" value={form.investmentType} onChange={(event) => handleChange('investmentType', event.target.value)}>
-              {INVESTMENT_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <>
+            <div className="form-group">
+              <label className="form-label">Contribute to</label>
+              <select
+                className="form-input"
+                value={form.linkedInvestmentId}
+                onChange={(event) => handleChange('linkedInvestmentId', event.target.value)}
+              >
+                <option value="">Create a new investment each time</option>
+                {investmentOptions.map((inv) => (
+                  <option key={inv.id} value={inv.id}>
+                    {inv.name} · {inv.memberName} ({formatCurrency(inv.currentValue)})
+                  </option>
+                ))}
+              </select>
+              <p className="form-helper-text">
+                {form.linkedInvestmentId
+                  ? 'Each recording will add this amount to the selected investment’s invested and current value.'
+                  : 'Each recording will create a new investment entry.'}
+              </p>
+            </div>
+
+            {!form.linkedInvestmentId ? (
+              <div className="form-group">
+                <label className="form-label">Investment type</label>
+                <select className="form-input" value={form.investmentType} onChange={(event) => handleChange('investmentType', event.target.value)}>
+                  {INVESTMENT_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+          </>
         )}
 
         <div className="form-group">
