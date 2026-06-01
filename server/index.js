@@ -90,8 +90,7 @@ const REPORT_SCHEMA = {
 
 const RECEIPT_ITEM_SCHEMA = {
   type: 'object',
-  additionalProperties: false,
-  required: ['name', 'amount', 'date', 'category', 'subcategory', 'paymentMethod', 'notes', 'confidence'],
+  required: ['name', 'amount', 'date', 'category'],
   properties: {
     name: { type: 'string' },
     amount: { type: 'number' },
@@ -100,20 +99,19 @@ const RECEIPT_ITEM_SCHEMA = {
     subcategory: { type: 'string' },
     paymentMethod: { type: 'string' },
     notes: { type: 'string' },
-    confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
+    confidence: { type: 'string' },
   },
 };
 
 const RECEIPT_SCHEMA = {
   type: 'object',
-  additionalProperties: false,
-  required: ['kind', 'items', 'note'],
+  required: ['kind', 'items'],
   properties: {
-    kind: { type: 'string', enum: ['single', 'list', 'unreadable'] },
+    kind: { type: 'string' },
     note: { type: 'string' },
     items: {
       type: 'array',
-      maxItems: 30,
+      maxItems: 12,
       items: RECEIPT_ITEM_SCHEMA,
     },
   },
@@ -506,7 +504,7 @@ async function generateGeminiJson({ promptPayload, schema, systemPrompt, sanitiz
   }
 }
 
-async function generateOpenAiVisionJson({ promptPayload, image, mimeType, schema, schemaName, systemPrompt, sanitize }) {
+async function generateOpenAiVisionJson({ promptPayload, image, mimeType, schema, schemaName, systemPrompt, sanitize, strict = true }) {
   if (!process.env.OPENAI_API_KEY) {
     throw createError(500, 'OPENAI_API_KEY is not configured on the AI server.');
   }
@@ -530,7 +528,7 @@ async function generateOpenAiVisionJson({ promptPayload, image, mimeType, schema
         format: {
           type: 'json_schema',
           name: schemaName,
-          strict: true,
+          strict,
           schema,
         },
       },
@@ -642,7 +640,9 @@ async function generateProviderReceipt(provider, { image, mimeType, promptPayloa
     systemPrompt: AI_RECEIPT_SYSTEM_PROMPT,
     sanitize: sanitizeReceiptParse,
   };
-  return provider === 'gemini' ? generateGeminiVisionJson(args) : generateOpenAiVisionJson(args);
+  return provider === 'gemini'
+    ? generateGeminiVisionJson(args)
+    : generateOpenAiVisionJson({ ...args, strict: false });
 }
 
 async function generateOpenAiReport(promptPayload) {

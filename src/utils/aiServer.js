@@ -1,4 +1,4 @@
-const RENDER_AI_SERVER_URL = 'https://my-money-nzbk.onrender.com';
+const RENDER_AI_SERVER_URL = 'https://my-money-api-ds6q.onrender.com';
 
 function getAiServerUrl() {
   const configuredUrl = import.meta.env.VITE_AI_SERVER_URL;

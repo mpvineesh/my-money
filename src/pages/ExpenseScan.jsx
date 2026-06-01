@@ -121,7 +121,7 @@ export default function ExpenseScan() {
       const response = await parseReceipt({
         image: imageBlob.base64,
         mimeType: imageBlob.mimeType,
-        provider: 'openai',
+        provider: 'gemini',
       });
       const result = response?.result;
       if (!result || result.kind === 'unreadable' || !result.items?.length) {
