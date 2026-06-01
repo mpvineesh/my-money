@@ -17,6 +17,7 @@ import RequireAuth from './components/RequireAuth';
 import Expenses from './pages/Expenses';
 import ExpenseList from './pages/ExpenseList';
 import ExpenseForm from './pages/ExpenseForm';
+import ExpenseScan from './pages/ExpenseScan';
 import AiInsights from './pages/AiInsights';
 import MonthlyReview from './pages/MonthlyReview';
 import Recurring from './pages/Recurring';
@@ -51,6 +52,7 @@ export default function App() {
                 <Route path="/expenses" element={<RequireAuth><Expenses /></RequireAuth>} />
                 <Route path="/expenses/list" element={<RequireAuth><ExpenseList /></RequireAuth>} />
                 <Route path="/expenses/new" element={<RequireAuth><ExpenseForm /></RequireAuth>} />
+                <Route path="/expenses/scan" element={<RequireAuth><ExpenseScan /></RequireAuth>} />
                 <Route path="/expenses/edit/:id" element={<RequireAuth><ExpenseForm /></RequireAuth>} />
                 <Route path="/recurring" element={<RequireAuth><Recurring /></RequireAuth>} />
                 <Route path="/recurring/new" element={<RequireAuth><RecurringForm /></RequireAuth>} />

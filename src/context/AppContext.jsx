@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   loadInvestments,
@@ -60,17 +60,34 @@ import {
   getExpenseTypes,
   getExpenseChartColor,
   getPaymentMethodInfo,
+  EXPENSE_PAYMENT_METHODS,
 } from '../utils/constants';
 import { AppContext } from './AppContextDef';
 import { useAuth } from './useAuth';
 import { db } from '../firebase';
 import { collection, doc, onSnapshot, orderBy, query, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { requestAiAsk, requestMonthlyAiReport } from '../utils/aiServer';
+import { requestAiAsk, requestMonthlyAiReport, requestReceiptParse } from '../utils/aiServer';
 
 function formatStoredExpenseDateTime(value) {
   if (!value) return '';
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${value}T09:00`;
   return String(value).slice(0, 16);
+}
+
+function writeMemberAccess(ownerUid, ownerName, member) {
+  if (!ownerUid || !member?.email) return;
+  setDoc(doc(db, 'memberAccess', member.email), {
+    ownerUid,
+    ownerName: String(ownerName || '').trim(),
+    memberId: member.id,
+    memberName: String(member.name || '').trim(),
+    role: 'reader',
+  });
+}
+
+function removeMemberAccess(email) {
+  if (!email) return;
+  deleteDoc(doc(db, 'memberAccess', email));
 }
 
 function getTodayDateValue() {
@@ -791,7 +808,11 @@ const INITIAL_APP_SETTINGS = loadPersistedAppSettings();
 const INITIAL_AI_REPORTS = loadPersistedAiReports();
 
 export function AppProvider({ children }) {
-  const { user } = useAuth();
+  const { user, household } = useAuth();
+  const effectiveUid = household?.mode === 'member' ? household.ownerUid : user?.uid;
+  const isReadOnly = household?.mode === 'member';
+  const readOnlyRef = useRef(false);
+  useEffect(() => { readOnlyRef.current = isReadOnly; }, [isReadOnly]);
 
   const [investments, setInvestments] = useState(() => loadPersistedInvestments().map((investment) => normalizeInvestment(investment)));
   const [familyMembers, setFamilyMembers] = useState(loadPersistedFamilyMembers);
@@ -821,8 +842,11 @@ export function AppProvider({ children }) {
     [familyMembers, investments],
   );
   const investmentVisibilityMemberId = useMemo(
-    () => normalizeInvestmentVisibilityMemberId(appSettings?.investmentVisibilityMemberId || 'all', investmentMemberOptions),
-    [appSettings?.investmentVisibilityMemberId, investmentMemberOptions],
+    () => {
+      if (household?.mode === 'member' && household.memberId) return household.memberId;
+      return normalizeInvestmentVisibilityMemberId(appSettings?.investmentVisibilityMemberId || 'all', investmentMemberOptions);
+    },
+    [appSettings?.investmentVisibilityMemberId, household, investmentMemberOptions],
   );
   const investmentVisibilityMember = useMemo(
     () =>
@@ -882,24 +906,25 @@ export function AppProvider({ children }) {
       && storedSnapshot.netWorth === currentNetWorthSnapshot.netWorth;
 
     if (isSameSnapshot) return;
+    if (isReadOnly) return;
 
     saveNetWorthSnapshots(derivedNetWorthSnapshots);
     if (user) {
       const ref = doc(db, 'users', user.uid, 'netWorthSnapshots', currentNetWorthSnapshot.periodKey);
       setDoc(ref, currentNetWorthSnapshot);
     }
-  }, [currentNetWorthSnapshot, derivedNetWorthSnapshots, netWorthSnapshots, user]);
+  }, [currentNetWorthSnapshot, derivedNetWorthSnapshots, isReadOnly, netWorthSnapshots, user]);
 
   useEffect(() => {
-    // If user is signed in, listen to their Firestore collections and sync locally
-    if (!user) return undefined;
+    // Listen to the active household's Firestore collections (owner OR member view).
+    if (!effectiveUid) return undefined;
 
-    const invCol = collection(db, 'users', user.uid, 'investments');
-    const familyMembersCol = collection(db, 'users', user.uid, 'familyMembers');
-    const goalsCol = collection(db, 'users', user.uid, 'goals');
-    const loansCol = collection(db, 'users', user.uid, 'loans');
-    const cashHistoryCol = collection(db, 'users', user.uid, 'cashHistory');
-    const netWorthSnapshotsCol = collection(db, 'users', user.uid, 'netWorthSnapshots');
+    const invCol = collection(db, 'users', effectiveUid, 'investments');
+    const familyMembersCol = collection(db, 'users', effectiveUid, 'familyMembers');
+    const goalsCol = collection(db, 'users', effectiveUid, 'goals');
+    const loansCol = collection(db, 'users', effectiveUid, 'loans');
+    const cashHistoryCol = collection(db, 'users', effectiveUid, 'cashHistory');
+    const netWorthSnapshotsCol = collection(db, 'users', effectiveUid, 'netWorthSnapshots');
 
     const unsubInv = onSnapshot(invCol, (snap) => {
       const items = snap.docs.map((d) => normalizeInvestment({ id: d.id, ...d.data() }));
@@ -943,35 +968,35 @@ export function AppProvider({ children }) {
       saveNetWorthSnapshots(items);
     });
 
-    const expensesCol = collection(db, 'users', user.uid, 'expenses');
+    const expensesCol = collection(db, 'users', effectiveUid, 'expenses');
     const unsubExpenses = onSnapshot(expensesCol, (snap) => {
       const items = snap.docs.map((d) => normalizeExpense({ id: d.id, ...d.data() }));
       setExpenses(items);
       saveExpenses(items);
     });
 
-    const expensePayersCol = collection(db, 'users', user.uid, 'expensePayers');
+    const expensePayersCol = collection(db, 'users', effectiveUid, 'expensePayers');
     const unsubExpensePayers = onSnapshot(expensePayersCol, (snap) => {
       const items = normalizeExpensePayers(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       setExpensePayers(items);
       saveExpensePayers(items);
     });
 
-    const expenseProjectsCol = collection(db, 'users', user.uid, 'expenseProjects');
+    const expenseProjectsCol = collection(db, 'users', effectiveUid, 'expenseProjects');
     const unsubExpenseProjects = onSnapshot(expenseProjectsCol, (snap) => {
       const items = normalizeExpenseProjects(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       setExpenseProjects(items);
       saveExpenseProjects(items);
     });
 
-    const expenseCategoriesCol = collection(db, 'users', user.uid, 'expenseCategories');
+    const expenseCategoriesCol = collection(db, 'users', effectiveUid, 'expenseCategories');
     const unsubExpenseCategories = onSnapshot(expenseCategoriesCol, (snap) => {
       const items = normalizeExpenseCategories(snap.docs.map((d, index) => ({ id: d.id, ...d.data(), sortIndex: index })));
       setExpenseCategories(items);
       saveExpenseCategories(items);
     });
 
-    const expenseSubcategoriesCol = collection(db, 'users', user.uid, 'expenseSubcategories');
+    const expenseSubcategoriesCol = collection(db, 'users', effectiveUid, 'expenseSubcategories');
     const unsubExpenseSubcategories = onSnapshot(expenseSubcategoriesCol, (snap) => {
       const items = normalizeExpenseSubcategories(
         snap.docs.map((d, index) => ({ id: d.id, ...d.data(), sortIndex: index })),
@@ -980,7 +1005,7 @@ export function AppProvider({ children }) {
       saveExpenseSubcategories(items);
     });
 
-    const expenseTypesCol = collection(db, 'users', user.uid, 'expenseTypes');
+    const expenseTypesCol = collection(db, 'users', effectiveUid, 'expenseTypes');
     const unsubExpenseTypes = onSnapshot(expenseTypesCol, (snap) => {
       const items = normalizeExpenseTypes(
         snap.docs.map((d, index) => ({ id: d.id, ...d.data(), sortIndex: index })),
@@ -989,7 +1014,7 @@ export function AppProvider({ children }) {
       saveExpenseTypes(items);
     });
 
-    const expenseBudgetsCol = collection(db, 'users', user.uid, 'expenseBudgets');
+    const expenseBudgetsCol = collection(db, 'users', effectiveUid, 'expenseBudgets');
     const unsubExpenseBudgets = onSnapshot(expenseBudgetsCol, (snap) => {
       const items = normalizeExpenseBudgets(
         snap.docs.map((d) => ({ id: d.id, ...d.data() })),
@@ -1000,7 +1025,7 @@ export function AppProvider({ children }) {
       saveExpenseBudgets(items);
     });
 
-    const recurringEntriesCol = collection(db, 'users', user.uid, 'recurringEntries');
+    const recurringEntriesCol = collection(db, 'users', effectiveUid, 'recurringEntries');
     const unsubRecurringEntries = onSnapshot(recurringEntriesCol, (snap) => {
       const items = normalizeRecurringEntries(
         snap.docs.map((d) => ({ id: d.id, ...d.data() })),
@@ -1011,21 +1036,21 @@ export function AppProvider({ children }) {
       saveRecurringEntries(items);
     });
 
-    const remindersCol = collection(db, 'users', user.uid, 'reminders');
+    const remindersCol = collection(db, 'users', effectiveUid, 'reminders');
     const unsubReminders = onSnapshot(remindersCol, (snap) => {
       const items = normalizeReminders(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
       setReminders(items);
       saveReminders(items);
     });
 
-    const appSettingsRef = doc(db, 'users', user.uid, 'settings', 'preferences');
+    const appSettingsRef = doc(db, 'users', effectiveUid, 'settings', 'preferences');
     const unsubAppSettings = onSnapshot(appSettingsRef, (snap) => {
       const nextSettings = normalizeAppSettings(snap.exists() ? snap.data() : {});
       setAppSettings(nextSettings);
       saveAppSettings(nextSettings);
     });
 
-    const aiReportsQuery = query(collection(db, 'users', user.uid, 'aiReports'), orderBy('generatedAt', 'desc'));
+    const aiReportsQuery = query(collection(db, 'users', effectiveUid, 'aiReports'), orderBy('generatedAt', 'desc'));
     const unsubAiReports = onSnapshot(aiReportsQuery, (snap) => {
       const items = sortAiReports(snap.docs.map((d) => normalizeAiReport({ id: d.id, ...d.data() })));
       setAiReports(items);
@@ -1051,9 +1076,10 @@ export function AppProvider({ children }) {
       unsubAppSettings();
       unsubAiReports();
     };
-  }, [expenseCategories, expenseSubcategories, user]);
+  }, [expenseCategories, expenseSubcategories, effectiveUid]);
 
   const addExpenseProject = useCallback((projectName) => {
+    if (readOnlyRef.current) return null;
     const trimmedName = String(projectName || '').trim();
     if (!trimmedName) return null;
 
@@ -1076,6 +1102,7 @@ export function AppProvider({ children }) {
   }, [expenseProjects, user]);
 
   const addInvestment = useCallback((investment) => {
+    if (readOnlyRef.current) return null;
     const newItem = buildInvestmentForSave({ ...investment, id: uuidv4() });
     if (user) {
       const ref = doc(db, 'users', user.uid, 'investments', newItem.id);
@@ -1090,6 +1117,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const addFamilyMember = useCallback((member) => {
+    if (readOnlyRef.current) return null;
     const trimmedName = String(member?.name || '').trim();
     if (!trimmedName) return null;
 
@@ -1107,6 +1135,7 @@ export function AppProvider({ children }) {
     if (user) {
       const ref = doc(db, 'users', user.uid, 'familyMembers', newMember.id);
       setDoc(ref, newMember);
+      writeMemberAccess(user.uid, user.displayName || user.email, newMember);
       return newMember;
     }
 
@@ -1120,6 +1149,7 @@ export function AppProvider({ children }) {
   }, [familyMembers, user]);
 
   const updateFamilyMember = useCallback((id, member) => {
+    if (readOnlyRef.current) return null;
     if (!id || id === DEFAULT_FAMILY_MEMBER.id) return null;
 
     const currentMember = familyMembers.find((item) => item.id === id);
@@ -1144,6 +1174,10 @@ export function AppProvider({ children }) {
     if (user) {
       const memberRef = doc(db, 'users', user.uid, 'familyMembers', id);
       setDoc(memberRef, nextMember, { merge: true });
+      if (currentMember.email && currentMember.email !== nextMember.email) {
+        removeMemberAccess(currentMember.email);
+      }
+      writeMemberAccess(user.uid, user.displayName || user.email, nextMember);
       linkedInvestments.forEach((investment) => {
         const investmentRef = doc(db, 'users', user.uid, 'investments', investment.id);
         updateDoc(investmentRef, { memberId: id, memberName: trimmedName });
@@ -1171,14 +1205,17 @@ export function AppProvider({ children }) {
   }, [familyMembers, investments, user]);
 
   const deleteFamilyMember = useCallback((id) => {
+    if (readOnlyRef.current) return null;
     if (!id || id === DEFAULT_FAMILY_MEMBER.id) return;
 
     const fallbackMember = DEFAULT_FAMILY_MEMBER;
+    const memberToDelete = familyMembers.find((item) => item.id === id);
     const linkedInvestments = investments.filter((investment) => investment.memberId === id);
 
     if (user) {
       const memberRef = doc(db, 'users', user.uid, 'familyMembers', id);
       deleteDoc(memberRef);
+      if (memberToDelete?.email) removeMemberAccess(memberToDelete.email);
       linkedInvestments.forEach((investment) => {
         const investmentRef = doc(db, 'users', user.uid, 'investments', investment.id);
         updateDoc(investmentRef, { memberId: fallbackMember.id, memberName: fallbackMember.name });
@@ -1203,9 +1240,18 @@ export function AppProvider({ children }) {
         return updated;
       });
     }
-  }, [investments, user]);
+  }, [familyMembers, investments, user]);
+
+  useEffect(() => {
+    if (!user || isReadOnly) return;
+    const ownerName = user.displayName || user.email || '';
+    familyMembers.forEach((member) => {
+      if (member.email) writeMemberAccess(user.uid, ownerName, member);
+    });
+  }, [familyMembers, isReadOnly, user]);
 
   const addLoan = useCallback((loan) => {
+    if (readOnlyRef.current) return null;
     const newItem = buildLoanForSave({ ...loan, id: uuidv4() });
     if (user) {
       const ref = doc(db, 'users', user.uid, 'loans', newItem.id);
@@ -1220,6 +1266,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const updateLoan = useCallback((id, loan) => {
+    if (readOnlyRef.current) return null;
     const previousLoan = loans.find((item) => item.id === id);
     const nextLoan = buildLoanForSave({ ...loan, id }, previousLoan);
     if (user) {
@@ -1235,6 +1282,7 @@ export function AppProvider({ children }) {
   }, [loans, user]);
 
   const deleteLoan = useCallback((id) => {
+    if (readOnlyRef.current) return null;
     if (user) {
       const ref = doc(db, 'users', user.uid, 'loans', id);
       deleteDoc(ref);
@@ -1248,6 +1296,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const addExpense = useCallback((expense) => {
+    if (readOnlyRef.current) return null;
     const newItem = normalizeExpense({ ...expense, id: uuidv4() }, expenseCategories, expenseSubcategories, expenseTypes);
     if (newItem.project) addExpenseProject(newItem.project);
     if (user) {
@@ -1263,6 +1312,7 @@ export function AppProvider({ children }) {
   }, [addExpenseProject, expenseCategories, expenseSubcategories, expenseTypes, user]);
 
   const updateExpense = useCallback((id, expense) => {
+    if (readOnlyRef.current) return null;
     const normalizedExpense = normalizeExpense(expense, expenseCategories, expenseSubcategories, expenseTypes);
     if (normalizedExpense.project) addExpenseProject(normalizedExpense.project);
     if (user) {
@@ -1278,6 +1328,7 @@ export function AppProvider({ children }) {
   }, [addExpenseProject, expenseCategories, expenseSubcategories, expenseTypes, user]);
 
   const deleteExpense = useCallback((id) => {
+    if (readOnlyRef.current) return null;
     if (user) {
       const ref = doc(db, 'users', user.uid, 'expenses', id);
       deleteDoc(ref);
@@ -1291,6 +1342,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const addExpensePayer = useCallback((payer) => {
+    if (readOnlyRef.current) return null;
     const trimmedName = payer?.name?.trim();
     if (!trimmedName) return null;
 
@@ -1311,6 +1363,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const addExpenseCategory = useCallback((category) => {
+    if (readOnlyRef.current) return null;
     const trimmedLabel = category?.label?.trim();
     if (!trimmedLabel) return null;
 
@@ -1342,6 +1395,7 @@ export function AppProvider({ children }) {
   }, [expenseCategories, user]);
 
   const addExpenseSubcategory = useCallback((subcategory) => {
+    if (readOnlyRef.current) return null;
     const trimmedLabel = subcategory?.label?.trim();
     const categoryValue = String(subcategory?.categoryValue || '').trim().toLowerCase();
     if (!trimmedLabel || !categoryValue) return null;
@@ -1375,6 +1429,7 @@ export function AppProvider({ children }) {
   }, [expenseSubcategories, user]);
 
   const addExpenseType = useCallback((expenseType) => {
+    if (readOnlyRef.current) return null;
     const trimmedLabel = expenseType?.label?.trim();
     const categoryValue = String(expenseType?.categoryValue || '').trim().toLowerCase();
     const subcategoryValue = String(expenseType?.subcategoryValue || '').trim().toLowerCase();
@@ -1410,6 +1465,7 @@ export function AppProvider({ children }) {
   }, [expenseTypes, user]);
 
   const addExpenseBudget = useCallback((expenseBudget) => {
+    if (readOnlyRef.current) return null;
     const normalizedBudget = normalizeExpenseBudget(expenseBudget, expenseCategories, expenseSubcategories);
     if (!normalizedBudget.categoryValue || normalizedBudget.amount <= 0) return null;
 
@@ -1456,6 +1512,7 @@ export function AppProvider({ children }) {
   }, [expenseBudgets, expenseCategories, expenseSubcategories, user]);
 
   const updateExpenseBudget = useCallback((id, expenseBudget) => {
+    if (readOnlyRef.current) return null;
     const previousBudget = expenseBudgets.find((item) => item.id === id);
     const normalizedBudget = normalizeExpenseBudget({ ...previousBudget, ...expenseBudget, id }, expenseCategories, expenseSubcategories);
     if (!normalizedBudget.categoryValue || normalizedBudget.amount <= 0) return null;
@@ -1509,6 +1566,7 @@ export function AppProvider({ children }) {
   }, [expenseBudgets, expenseCategories, expenseSubcategories, user]);
 
   const deleteExpenseBudget = useCallback((id) => {
+    if (readOnlyRef.current) return null;
     if (user) {
       const ref = doc(db, 'users', user.uid, 'expenseBudgets', id);
       deleteDoc(ref);
@@ -1523,6 +1581,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const addRecurringEntry = useCallback((recurringEntry) => {
+    if (readOnlyRef.current) return null;
     const newEntry = normalizeRecurringEntry({ ...recurringEntry, id: uuidv4() }, expenseCategories, expenseSubcategories);
     if (!newEntry.title || newEntry.amount <= 0) return null;
 
@@ -1542,6 +1601,7 @@ export function AppProvider({ children }) {
   }, [expenseCategories, expenseSubcategories, user]);
 
   const updateRecurringEntry = useCallback((id, recurringEntry) => {
+    if (readOnlyRef.current) return null;
     const currentEntry = recurringEntries.find((item) => item.id === id);
     const normalizedEntry = normalizeRecurringEntry({ ...currentEntry, ...recurringEntry, id }, expenseCategories, expenseSubcategories);
     if (!normalizedEntry.title || normalizedEntry.amount <= 0) return null;
@@ -1566,6 +1626,7 @@ export function AppProvider({ children }) {
   }, [expenseCategories, expenseSubcategories, recurringEntries, user]);
 
   const deleteRecurringEntry = useCallback((id) => {
+    if (readOnlyRef.current) return null;
     if (user) {
       const ref = doc(db, 'users', user.uid, 'recurringEntries', id);
       deleteDoc(ref);
@@ -1580,6 +1641,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const markRecurringEntryRecorded = useCallback((id, recordedDate = getTodayDateValue()) => {
+    if (readOnlyRef.current) return null;
     const entry = recurringEntries.find((item) => item.id === id);
     if (!entry) return null;
 
@@ -1613,6 +1675,7 @@ export function AppProvider({ children }) {
   }, [expenseCategories, expenseSubcategories, recurringEntries, user]);
 
   const updateInvestment = useCallback((id, investment) => {
+    if (readOnlyRef.current) return null;
     const previousInvestment = investments.find((item) => item.id === id);
     const normalizedInvestment = buildInvestmentForSave({ ...investment, id }, previousInvestment);
     if (user) {
@@ -1628,6 +1691,7 @@ export function AppProvider({ children }) {
   }, [investments, user]);
 
   const recordRecurringEntryNow = useCallback((id, recordedDate = getTodayDateValue()) => {
+    if (readOnlyRef.current) return null;
     const entry = recurringEntries.find((item) => item.id === id);
     if (!entry) return null;
 
@@ -1678,6 +1742,7 @@ export function AppProvider({ children }) {
   }, [recordRecurringEntryNow, recurringEntries]);
 
   const addReminder = useCallback((reminder) => {
+    if (readOnlyRef.current) return null;
     const newReminder = normalizeReminder({ ...reminder, id: uuidv4() });
     if (!newReminder.title || newReminder.amount <= 0) return null;
 
@@ -1697,6 +1762,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const updateReminder = useCallback((id, reminder) => {
+    if (readOnlyRef.current) return null;
     const currentReminder = reminders.find((item) => item.id === id);
     const normalizedReminder = normalizeReminder({ ...currentReminder, ...reminder, id });
     if (!normalizedReminder.title || normalizedReminder.amount <= 0) return null;
@@ -1719,6 +1785,7 @@ export function AppProvider({ children }) {
   }, [reminders, user]);
 
   const deleteReminder = useCallback((id) => {
+    if (readOnlyRef.current) return null;
     if (user) {
       const ref = doc(db, 'users', user.uid, 'reminders', id);
       deleteDoc(ref);
@@ -1733,6 +1800,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const markReminderDone = useCallback((id, completedDate = getTodayDateValue()) => {
+    if (readOnlyRef.current) return null;
     const reminder = reminders.find((item) => item.id === id);
     if (!reminder) return null;
 
@@ -1773,6 +1841,7 @@ export function AppProvider({ children }) {
   }, [reminders, user]);
 
   const updateAppSettings = useCallback((nextSettings) => {
+    if (readOnlyRef.current) return null;
     const normalizedSettings = normalizeAppSettings({
       ...appSettings,
       ...(typeof nextSettings === 'function' ? nextSettings(appSettings) : nextSettings),
@@ -1790,6 +1859,7 @@ export function AppProvider({ children }) {
   }, [appSettings, user]);
 
   const setCash = useCallback((amount) => {
+    if (readOnlyRef.current) return null;
     const value = Number(amount) || 0;
     const date = getTodayDateValue();
     const nextHistory = appendAmountSnapshot(cashHistory, value, date);
@@ -1804,6 +1874,7 @@ export function AppProvider({ children }) {
   }, [cashHistory, user]);
 
   const generateMonthlyAiReport = useCallback(async (periodKey, options = {}) => {
+    if (readOnlyRef.current) return null;
     if (!user) throw new Error('Sign in is required to generate AI reports.');
 
     const result = await requestMonthlyAiReport(user, {
@@ -1831,11 +1902,32 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const askAi = useCallback(async (payload) => {
+    if (readOnlyRef.current) return null;
     if (!user) throw new Error('Sign in is required to ask AI.');
     return requestAiAsk(user, payload);
   }, [user]);
 
+  const parseReceipt = useCallback(async ({ image, mimeType, provider }) => {
+    if (readOnlyRef.current) return null;
+    if (!user) throw new Error('Sign in is required to scan receipts.');
+    const categories = expenseCategories.map((category) => category.value).filter(Boolean);
+    const subcategories = expenseSubcategories
+      .map((subcategory) => ({ category: subcategory.categoryValue, value: subcategory.value }))
+      .filter((entry) => entry.category && entry.value);
+    const paymentMethods = EXPENSE_PAYMENT_METHODS.map((method) => method.value);
+    return requestReceiptParse(user, {
+      image,
+      mimeType,
+      provider,
+      today: getTodayDateValue(),
+      categories,
+      subcategories,
+      paymentMethods,
+    });
+  }, [user, expenseCategories, expenseSubcategories]);
+
   const deleteInvestment = useCallback((id) => {
+    if (readOnlyRef.current) return null;
     if (user) {
       const ref = doc(db, 'users', user.uid, 'investments', id);
       deleteDoc(ref);
@@ -1849,6 +1941,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const addGoal = useCallback((goal) => {
+    if (readOnlyRef.current) return null;
     const normalizedGoal = normalizeGoal({ ...goal, id: uuidv4() });
     const newItem = {
       ...normalizedGoal,
@@ -1867,6 +1960,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const updateGoal = useCallback((id, goal) => {
+    if (readOnlyRef.current) return null;
     const previousGoal = storedGoals.find((item) => item.id === id);
     const normalizedGoal = normalizeGoal({ ...previousGoal, ...goal, id });
     const nextGoal = {
@@ -1886,6 +1980,7 @@ export function AppProvider({ children }) {
   }, [storedGoals, user]);
 
   const deleteGoal = useCallback((id) => {
+    if (readOnlyRef.current) return null;
     if (user) {
       const ref = doc(db, 'users', user.uid, 'goals', id);
       deleteDoc(ref);
@@ -1899,6 +1994,7 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const resetToDemo = useCallback(() => {
+    if (readOnlyRef.current) return null;
     const demoInv = getDemoInvestments().map((investment) => normalizeInvestment(investment));
     const demoGoals = getDemoGoals().map((goal) => normalizeGoal(goal));
     const demoLoans = getDemoLoans();
@@ -1944,6 +2040,8 @@ export function AppProvider({ children }) {
   }, []);
 
   const value = {
+    household,
+    isReadOnly,
     investments,
     familyMembers,
     investmentMemberOptions,
@@ -2002,6 +2100,7 @@ export function AppProvider({ children }) {
     updateAppSettings,
     generateMonthlyAiReport,
     askAi,
+    parseReceipt,
     resetToDemo,
   };
 

@@ -35,6 +35,34 @@ export async function requestMonthlyAiReport(user, payload) {
   return data;
 }
 
+export async function requestReceiptParse(user, payload) {
+  if (!user) {
+    throw new Error('Sign in is required to scan receipts.');
+  }
+
+  const token = await user.getIdToken();
+  let response;
+  try {
+    response = await fetch(`${getAiServerUrl()}/api/ai/parse-receipt`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new Error(`Could not reach the AI server at ${getAiServerUrl()}.`);
+  }
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data?.error || 'Could not parse the receipt.');
+  }
+
+  return data;
+}
+
 export async function requestAiAsk(user, payload) {
   if (!user) {
     throw new Error('Sign in is required to ask AI.');

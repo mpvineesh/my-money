@@ -88,6 +88,37 @@ const REPORT_SCHEMA = {
   },
 };
 
+const RECEIPT_ITEM_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['name', 'amount', 'date', 'category', 'subcategory', 'paymentMethod', 'notes', 'confidence'],
+  properties: {
+    name: { type: 'string' },
+    amount: { type: 'number' },
+    date: { type: 'string' },
+    category: { type: 'string' },
+    subcategory: { type: 'string' },
+    paymentMethod: { type: 'string' },
+    notes: { type: 'string' },
+    confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
+  },
+};
+
+const RECEIPT_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['kind', 'items', 'note'],
+  properties: {
+    kind: { type: 'string', enum: ['single', 'list', 'unreadable'] },
+    note: { type: 'string' },
+    items: {
+      type: 'array',
+      maxItems: 30,
+      items: RECEIPT_ITEM_SCHEMA,
+    },
+  },
+};
+
 const ASK_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -107,6 +138,17 @@ const AI_REPORT_SYSTEM_PROMPT =
   'You are a personal finance analyst for a money-tracking app. Use only the provided JSON. Do not invent transactions or balances. Avoid regulated financial advice, and give practical observations and next steps. Balance the report across expenses and investments, and explicitly comment on portfolio progress, gains or losses, and concentration where data supports it.';
 const AI_ASK_SYSTEM_PROMPT =
   'You are a personal finance analyst for a money-tracking app. Use only the provided JSON. Answer the user question directly, keep assumptions explicit, and do not invent transactions, returns, or interest savings. If a what-if scenario is provided, reason from the deterministic scenario values instead of making up projections.';
+const AI_RECEIPT_SYSTEM_PROMPT =
+  'You parse photos of bills, receipts, and hand-written expense notes into structured expense data. ' +
+  'Rules: ' +
+  '(1) If the image is a single printed/till receipt or single bill, set kind="single" and items has ONE entry whose amount is the grand total. ' +
+  '(2) If the image is a hand-written list where each line is a separate expense the user wants to track, set kind="list" with one item per line. ' +
+  '(3) If the image is unreadable, set kind="unreadable" and items=[]. ' +
+  '(4) Map category, subcategory, and paymentMethod to values from the provided allowed lists ONLY. Use "other" if uncertain. ' +
+  '(5) Amounts are numbers in INR (no currency symbols). ' +
+  '(6) date is YYYY-MM-DD. Use the date visible on the receipt if present, else use the provided today value. ' +
+  '(7) confidence reflects how sure you are about the parsed values for that item. ' +
+  '(8) Do not invent amounts you cannot read.';
 
 function createError(status, message) {
   const error = new Error(message);
@@ -464,6 +506,145 @@ async function generateGeminiJson({ promptPayload, schema, systemPrompt, sanitiz
   }
 }
 
+async function generateOpenAiVisionJson({ promptPayload, image, mimeType, schema, schemaName, systemPrompt, sanitize }) {
+  if (!process.env.OPENAI_API_KEY) {
+    throw createError(500, 'OPENAI_API_KEY is not configured on the AI server.');
+  }
+
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+  try {
+    const aiResponse = await client.responses.create({
+      model: openAiModel,
+      input: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: [
+            { type: 'input_text', text: JSON.stringify(promptPayload, null, 2) },
+            { type: 'input_image', image_url: `data:${mimeType};base64,${image}` },
+          ],
+        },
+      ],
+      text: {
+        format: {
+          type: 'json_schema',
+          name: schemaName,
+          strict: true,
+          schema,
+        },
+      },
+    });
+
+    if (!aiResponse.output_text) {
+      throw createError(502, 'OpenAI returned an empty response.');
+    }
+
+    return sanitize(JSON.parse(aiResponse.output_text));
+  } catch (error) {
+    logAiError('OpenAI', openAiModel, error);
+    const diagnostic =
+      process.env.NODE_ENV === 'production'
+        ? ''
+        : ` provider=openai code=${error?.code || 'unknown'} requestId=${error?.request_id || error?.headers?.['x-request-id'] || 'unknown'}`;
+    throw createError(error?.status === 429 ? 429 : 502, `AI request failed.${diagnostic}`);
+  }
+}
+
+async function generateGeminiVisionJson({ promptPayload, image, mimeType, schema, systemPrompt, sanitize }) {
+  if (!process.env.GEMINI_API_KEY) {
+    throw createError(500, 'GEMINI_API_KEY is not configured on the AI server.');
+  }
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': process.env.GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents: [
+            { parts: [{ text: systemPrompt }] },
+            {
+              parts: [
+                { text: JSON.stringify(promptPayload, null, 2) },
+                { inlineData: { mimeType, data: image } },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseJsonSchema: schema,
+          },
+        }),
+      },
+    );
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const apiError = payload?.error || {};
+      const error = new Error(apiError.message || 'Gemini request failed.');
+      error.status = response.status;
+      error.code = apiError.status || apiError.code || 'unknown';
+      error.type = apiError.status || 'unknown';
+      throw error;
+    }
+
+    const text = payload?.candidates?.[0]?.content?.parts?.find((part) => typeof part?.text === 'string')?.text || '';
+    if (!text) {
+      throw createError(502, 'Gemini returned an empty response.');
+    }
+
+    return sanitize(JSON.parse(text));
+  } catch (error) {
+    logAiError('Gemini', geminiModel, error);
+    const diagnostic =
+      process.env.NODE_ENV === 'production' ? '' : ` provider=gemini code=${error?.code || 'unknown'}`;
+    throw createError(error?.status === 429 ? 429 : 502, `AI request failed.${diagnostic}`);
+  }
+}
+
+function sanitizeReceiptParse(aiResponse) {
+  const validKinds = new Set(['single', 'list', 'unreadable']);
+  const kind = validKinds.has(aiResponse?.kind) ? aiResponse.kind : 'unreadable';
+  const items = Array.isArray(aiResponse?.items)
+    ? aiResponse.items
+        .map((item) => ({
+          name: normalizeLabel(item?.name, ''),
+          amount: safeNumber(item?.amount),
+          date: typeof item?.date === 'string' ? item.date.slice(0, 10) : '',
+          category: normalizeLabel(item?.category, 'other'),
+          subcategory: typeof item?.subcategory === 'string' ? item.subcategory.trim() : '',
+          paymentMethod: typeof item?.paymentMethod === 'string' ? item.paymentMethod.trim() : '',
+          notes: typeof item?.notes === 'string' ? item.notes.trim() : '',
+          confidence: ['low', 'medium', 'high'].includes(item?.confidence) ? item.confidence : 'medium',
+        }))
+        .filter((item) => item.amount > 0 || item.name)
+    : [];
+
+  return {
+    kind: kind === 'unreadable' || !items.length ? (items.length ? kind : 'unreadable') : kind,
+    note: normalizeLabel(aiResponse?.note, ''),
+    items,
+  };
+}
+
+async function generateProviderReceipt(provider, { image, mimeType, promptPayload }) {
+  const args = {
+    promptPayload,
+    image,
+    mimeType,
+    schema: RECEIPT_SCHEMA,
+    schemaName: 'receipt_parse',
+    systemPrompt: AI_RECEIPT_SYSTEM_PROMPT,
+    sanitize: sanitizeReceiptParse,
+  };
+  return provider === 'gemini' ? generateGeminiVisionJson(args) : generateOpenAiVisionJson(args);
+}
+
 async function generateOpenAiReport(promptPayload) {
   return generateOpenAiJson({
     promptPayload: {
@@ -552,7 +733,7 @@ function buildWhatIfScenario(scenarioInput, summaries) {
 app.use(cors({
   origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((item) => item.trim()) : true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '15mb' }));
 
 app.get('/health', (_request, response) => {
   response.json({ ok: true });
@@ -661,6 +842,59 @@ app.post('/api/ai/reports/monthly', requireUser, async (request, response, next)
     response.json({
       cached: false,
       report: serializeReport(`${provider}_${periodKey}`, reportDocument),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/ai/parse-receipt', requireUser, async (request, response, next) => {
+  try {
+    const provider = normalizeAiProvider(request.body?.provider);
+    const image = String(request.body?.image || '').trim();
+    const mimeType = String(request.body?.mimeType || '').trim() || 'image/jpeg';
+
+    if (!image) {
+      throw createError(400, 'Provide an image (base64) to parse.');
+    }
+    if (!/^image\/(jpeg|jpg|png|webp|heic|heif)$/i.test(mimeType)) {
+      throw createError(400, `Unsupported image type: ${mimeType}`);
+    }
+
+    const today = (request.body?.today && /^\d{4}-\d{2}-\d{2}$/.test(request.body.today))
+      ? request.body.today
+      : new Date().toISOString().slice(0, 10);
+    const allowedCategories = Array.isArray(request.body?.categories)
+      ? request.body.categories.filter((value) => typeof value === 'string' && value.trim()).slice(0, 60)
+      : [];
+    const allowedSubcategories = Array.isArray(request.body?.subcategories)
+      ? request.body.subcategories
+          .filter((entry) => entry && typeof entry.category === 'string' && typeof entry.value === 'string')
+          .slice(0, 200)
+      : [];
+    const allowedPaymentMethods = Array.isArray(request.body?.paymentMethods)
+      ? request.body.paymentMethods.filter((value) => typeof value === 'string' && value.trim()).slice(0, 20)
+      : [];
+
+    const promptPayload = {
+      task: 'Parse the attached image into structured expense data following the rules.',
+      today,
+      allowedCategories,
+      allowedSubcategories,
+      allowedPaymentMethods,
+    };
+
+    const result = await generateProviderReceipt(provider, {
+      image,
+      mimeType,
+      promptPayload,
+    });
+
+    response.json({
+      provider,
+      model: getProviderModel(provider),
+      generatedAt: new Date().toISOString(),
+      result,
     });
   } catch (error) {
     next(error);

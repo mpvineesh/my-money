@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { BellRing, Briefcase, Target, TrendingUp, Wallet, Repeat } from 'lucide-react';
+import { BellRing, Briefcase, ScanLine, Target, TrendingUp, Wallet, Repeat } from 'lucide-react';
 import './AddPage.css';
 
 export default function AddPage() {
@@ -43,6 +43,16 @@ export default function AddPage() {
           <div className="add-option-text">
             <h3>New Expense</h3>
             <p>Record amount, date, paid by, payment method, and category allocation</p>
+          </div>
+        </button>
+
+        <button className="add-option-card" onClick={() => navigate('/expenses/scan')}>
+          <div className="add-option-icon" style={{ background: '#eef2ff', color: '#6366f1' }}>
+            <ScanLine size={28} />
+          </div>
+          <div className="add-option-text">
+            <h3>Scan a Bill</h3>
+            <p>Snap a receipt or handwritten list — AI extracts the expense(s) for review</p>
           </div>
         </button>
 
