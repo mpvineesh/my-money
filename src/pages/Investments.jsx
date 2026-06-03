@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
-import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency, isValidDateValue } from '../utils/constants';
+import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency, formatCompactCurrency, isValidDateValue } from '../utils/constants';
 import InvestmentCard from '../components/InvestmentCard';
 import { Briefcase, CalendarRange, Search, SlidersHorizontal, Users } from 'lucide-react';
 import { LineChart, Line, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -345,7 +345,8 @@ export default function Investments() {
                   tickLine={false}
                   axisLine={false}
                   tick={{ fill: '#64748b', fontSize: 12 }}
-                  tickFormatter={(value) => formatCurrency(value)}
+                  tickFormatter={(value) => formatCompactCurrency(value)}
+                  width={52}
                 />
                 <Tooltip content={<ProgressTooltip />} />
                 <Line type="monotone" dataKey="investedAmount" stroke="#94a3b8" strokeWidth={2} dot={{ r: 3 }} />

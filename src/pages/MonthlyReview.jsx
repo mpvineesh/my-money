@@ -4,7 +4,7 @@ import { AlertTriangle, BellRing, Briefcase, CalendarRange, Repeat, Target, Wall
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import NativePickerField from '../components/NativePickerField';
 import { useApp } from '../context/useApp';
-import { formatCurrency, getExpenseCategoryInfo, isValidDateValue } from '../utils/constants';
+import { formatCurrency, formatCompactCurrency, getExpenseCategoryInfo, isValidDateValue } from '../utils/constants';
 import './MonthlyReview.css';
 
 const TREND_MONTHS = 12;
@@ -256,8 +256,8 @@ export default function MonthlyReview() {
                   tickLine={false}
                   axisLine={false}
                   tick={{ fill: '#64748b', fontSize: 12 }}
-                  tickFormatter={(value) => formatCurrency(value)}
-                  width={70}
+                  tickFormatter={(value) => formatCompactCurrency(value)}
+                  width={52}
                 />
                 <Tooltip content={<TrendTooltip />} cursor={{ fill: 'rgba(15, 118, 110, 0.06)' }} />
                 <Bar dataKey="invested" fill="#0f766e" radius={[6, 6, 0, 0]} maxBarSize={36} name="Invested" />
