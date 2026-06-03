@@ -63,9 +63,16 @@ export default function MonthlyReview() {
       || (investment.history || []).some((entry) => getPeriodKey(entry.date) === periodKey),
     );
     const investedThisMonth = monthlyInvestmentAdds.reduce((sum, investment) => {
-      const monthHistory = (investment.history || []).filter((entry) => getPeriodKey(entry.date) === periodKey);
-      if (monthHistory.length) return sum + monthHistory.reduce((entrySum, entry) => entrySum + (Number(entry.investedAmount) || 0), 0);
-      return sum + (Number(investment.investedAmount) || 0);
+      // Each history entry's investedAmount is the cumulative invested principal as of that
+      // snapshot date, not a per-period contribution. New money invested during the month is the
+      // increase from the latest snapshot before the month to the latest snapshot within it.
+      const history = [...(investment.history || [])].sort((left, right) => left.date.localeCompare(right.date));
+      const monthEntries = history.filter((entry) => getPeriodKey(entry.date) === periodKey);
+      if (!monthEntries.length) return sum;
+      const endOfMonthInvested = Number(monthEntries[monthEntries.length - 1].investedAmount) || 0;
+      const priorEntry = [...history].reverse().find((entry) => getPeriodKey(entry.date) < periodKey);
+      const baselineInvested = priorEntry ? (Number(priorEntry.investedAmount) || 0) : 0;
+      return sum + (endOfMonthInvested - baselineInvested);
     }, 0);
 
     const budgetItems = expenseBudgets
