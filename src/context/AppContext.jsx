@@ -61,6 +61,7 @@ import {
   getExpenseChartColor,
   getPaymentMethodInfo,
   EXPENSE_PAYMENT_METHODS,
+  isValidDateValue,
 } from '../utils/constants';
 import { AppContext } from './AppContextDef';
 import { useAuth } from './useAuth';
@@ -97,7 +98,7 @@ function getTodayDateValue() {
 }
 
 function normalizeHistoryDate(value, fallbackDate = getTodayDateValue()) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || '').trim()) ? String(value).trim() : fallbackDate;
+  return isValidDateValue(value) ? String(value).trim() : fallbackDate;
 }
 
 function normalizeAmountHistory(history, currentAmount = 0, fallbackDate = getTodayDateValue()) {
@@ -644,8 +645,10 @@ function normalizeNetWorthSnapshots(snapshots) {
   return snapshots
     .map((snapshot) => {
       const periodKey = String(snapshot?.periodKey || '').trim();
+      const [keyYear, keyMonth] = periodKey.split('-').map(Number);
+      const hasValidPeriodKey = /^\d{4}-\d{2}$/.test(periodKey) && keyYear >= 1970 && keyMonth >= 1 && keyMonth <= 12;
       return {
-        periodKey: /^\d{4}-\d{2}$/.test(periodKey) ? periodKey : normalizeHistoryDate(snapshot?.date, getTodayDateValue()).slice(0, 7),
+        periodKey: hasValidPeriodKey ? periodKey : normalizeHistoryDate(snapshot?.date, getTodayDateValue()).slice(0, 7),
         date: normalizeHistoryDate(snapshot?.date, getTodayDateValue()),
         portfolioValue: Number(snapshot?.portfolioValue) || 0,
         cashReserve: Number(snapshot?.cashReserve) || 0,

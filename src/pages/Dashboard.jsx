@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
-import { getTypeInfo, formatCurrency, calculateReturns } from '../utils/constants';
+import { getTypeInfo, formatCurrency, calculateReturns, isValidDateValue } from '../utils/constants';
 import InvestmentCard from '../components/InvestmentCard';
 import GoalCard from '../components/GoalCard';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -10,7 +10,7 @@ import './Dashboard.css';
 
 function getPeriodKey(dateValue, range) {
   const value = String(dateValue || '');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+  if (!isValidDateValue(value)) return '';
   return range === 'year' ? value.slice(0, 4) : value.slice(0, 7);
 }
 

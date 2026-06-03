@@ -304,6 +304,16 @@ export function getPaymentMethodInfo(paymentMethod) {
   );
 }
 
+// A digit-shaped string like "0000-00-00" passes a naive /^\d{4}-\d{2}-\d{2}$/ test but is not a
+// real date. Validate the calendar components so bogus zero-dates can't leak into charts (e.g. a
+// year axis rendering "0000") or sort order.
+export function isValidDateValue(value) {
+  const normalized = String(value || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return false;
+  const [year, month, day] = normalized.split('-').map(Number);
+  return year >= 1970 && month >= 1 && month <= 12 && day >= 1 && day <= 31;
+}
+
 export function formatCurrency(amount) {
   if (amount === undefined || amount === null || isNaN(amount)) return '₹0';
   return new Intl.NumberFormat('en-IN', {

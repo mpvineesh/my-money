@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
-import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency } from '../utils/constants';
+import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency, isValidDateValue } from '../utils/constants';
 import InvestmentCard from '../components/InvestmentCard';
 import { Briefcase, CalendarRange, Search, SlidersHorizontal, Users } from 'lucide-react';
 import { LineChart, Line, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -9,7 +9,7 @@ import './Investments.css';
 
 function getPeriodKey(dateValue, range) {
   const value = String(dateValue || '');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+  if (!isValidDateValue(value)) return '';
   return range === 'year' ? value.slice(0, 4) : value.slice(0, 7);
 }
 

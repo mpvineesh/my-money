@@ -104,6 +104,43 @@
   font-size: 0.82rem;
 }
 
+.monthly-review-trend {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.monthly-review-trend-caption {
+  margin: 0 0 8px;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.monthly-review-trend-chart {
+  margin: 0 -4px;
+}
+
+.monthly-review-trend-tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.monthly-review-trend-tooltip strong {
+  color: #0f172a;
+  font-size: 0.88rem;
+}
+
 .monthly-review-panels {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
