@@ -346,12 +346,23 @@ export default function Dashboard() {
   }, [expenseBudgets, expenses, recordRecurringEntryNow, recurringEntries, reminders, visibleInvestments]);
 
   const netWorthSeries = useMemo(
-    () => buildNetWorthSeries(visibleInvestments, netWorthRange, cashHistory, loans, goals, netWorthSnapshots, {
-      cashReserve: Number(cash) || 0,
-      loanPrincipal: stats.totalLoanPrincipal,
-      goalSaved: stats.totalGoalCurrent,
-    }),
-    [cash, cashHistory, goals, loans, netWorthRange, netWorthSnapshots, stats.totalGoalCurrent, stats.totalLoanPrincipal, visibleInvestments],
+    () => buildNetWorthSeries(
+      visibleInvestments,
+      netWorthRange,
+      cashHistory,
+      loans,
+      goals,
+      // Saved snapshots are whole-family aggregates; only apply them in the family view. When a
+      // member is selected, build purely from that member's scoped data so the line reflects the
+      // selected scope instead of family totals.
+      investmentVisibilityMember ? [] : netWorthSnapshots,
+      {
+        cashReserve: Number(cash) || 0,
+        loanPrincipal: stats.totalLoanPrincipal,
+        goalSaved: stats.totalGoalCurrent,
+      },
+    ),
+    [cash, cashHistory, goals, investmentVisibilityMember, loans, netWorthRange, netWorthSnapshots, stats.totalGoalCurrent, stats.totalLoanPrincipal, visibleInvestments],
   );
   const latestNetWorth = netWorthSeries[netWorthSeries.length - 1];
   const previousNetWorth = netWorthSeries[netWorthSeries.length - 2];
