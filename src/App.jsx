@@ -7,6 +7,7 @@ import ScrollToTop from './components/ScrollToTop';
 import Dashboard from './pages/Dashboard';
 import Investments from './pages/Investments';
 import InvestmentForm from './pages/InvestmentForm';
+import InvestmentTransactions from './pages/InvestmentTransactions';
 import Goals from './pages/Goals';
 import GoalForm from './pages/GoalForm';
 import Loans from './pages/Loans';
@@ -40,6 +41,7 @@ export default function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
                 <Route path="/investments" element={<RequireAuth><Investments /></RequireAuth>} />
+                <Route path="/investments/transactions" element={<RequireAuth><InvestmentTransactions /></RequireAuth>} />
                 <Route path="/investments/new" element={<RequireAuth><InvestmentForm /></RequireAuth>} />
                 <Route path="/investments/edit/:id" element={<RequireAuth><InvestmentForm /></RequireAuth>} />
                 <Route path="/add" element={<RequireAuth><AddPage /></RequireAuth>} />

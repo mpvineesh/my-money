@@ -137,6 +137,28 @@
   text-align: right;
 }
 
+.inv-card-txn-btn {
+  margin-top: 10px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #0f766e;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.inv-card-txn-btn:hover {
+  background: #f0fdfa;
+  border-color: #99f6e4;
+}
+
 .inv-card-projection {
   display:flex;
   align-items:center;
