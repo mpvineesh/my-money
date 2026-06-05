@@ -57,6 +57,14 @@ export default function Settings() {
     });
   }
 
+  const showProjectedValue = appSettings?.showProjectedValue !== false;
+
+  function handleProjectedValueToggle() {
+    updateAppSettings((current) => ({
+      showProjectedValue: current?.showProjectedValue === false,
+    }));
+  }
+
   return (
     <div className="settings-page">
       <header className="settings-header">
@@ -100,6 +108,23 @@ export default function Settings() {
         <p className="settings-helper-copy">
           Current view: <strong>{investmentVisibilityMember ? investmentVisibilityMember.name : 'Whole family'}</strong>. This affects the dashboard and investments pages.
         </p>
+
+        <div className="settings-toggle-list">
+          <article className="settings-toggle-card">
+            <div>
+              <strong>Projected Value</strong>
+              <p>Show or hide the future-value projection chart and estimate on each investment card.</p>
+            </div>
+            <button
+              type="button"
+              className={`settings-switch ${showProjectedValue ? 'active' : ''}`}
+              onClick={handleProjectedValueToggle}
+              aria-pressed={showProjectedValue ? 'true' : 'false'}
+            >
+              <span />
+            </button>
+          </article>
+        </div>
       </section>
 
       <section className="settings-panel">

@@ -340,6 +340,7 @@ const DEFAULT_APP_SETTINGS = {
     topInvestments: true,
   },
   investmentVisibilityMemberId: 'all',
+  showProjectedValue: true,
 };
 
 function normalizeAppSettings(appSettings) {
@@ -359,6 +360,7 @@ function normalizeAppSettings(appSettings) {
       typeof appSettings?.investmentVisibilityMemberId === 'string' && appSettings.investmentVisibilityMemberId.trim()
         ? appSettings.investmentVisibilityMemberId.trim()
         : 'all',
+    showProjectedValue: appSettings?.showProjectedValue !== false,
   };
 }
 

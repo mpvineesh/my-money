@@ -8,9 +8,12 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { useApp } from '../context/useApp';
 import './InvestmentCard.css';
 
 export default function InvestmentCard({ investment, onClick }) {
+  const { appSettings } = useApp();
+  const showProjectedValue = appSettings?.showProjectedValue !== false;
   const typeInfo = getTypeInfo(investment.type);
   const returns = calculateReturns(investment.investedAmount, investment.currentValue);
   const gain = investment.currentValue - investment.investedAmount;
@@ -61,6 +64,7 @@ export default function InvestmentCard({ investment, onClick }) {
         </span>
       </div>
 
+      {showProjectedValue && (
       <div className="inv-card-projection">
         <div className="projection-chart">
           <ResponsiveContainer width="100%" height={60}>
@@ -77,6 +81,7 @@ export default function InvestmentCard({ investment, onClick }) {
           <span className="proj-value">{rate ? `~ ${formatCurrency(futureValue)} in ${years}y` : '—'}</span>
         </div>
       </div>
+      )}
     </div>
   );
 }
