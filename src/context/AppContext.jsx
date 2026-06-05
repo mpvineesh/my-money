@@ -61,6 +61,7 @@ import {
   getExpenseChartColor,
   getPaymentMethodInfo,
   EXPENSE_PAYMENT_METHODS,
+  isValidDateValue,
 } from '../utils/constants';
 import { AppContext } from './AppContextDef';
 import { useAuth } from './useAuth';
@@ -97,7 +98,7 @@ function getTodayDateValue() {
 }
 
 function normalizeHistoryDate(value, fallbackDate = getTodayDateValue()) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || '').trim()) ? String(value).trim() : fallbackDate;
+  return isValidDateValue(value) ? String(value).trim() : fallbackDate;
 }
 
 function normalizeAmountHistory(history, currentAmount = 0, fallbackDate = getTodayDateValue()) {
@@ -540,6 +541,23 @@ function calculateGoalCurrentAmount(goal, investments = [], cash = 0) {
   return memberId === FAMILY_GOAL_SCOPE.id ? investmentValue + (Number(cash) || 0) : investmentValue;
 }
 
+// Treat any change to an investment's current value as money added/removed: the invested amount
+// (cost basis) moves by the same delta, so a 1L -> 1.2L bump records the 20k as an additional
+// purchase. When the current value is unchanged, the invested amount the caller provided is kept
+// as-is (allowing a deliberate cost-basis correction).
+function applyContributionDelta(investment, previousInvestment) {
+  if (!previousInvestment) return investment;
+  const nextCurrent = investment?.currentValue;
+  if (nextCurrent === undefined || nextCurrent === null || nextCurrent === '') return investment;
+
+  const previousCurrent = Number(previousInvestment.currentValue) || 0;
+  const delta = (Number(nextCurrent) || 0) - previousCurrent;
+  if (delta === 0) return investment;
+
+  const previousInvested = Number(previousInvestment.investedAmount) || 0;
+  return { ...investment, investedAmount: Math.max(0, previousInvested + delta) };
+}
+
 function buildInvestmentForSave(investment, previousInvestment = null) {
   const mergedInvestment = normalizeInvestment({
     ...(previousInvestment || {}),
@@ -646,8 +664,10 @@ function normalizeNetWorthSnapshots(snapshots) {
   return snapshots
     .map((snapshot) => {
       const periodKey = String(snapshot?.periodKey || '').trim();
+      const [keyYear, keyMonth] = periodKey.split('-').map(Number);
+      const hasValidPeriodKey = /^\d{4}-\d{2}$/.test(periodKey) && keyYear >= 1970 && keyMonth >= 1 && keyMonth <= 12;
       return {
-        periodKey: /^\d{4}-\d{2}$/.test(periodKey) ? periodKey : normalizeHistoryDate(snapshot?.date, getTodayDateValue()).slice(0, 7),
+        periodKey: hasValidPeriodKey ? periodKey : normalizeHistoryDate(snapshot?.date, getTodayDateValue()).slice(0, 7),
         date: normalizeHistoryDate(snapshot?.date, getTodayDateValue()),
         portfolioValue: Number(snapshot?.portfolioValue) || 0,
         cashReserve: Number(snapshot?.cashReserve) || 0,
@@ -1679,7 +1699,8 @@ export function AppProvider({ children }) {
   const updateInvestment = useCallback((id, investment) => {
     if (readOnlyRef.current) return null;
     const previousInvestment = investments.find((item) => item.id === id);
-    const normalizedInvestment = buildInvestmentForSave({ ...investment, id }, previousInvestment);
+    const adjustedInvestment = applyContributionDelta(investment, previousInvestment);
+    const normalizedInvestment = buildInvestmentForSave({ ...adjustedInvestment, id }, previousInvestment);
     if (user) {
       const ref = doc(db, 'users', user.uid, 'investments', id);
       updateDoc(ref, { ...normalizedInvestment });

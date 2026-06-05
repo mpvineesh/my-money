@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
-import { getTypeInfo, formatCurrency, calculateReturns } from '../utils/constants';
+import { getTypeInfo, formatCurrency, formatCompactCurrency, calculateReturns, isValidDateValue } from '../utils/constants';
 import InvestmentCard from '../components/InvestmentCard';
 import GoalCard from '../components/GoalCard';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -10,16 +10,25 @@ import './Dashboard.css';
 
 function getPeriodKey(dateValue, range) {
   const value = String(dateValue || '');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+  if (!isValidDateValue(value)) return '';
   return range === 'year' ? value.slice(0, 4) : value.slice(0, 7);
 }
 
 function formatPeriodLabel(periodKey, range) {
   if (!periodKey) return '';
-  if (range === 'year') return periodKey;
-
   const [year, month] = periodKey.split('-').map(Number);
+  if (!(year >= 1970)) return '';
+  if (range === 'year') return periodKey;
   return new Date(year, (month || 1) - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+}
+
+// Period key for a net-worth snapshot, guarding against legacy/garbage values (e.g. "0000-00") so
+// the axis can never render a "0000" tick.
+function getSnapshotPeriodKey(snapshot, range) {
+  const periodKey = String(snapshot?.periodKey || '').trim();
+  const [year, month] = periodKey.split('-').map(Number);
+  if (!(/^\d{4}-\d{2}$/.test(periodKey) && year >= 1970 && month >= 1 && month <= 12)) return '';
+  return range === 'year' ? periodKey.slice(0, 4) : periodKey;
 }
 
 function getCurrentPeriodKey(range) {
@@ -88,7 +97,7 @@ function buildNetWorthSeries(investments, range, cashHistory, loans, goals, netW
   }));
   const netWorthSnapshotMap = new Map(
     (netWorthSnapshots || [])
-      .map((snapshot) => [range === 'year' ? String(snapshot.periodKey || '').slice(0, 4) : snapshot.periodKey, snapshot])
+      .map((snapshot) => [getSnapshotPeriodKey(snapshot, range), snapshot])
       .filter(([periodKey]) => periodKey),
   );
 
@@ -337,12 +346,23 @@ export default function Dashboard() {
   }, [expenseBudgets, expenses, recordRecurringEntryNow, recurringEntries, reminders, visibleInvestments]);
 
   const netWorthSeries = useMemo(
-    () => buildNetWorthSeries(visibleInvestments, netWorthRange, cashHistory, loans, goals, netWorthSnapshots, {
-      cashReserve: Number(cash) || 0,
-      loanPrincipal: stats.totalLoanPrincipal,
-      goalSaved: stats.totalGoalCurrent,
-    }),
-    [cash, cashHistory, goals, loans, netWorthRange, netWorthSnapshots, stats.totalGoalCurrent, stats.totalLoanPrincipal, visibleInvestments],
+    () => buildNetWorthSeries(
+      visibleInvestments,
+      netWorthRange,
+      cashHistory,
+      loans,
+      goals,
+      // Saved snapshots are whole-family aggregates; only apply them in the family view. When a
+      // member is selected, build purely from that member's scoped data so the line reflects the
+      // selected scope instead of family totals.
+      investmentVisibilityMember ? [] : netWorthSnapshots,
+      {
+        cashReserve: Number(cash) || 0,
+        loanPrincipal: stats.totalLoanPrincipal,
+        goalSaved: stats.totalGoalCurrent,
+      },
+    ),
+    [cash, cashHistory, goals, investmentVisibilityMember, loans, netWorthRange, netWorthSnapshots, stats.totalGoalCurrent, stats.totalLoanPrincipal, visibleInvestments],
   );
   const latestNetWorth = netWorthSeries[netWorthSeries.length - 1];
   const previousNetWorth = netWorthSeries[netWorthSeries.length - 2];
@@ -533,7 +553,7 @@ export default function Dashboard() {
                   <LineChart data={netWorthSeries} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                    <YAxis tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => formatCurrency(value)} />
+                    <YAxis tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => formatCompactCurrency(value)} width={52} />
                     <Tooltip content={<NetWorthTooltip />} />
                     <Line type="monotone" dataKey="portfolioValue" stroke="#14b8a6" strokeWidth={2.5} dot={{ r: 3 }} name="Portfolio" />
                     <Line type="monotone" dataKey="netWorth" stroke="#6366f1" strokeWidth={3} dot={{ r: 3 }} name="Net worth" />

@@ -1,5 +1,5 @@
 import { DEFAULT_FAMILY_MEMBER, getTypeInfo, formatCurrency, calculateReturns, formatDate } from '../utils/constants';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, ReceiptText } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -11,7 +11,7 @@ import {
 import { useApp } from '../context/useApp';
 import './InvestmentCard.css';
 
-export default function InvestmentCard({ investment, onClick }) {
+export default function InvestmentCard({ investment, onClick, onViewTransactions }) {
   const { appSettings } = useApp();
   const showProjectedValue = appSettings?.showProjectedValue !== false;
   const typeInfo = getTypeInfo(investment.type);
@@ -64,7 +64,22 @@ export default function InvestmentCard({ investment, onClick }) {
         </span>
       </div>
 
-      {showProjectedValue && (
+       
+      {onViewTransactions ? (
+        <button
+          type="button"
+          className="inv-card-txn-btn"
+          onClick={(event) => {
+            event.stopPropagation();
+            onViewTransactions();
+          }}
+        >
+          <ReceiptText size={14} />
+          View transactions{historyCount ? ` (${historyCount})` : ''}
+        </button>
+      ) : null}
+     
+{showProjectedValue && (
       <div className="inv-card-projection">
         <div className="projection-chart">
           <ResponsiveContainer width="100%" height={60}>

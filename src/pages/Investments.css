@@ -34,6 +34,32 @@
   font-size: 0.9rem;
 }
 
+.inv-page-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.inv-transactions-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #0f766e;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 7px 12px;
+  border-radius: 12px;
+}
+
+.inv-transactions-link:hover {
+  background: #f0fdfa;
+  border-color: #99f6e4;
+}
+
 .inv-page-total {
   text-align: right;
   display: flex;

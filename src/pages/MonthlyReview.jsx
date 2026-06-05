@@ -1,10 +1,79 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, BellRing, Briefcase, CalendarRange, Repeat, Target, Wallet } from 'lucide-react';
+import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import NativePickerField from '../components/NativePickerField';
 import { useApp } from '../context/useApp';
-import { formatCurrency, getExpenseCategoryInfo } from '../utils/constants';
+import { formatCurrency, formatCompactCurrency, getExpenseCategoryInfo, isValidDateValue } from '../utils/constants';
 import './MonthlyReview.css';
+
+const TREND_MONTHS = 12;
+
+function formatMonthShort(periodKey) {
+  if (!/^\d{4}-\d{2}$/.test(periodKey)) return periodKey;
+  const [year, month] = periodKey.split('-').map(Number);
+  return new Date(year, (month || 1) - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+}
+
+// Build a rolling window of month keys ending at (and including) endKey.
+function buildMonthRange(endKey, count) {
+  if (!/^\d{4}-\d{2}$/.test(endKey)) return [];
+  const [year, month] = endKey.split('-').map(Number);
+  const keys = [];
+  for (let offset = count - 1; offset >= 0; offset -= 1) {
+    const date = new Date(year, month - 1 - offset, 1);
+    keys.push(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
+  }
+  return keys;
+}
+
+// New invested principal per month = increase in cumulative invested principal from the prior month.
+// Each history entry's investedAmount is the cumulative total as of that snapshot, so we carry the
+// latest snapshot forward and difference consecutive months. An extra leading month seeds the
+// baseline so the first visible month reflects money invested before the window too.
+function buildMonthlyInvestmentSeries(investments, endKey, count) {
+  const perInvestment = investments.map((investment) => {
+    const byMonth = new Map();
+    (investment.history || []).forEach((entry) => {
+      if (!isValidDateValue(entry.date)) return;
+      byMonth.set(entry.date.slice(0, 7), Number(entry.investedAmount) || 0);
+    });
+    return [...byMonth.entries()].sort((left, right) => left[0].localeCompare(right[0]));
+  });
+
+  const cumulativeAsOf = (snapshots, monthKey) => {
+    let value = 0;
+    for (const [key, amount] of snapshots) {
+      if (key <= monthKey) value = amount;
+      else break;
+    }
+    return value;
+  };
+
+  const months = buildMonthRange(endKey, count + 1);
+  const totals = months.map((monthKey) =>
+    perInvestment.reduce((sum, snapshots) => sum + cumulativeAsOf(snapshots, monthKey), 0),
+  );
+
+  return months.slice(1).map((monthKey, index) => ({
+    key: monthKey,
+    label: formatMonthShort(monthKey),
+    invested: totals[index + 1] - totals[index],
+    cumulative: totals[index + 1],
+  }));
+}
+
+function TrendTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const point = payload[0].payload;
+  return (
+    <div className="monthly-review-trend-tooltip">
+      <strong>{point.label}</strong>
+      <span>Invested: {formatCurrency(point.invested)}</span>
+      <span>Total invested: {formatCurrency(point.cumulative)}</span>
+    </div>
+  );
+}
 
 function getCurrentMonthValue() {
   const now = new Date();
@@ -63,9 +132,16 @@ export default function MonthlyReview() {
       || (investment.history || []).some((entry) => getPeriodKey(entry.date) === periodKey),
     );
     const investedThisMonth = monthlyInvestmentAdds.reduce((sum, investment) => {
-      const monthHistory = (investment.history || []).filter((entry) => getPeriodKey(entry.date) === periodKey);
-      if (monthHistory.length) return sum + monthHistory.reduce((entrySum, entry) => entrySum + (Number(entry.investedAmount) || 0), 0);
-      return sum + (Number(investment.investedAmount) || 0);
+      // Each history entry's investedAmount is the cumulative invested principal as of that
+      // snapshot date, not a per-period contribution. New money invested during the month is the
+      // increase from the latest snapshot before the month to the latest snapshot within it.
+      const history = [...(investment.history || [])].sort((left, right) => left.date.localeCompare(right.date));
+      const monthEntries = history.filter((entry) => getPeriodKey(entry.date) === periodKey);
+      if (!monthEntries.length) return sum;
+      const endOfMonthInvested = Number(monthEntries[monthEntries.length - 1].investedAmount) || 0;
+      const priorEntry = [...history].reverse().find((entry) => getPeriodKey(entry.date) < periodKey);
+      const baselineInvested = priorEntry ? (Number(priorEntry.investedAmount) || 0) : 0;
+      return sum + (endOfMonthInvested - baselineInvested);
     }, 0);
 
     const budgetItems = expenseBudgets
@@ -95,6 +171,7 @@ export default function MonthlyReview() {
     );
     const totalGoalTarget = goals.reduce((sum, goal) => sum + (Number(goal.targetAmount) || 0), 0);
     const totalGoalCurrent = goals.reduce((sum, goal) => sum + (Number(goal.currentAmount) || 0), 0);
+    const investmentTrend = buildMonthlyInvestmentSeries(investments, periodKey, TREND_MONTHS);
 
     return {
       monthlyExpenses,
@@ -102,6 +179,7 @@ export default function MonthlyReview() {
       categoryBreakdown,
       monthlyInvestmentAdds,
       investedThisMonth,
+      investmentTrend,
       budgetItems,
       overBudgetItems,
       dueRecurring,
@@ -158,6 +236,38 @@ export default function MonthlyReview() {
           <strong>{goalProgress}%</strong>
           <p>{formatCurrency(review.totalGoalCurrent)} of {formatCurrency(review.totalGoalTarget)}</p>
         </article>
+      </section>
+
+      <section className="monthly-review-trend">
+        <div className="monthly-review-panel-head">
+          <h2>Monthly investment</h2>
+          <Link to="/investments">Open investments</Link>
+        </div>
+        <p className="monthly-review-trend-caption">
+          New money invested each month over the last {TREND_MONTHS} months, ending {formatMonthLabel(periodKey)}.
+        </p>
+        {review.investmentTrend.some((point) => point.invested !== 0) ? (
+          <div className="monthly-review-trend-chart">
+            <ResponsiveContainer width="100%" height={240}>
+              <ComposedChart data={review.investmentTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: '#64748b', fontSize: 12 }}
+                  tickFormatter={(value) => formatCompactCurrency(value)}
+                  width={52}
+                />
+                <Tooltip content={<TrendTooltip />} cursor={{ fill: 'rgba(15, 118, 110, 0.06)' }} />
+                <Bar dataKey="invested" fill="#0f766e" radius={[6, 6, 0, 0]} maxBarSize={36} name="Invested" />
+                <Line type="monotone" dataKey="cumulative" stroke="#6366f1" strokeWidth={2} dot={false} name="Total invested" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <p className="monthly-review-empty">No investment activity recorded in this period.</p>
+        )}
       </section>
 
       <section className="monthly-review-panels">

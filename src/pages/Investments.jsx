@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
-import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency } from '../utils/constants';
+import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency, formatCompactCurrency, isValidDateValue } from '../utils/constants';
 import InvestmentCard from '../components/InvestmentCard';
-import { Briefcase, CalendarRange, Search, SlidersHorizontal, Users } from 'lucide-react';
-import { LineChart, Line, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Briefcase, CalendarRange, ReceiptText, Search, SlidersHorizontal, TrendingUp, Users } from 'lucide-react';
+import { Area, ComposedChart, LineChart, Line, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import './Investments.css';
 
 function getPeriodKey(dateValue, range) {
   const value = String(dateValue || '');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+  if (!isValidDateValue(value)) return '';
   return range === 'year' ? value.slice(0, 4) : value.slice(0, 7);
 }
 
@@ -147,6 +147,44 @@ function ProgressTooltip({ active, payload, label }) {
   );
 }
 
+// Project each holding's current value forward, compounding annually at its own interest rate.
+// Holdings without a rate stay flat. The baseline (today's value held constant) is kept alongside
+// so the chart can show projected growth above the current level.
+const PROJECTION_YEARS = 10;
+
+function buildProjectionSeries(investments, years = PROJECTION_YEARS) {
+  const startYear = new Date().getFullYear();
+  const baseline = investments.reduce((sum, investment) => sum + (Number(investment.currentValue) || 0), 0);
+
+  return Array.from({ length: years + 1 }, (_, offset) => {
+    const projected = investments.reduce((sum, investment) => {
+      const rate = parseFloat(investment.interestRate) || 0;
+      return sum + (Number(investment.currentValue) || 0) * Math.pow(1 + rate / 100, offset);
+    }, 0);
+
+    return {
+      year: startYear + offset,
+      label: offset === 0 ? 'Now' : String(startYear + offset),
+      projected: Math.round(projected),
+      baseline: Math.round(baseline),
+    };
+  });
+}
+
+function ProjectionTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const point = payload[0].payload;
+  const growth = point.projected - point.baseline;
+
+  return (
+    <div className="inv-progress-tooltip">
+      <strong>{point.label}</strong>
+      <span>Projected: {formatCurrency(point.projected)}</span>
+      <span>Growth vs now: {growth >= 0 ? '+' : ''}{formatCurrency(growth)}</span>
+    </div>
+  );
+}
+
 export default function Investments() {
   const { investments, visibleInvestments, familyMembers, investmentVisibilityMember } = useApp();
   const navigate = useNavigate();
@@ -235,6 +273,11 @@ export default function Investments() {
   const latestProgress = progressSeries[progressSeries.length - 1];
   const previousProgress = progressSeries[progressSeries.length - 2];
   const periodGainChange = latestProgress && previousProgress ? latestProgress.gain - previousProgress.gain : 0;
+
+  const projectionSeries = useMemo(() => buildProjectionSeries(filtered), [filtered]);
+  const projectedFuture = projectionSeries[projectionSeries.length - 1];
+  const projectedGrowth = projectedFuture ? projectedFuture.projected - projectedFuture.baseline : 0;
+  const hasProjectionRates = filtered.some((investment) => (parseFloat(investment.interestRate) || 0) > 0);
   const totalLabel = search || filterType !== 'all' || activeFilterMember !== 'all' ? 'Showing' : 'Total';
 
   return (
@@ -245,9 +288,15 @@ export default function Investments() {
           <h1 className="inv-page-title">My Investments</h1>
           <p className="inv-page-scope">Showing: {portfolioScopeLabel}</p>
         </div>
-        <div className="inv-page-total">
-          <span className="inv-total-label">{totalLabel}</span>
-          <span className="inv-total-value">{formatCurrency(totalValue)}</span>
+        <div className="inv-page-header-right">
+          <button type="button" className="inv-transactions-link" onClick={() => navigate('/investments/transactions')}>
+            <ReceiptText size={16} />
+            Transactions
+          </button>
+          <div className="inv-page-total">
+            <span className="inv-total-label">{totalLabel}</span>
+            <span className="inv-total-value">{formatCurrency(totalValue)}</span>
+          </div>
         </div>
       </header>
 
@@ -345,7 +394,8 @@ export default function Investments() {
                   tickLine={false}
                   axisLine={false}
                   tick={{ fill: '#64748b', fontSize: 12 }}
-                  tickFormatter={(value) => formatCurrency(value)}
+                  tickFormatter={(value) => formatCompactCurrency(value)}
+                  width={52}
                 />
                 <Tooltip content={<ProgressTooltip />} />
                 <Line type="monotone" dataKey="investedAmount" stroke="#94a3b8" strokeWidth={2} dot={{ r: 3 }} />
@@ -357,6 +407,70 @@ export default function Investments() {
           <div className="inv-progress-footnote">
             <CalendarRange size={14} />
             <span>Each investment edit records a dated snapshot. Older investments start building trend history from the snapshots you save.</span>
+          </div>
+        </section>
+      ) : null}
+
+      {filtered.length > 0 ? (
+        <section className="inv-progress-panel">
+          <div className="inv-progress-header">
+            <div>
+              <p className="inv-progress-label">Projection</p>
+              <h2 className="inv-progress-title">
+                Projected value · next {PROJECTION_YEARS} years{selectedMember ? ` · ${selectedMember.name}` : ''}
+              </h2>
+            </div>
+          </div>
+
+          <div className="inv-progress-summary">
+            <div>
+              <span className="inv-progress-summary-label">Current value</span>
+              <strong>{formatCurrency(projectionSeries[0]?.baseline || totalValue)}</strong>
+            </div>
+            <div>
+              <span className="inv-progress-summary-label">In {PROJECTION_YEARS} years</span>
+              <strong>{formatCurrency(projectedFuture?.projected || 0)}</strong>
+            </div>
+            <div>
+              <span className="inv-progress-summary-label">Projected growth</span>
+              <strong className={projectedGrowth >= 0 ? 'inv-progress-positive' : 'inv-progress-negative'}>
+                {projectedGrowth >= 0 ? '+' : ''}{formatCurrency(projectedGrowth)}
+              </strong>
+            </div>
+          </div>
+
+          <div className="inv-progress-chart">
+            <ResponsiveContainer width="100%" height={260}>
+              <ComposedChart data={projectionSeries} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="invProjectionFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0f766e" stopOpacity={0.28} />
+                    <stop offset="95%" stopColor="#0f766e" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: '#64748b', fontSize: 12 }}
+                  tickFormatter={(value) => formatCompactCurrency(value)}
+                  width={52}
+                />
+                <Tooltip content={<ProjectionTooltip />} />
+                <Line type="monotone" dataKey="baseline" stroke="#94a3b8" strokeWidth={2} strokeDasharray="4 4" dot={false} name="Current value" />
+                <Area type="monotone" dataKey="projected" stroke="#0f766e" strokeWidth={3} fill="url(#invProjectionFill)" dot={{ r: 3 }} name="Projected" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="inv-progress-footnote">
+            <TrendingUp size={14} />
+            <span>
+              {hasProjectionRates
+                ? "Compounds each holding's current value at its own interest rate. Holdings without a rate stay flat — this is an estimate, not a guarantee."
+                : 'Set an interest rate on each holding to project its growth. Without a rate, the value is held flat.'}
+            </span>
           </div>
         </section>
       ) : null}
@@ -456,6 +570,7 @@ export default function Investments() {
             key={investment.id}
             investment={investment}
             onClick={() => navigate(`/investments/edit/${investment.id}`)}
+            onViewTransactions={() => navigate(`/investments/transactions?investment=${investment.id}`)}
           />
         ))}
       </div>

@@ -304,6 +304,31 @@ export function getPaymentMethodInfo(paymentMethod) {
   );
 }
 
+// A digit-shaped string like "0000-00-00" passes a naive /^\d{4}-\d{2}-\d{2}$/ test but is not a
+// real date. Validate the calendar components so bogus zero-dates can't leak into charts (e.g. a
+// year axis rendering "0000") or sort order.
+export function isValidDateValue(value) {
+  const normalized = String(value || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return false;
+  const [year, month, day] = normalized.split('-').map(Number);
+  return year >= 1970 && month >= 1 && month <= 12 && day >= 1 && day <= 31;
+}
+
+// Compact Indian-numbering currency for tight spaces like chart axis ticks, where the full
+// "₹12,99,500" string gets clipped. Uses k / L (lakh) / Cr (crore): 10000 -> ₹10k, 150000 -> ₹1.5L,
+// 12500000 -> ₹1.25Cr.
+export function formatCompactCurrency(amount) {
+  const num = Number(amount);
+  if (!num || isNaN(num)) return '₹0';
+  const sign = num < 0 ? '-' : '';
+  const abs = Math.abs(num);
+  const trim = (value) => value.toFixed(value < 10 ? 2 : 1).replace(/\.?0+$/, '');
+  if (abs >= 1e7) return `${sign}₹${trim(abs / 1e7)}Cr`;
+  if (abs >= 1e5) return `${sign}₹${trim(abs / 1e5)}L`;
+  if (abs >= 1e3) return `${sign}₹${trim(abs / 1e3)}k`;
+  return `${sign}₹${Math.round(abs)}`;
+}
+
 export function formatCurrency(amount) {
   if (amount === undefined || amount === null || isNaN(amount)) return '₹0';
   return new Intl.NumberFormat('en-IN', {
