@@ -343,7 +343,7 @@ export default function InvestmentForm() {
           />
           <p className="form-helper-text">
             Each save records a history snapshot for this date so monthly and yearly progress can be tracked.
-            {isEdit ? ' Raising the current value records the increase as an additional investment.' : ''}
+            {isEdit ? ' Update the current value freely to track market changes — only changing the invested amount counts as new money invested.' : ''}
           </p>
         </div>
 

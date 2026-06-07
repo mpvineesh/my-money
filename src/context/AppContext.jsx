@@ -541,23 +541,6 @@ function calculateGoalCurrentAmount(goal, investments = [], cash = 0) {
   return memberId === FAMILY_GOAL_SCOPE.id ? investmentValue + (Number(cash) || 0) : investmentValue;
 }
 
-// Treat any change to an investment's current value as money added/removed: the invested amount
-// (cost basis) moves by the same delta, so a 1L -> 1.2L bump records the 20k as an additional
-// purchase. When the current value is unchanged, the invested amount the caller provided is kept
-// as-is (allowing a deliberate cost-basis correction).
-function applyContributionDelta(investment, previousInvestment) {
-  if (!previousInvestment) return investment;
-  const nextCurrent = investment?.currentValue;
-  if (nextCurrent === undefined || nextCurrent === null || nextCurrent === '') return investment;
-
-  const previousCurrent = Number(previousInvestment.currentValue) || 0;
-  const delta = (Number(nextCurrent) || 0) - previousCurrent;
-  if (delta === 0) return investment;
-
-  const previousInvested = Number(previousInvestment.investedAmount) || 0;
-  return { ...investment, investedAmount: Math.max(0, previousInvested + delta) };
-}
-
 function buildInvestmentForSave(investment, previousInvestment = null) {
   const mergedInvestment = normalizeInvestment({
     ...(previousInvestment || {}),
@@ -1699,8 +1682,10 @@ export function AppProvider({ children }) {
   const updateInvestment = useCallback((id, investment) => {
     if (readOnlyRef.current) return null;
     const previousInvestment = investments.find((item) => item.id === id);
-    const adjustedInvestment = applyContributionDelta(investment, previousInvestment);
-    const normalizedInvestment = buildInvestmentForSave({ ...adjustedInvestment, id }, previousInvestment);
+    // Invested amount (cost basis) and current value (market value) are independent: changing the
+    // current value never alters the invested amount. New contributions are recorded only when the
+    // user explicitly edits the invested amount.
+    const normalizedInvestment = buildInvestmentForSave({ ...investment, id }, previousInvestment);
     if (user) {
       const ref = doc(db, 'users', user.uid, 'investments', id);
       updateDoc(ref, { ...normalizedInvestment });
