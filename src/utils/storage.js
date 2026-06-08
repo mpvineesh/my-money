@@ -17,6 +17,7 @@ const STORAGE_KEYS = {
   REMINDERS: 'myMoney_reminders',
   APP_SETTINGS: 'myMoney_app_settings',
   AI_REPORTS: 'myMoney_ai_reports',
+  SWING_TRADES: 'myMoney_swing_trades',
 };
 
 export function loadInvestments() {
@@ -30,6 +31,23 @@ export function loadInvestments() {
 
 export function saveInvestments(investments) {
   localStorage.setItem(STORAGE_KEYS.INVESTMENTS, JSON.stringify(investments));
+}
+
+export function loadSwingTrades() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.SWING_TRADES);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveSwingTrades(swingTrades) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SWING_TRADES, JSON.stringify(swingTrades));
+  } catch {
+    // ignore
+  }
 }
 
 export function loadFamilyMembers() {

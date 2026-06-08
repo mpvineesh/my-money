@@ -12,6 +12,7 @@ import {
   Repeat,
   BellRing,
   CalendarRange,
+  CandlestickChart,
   Settings as SettingsIcon,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
@@ -69,6 +70,9 @@ function MoreMenu() {
           </button>
           <button className="more-item" onClick={() => { setOpen(false); navigate('/expenses'); }}>
             <Wallet size={16} style={{ marginRight: 8 }} /> Expenses
+          </button>
+          <button className="more-item" onClick={() => { setOpen(false); navigate('/swing-trades'); }}>
+            <CandlestickChart size={16} style={{ marginRight: 8 }} /> Swing Trades
           </button>
           <button className="more-item" onClick={() => { setOpen(false); navigate('/recurring'); }}>
             <Repeat size={16} style={{ marginRight: 8 }} /> Recurring

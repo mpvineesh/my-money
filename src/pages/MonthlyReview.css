@@ -213,6 +213,51 @@
   font-size: 0.9rem;
 }
 
+.monthly-review-additions {
+  padding: 16px;
+}
+
+.monthly-review-add-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.monthly-review-add-name {
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.monthly-review-add-meta {
+  color: #64748b;
+  font-size: 0.74rem;
+}
+
+.monthly-review-additions .monthly-review-row strong {
+  color: #0f766e;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.monthly-review-additions .monthly-review-row.danger strong {
+  color: #dc2626;
+}
+
+.monthly-review-add-total {
+  border-top: 2px solid #e2e8f0;
+}
+
+.monthly-review-add-total span {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.monthly-review-add-total strong {
+  color: #0f172a !important;
+}
+
 @media (max-width: 820px) {
   .monthly-review-header,
   .monthly-review-panel-head {

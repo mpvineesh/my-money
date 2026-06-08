@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard';
 import Investments from './pages/Investments';
 import InvestmentForm from './pages/InvestmentForm';
 import InvestmentTransactions from './pages/InvestmentTransactions';
+import SwingTrades from './pages/SwingTrades';
+import SwingTradeForm from './pages/SwingTradeForm';
 import Goals from './pages/Goals';
 import GoalForm from './pages/GoalForm';
 import Loans from './pages/Loans';
@@ -44,6 +46,9 @@ export default function App() {
                 <Route path="/investments/transactions" element={<RequireAuth><InvestmentTransactions /></RequireAuth>} />
                 <Route path="/investments/new" element={<RequireAuth><InvestmentForm /></RequireAuth>} />
                 <Route path="/investments/edit/:id" element={<RequireAuth><InvestmentForm /></RequireAuth>} />
+                <Route path="/swing-trades" element={<RequireAuth><SwingTrades /></RequireAuth>} />
+                <Route path="/swing-trades/new" element={<RequireAuth><SwingTradeForm /></RequireAuth>} />
+                <Route path="/swing-trades/edit/:id" element={<RequireAuth><SwingTradeForm /></RequireAuth>} />
                 <Route path="/add" element={<RequireAuth><AddPage /></RequireAuth>} />
                 <Route path="/loans" element={<RequireAuth><Loans /></RequireAuth>} />
                 <Route path="/loans/new" element={<RequireAuth><LoanForm /></RequireAuth>} />

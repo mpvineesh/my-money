@@ -4,7 +4,15 @@ import { AlertTriangle, BellRing, Briefcase, CalendarRange, Repeat, Target, Wall
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import NativePickerField from '../components/NativePickerField';
 import { useApp } from '../context/useApp';
-import { formatCurrency, formatCompactCurrency, getExpenseCategoryInfo, isValidDateValue } from '../utils/constants';
+import {
+  DEFAULT_FAMILY_MEMBER,
+  formatCurrency,
+  formatCompactCurrency,
+  formatDate,
+  getExpenseCategoryInfo,
+  getTypeInfo,
+  isValidDateValue,
+} from '../utils/constants';
 import './MonthlyReview.css';
 
 const TREND_MONTHS = 12;
@@ -131,18 +139,30 @@ export default function MonthlyReview() {
       getPeriodKey(investment.startDate || investment.lastUpdated) === periodKey
       || (investment.history || []).some((entry) => getPeriodKey(entry.date) === periodKey),
     );
-    const investedThisMonth = monthlyInvestmentAdds.reduce((sum, investment) => {
-      // Each history entry's investedAmount is the cumulative invested principal as of that
-      // snapshot date, not a per-period contribution. New money invested during the month is the
-      // increase from the latest snapshot before the month to the latest snapshot within it.
-      const history = [...(investment.history || [])].sort((left, right) => left.date.localeCompare(right.date));
-      const monthEntries = history.filter((entry) => getPeriodKey(entry.date) === periodKey);
-      if (!monthEntries.length) return sum;
-      const endOfMonthInvested = Number(monthEntries[monthEntries.length - 1].investedAmount) || 0;
-      const priorEntry = [...history].reverse().find((entry) => getPeriodKey(entry.date) < periodKey);
-      const baselineInvested = priorEntry ? (Number(priorEntry.investedAmount) || 0) : 0;
-      return sum + (endOfMonthInvested - baselineInvested);
-    }, 0);
+    // Each history entry's investedAmount is the cumulative invested principal as of that snapshot
+    // date, not a per-period contribution. New money invested in a holding during the month is the
+    // increase from the latest snapshot before the month to the latest snapshot within it.
+    const investmentAdditions = monthlyInvestmentAdds
+      .map((investment) => {
+        const history = [...(investment.history || [])].sort((left, right) => left.date.localeCompare(right.date));
+        const monthEntries = history.filter((entry) => getPeriodKey(entry.date) === periodKey);
+        if (!monthEntries.length) return null;
+        const lastMonthEntry = monthEntries[monthEntries.length - 1];
+        const endOfMonthInvested = Number(lastMonthEntry.investedAmount) || 0;
+        const priorEntry = [...history].reverse().find((entry) => getPeriodKey(entry.date) < periodKey);
+        const baselineInvested = priorEntry ? (Number(priorEntry.investedAmount) || 0) : 0;
+        return {
+          id: investment.id,
+          name: investment.name,
+          type: investment.type,
+          memberName: investment.memberName || DEFAULT_FAMILY_MEMBER.name,
+          date: lastMonthEntry.date,
+          added: endOfMonthInvested - baselineInvested,
+        };
+      })
+      .filter((item) => item && item.added !== 0)
+      .sort((left, right) => right.added - left.added);
+    const investedThisMonth = investmentAdditions.reduce((sum, item) => sum + item.added, 0);
 
     const budgetItems = expenseBudgets
       .filter((budget) => budget.periodKey === periodKey)
@@ -179,6 +199,7 @@ export default function MonthlyReview() {
       categoryBreakdown,
       monthlyInvestmentAdds,
       investedThisMonth,
+      investmentAdditions,
       investmentTrend,
       budgetItems,
       overBudgetItems,
@@ -319,6 +340,37 @@ export default function MonthlyReview() {
             <span>{review.dueReminders.length} reminders due or upcoming</span>
           </div>
         </article>
+      </section>
+
+      <section className="monthly-review-panel monthly-review-additions">
+        <div className="monthly-review-panel-head">
+          <h2>Investment additions</h2>
+          <Link to="/investments/transactions">View transactions</Link>
+        </div>
+        <p className="monthly-review-trend-caption">
+          New money added to each holding in {formatMonthLabel(periodKey)}.
+        </p>
+        {review.investmentAdditions.length ? (
+          <>
+            {review.investmentAdditions.map((item) => (
+              <div key={item.id} className={`monthly-review-row ${item.added < 0 ? 'danger' : ''}`}>
+                <div className="monthly-review-add-info">
+                  <span className="monthly-review-add-name">{item.name}</span>
+                  <span className="monthly-review-add-meta">
+                    {getTypeInfo(item.type).label} · {item.memberName} · {formatDate(item.date)}
+                  </span>
+                </div>
+                <strong>{item.added >= 0 ? '+' : ''}{formatCurrency(item.added)}</strong>
+              </div>
+            ))}
+            <div className="monthly-review-row monthly-review-add-total">
+              <span>Total added</span>
+              <strong>{formatCurrency(review.investedThisMonth)}</strong>
+            </div>
+          </>
+        ) : (
+          <p className="monthly-review-empty">No investment additions recorded for this month.</p>
+        )}
       </section>
     </div>
   );

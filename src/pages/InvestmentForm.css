@@ -117,6 +117,33 @@
   color: #cbd5e1;
 }
 
+/* iOS Safari renders <input type="date|time"> with an intrinsic content width and
+   ignores width:100% unless the native appearance is reset, and its inner value box
+   carries default margins — both cause the field to overflow its column on iPhone.
+   Reset appearance, allow it to shrink, and strip the inner margins. */
+input[type='date'].form-input,
+input[type='time'].form-input,
+input[type='datetime-local'].form-input {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  /* With the native appearance reset, an empty date field has no content to give it
+     height and collapses shorter than filled/text inputs. Pin a min-height (border-box
+     includes the 24px padding + 3px border) so empty and filled fields match. */
+  min-height: 45px;
+}
+
+.form-input::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+  min-width: 0;
+}
+
+.form-input::-webkit-datetime-edit {
+  padding: 0;
+}
+
 .form-picker-field {
   position: relative;
   display: flex;

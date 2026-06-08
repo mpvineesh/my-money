@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   loadInvestments,
   saveInvestments,
+  loadSwingTrades,
+  saveSwingTrades,
   loadFamilyMembers,
   saveFamilyMembers,
   loadGoals,
@@ -576,6 +578,30 @@ function buildInvestmentForSave(investment, previousInvestment = null) {
   return normalizeInvestment(rest);
 }
 
+function normalizeSwingTrade(trade) {
+  const sellDate = trade?.sellDate ? normalizeHistoryDate(trade.sellDate, '') : '';
+  const sellPrice = Number(trade?.sellPrice) || 0;
+  const isClosed = Boolean(sellDate) && sellPrice > 0;
+  return {
+    id: trade?.id || uuidv4(),
+    symbol: String(trade?.symbol || '').trim().toUpperCase(),
+    segment: trade?.segment === 'intraday' ? 'intraday' : 'delivery',
+    quantity: Number(trade?.quantity) || 0,
+    buyPrice: Number(trade?.buyPrice) || 0,
+    buyDate: normalizeHistoryDate(trade?.buyDate || trade?.date, getTodayDateValue()),
+    buyNotes: String(trade?.buyNotes || '').trim(),
+    sellPrice,
+    sellDate,
+    sellNotes: String(trade?.sellNotes || '').trim(),
+    brokerageOverride:
+      trade?.brokerageOverride === '' || trade?.brokerageOverride === null || trade?.brokerageOverride === undefined
+        ? ''
+        : Number(trade.brokerageOverride),
+    status: isClosed ? 'closed' : 'open',
+    lastUpdated: normalizeHistoryDate(trade?.lastUpdated || trade?.buyDate, getTodayDateValue()),
+  };
+}
+
 function normalizeLoan(loan) {
   const principal = Number(loan?.principal || loan?.loanAmount || loan?.principalAmount) || 0;
   const outstandingBalance = Number(
@@ -820,6 +846,7 @@ export function AppProvider({ children }) {
   useEffect(() => { readOnlyRef.current = isReadOnly; }, [isReadOnly]);
 
   const [investments, setInvestments] = useState(() => loadPersistedInvestments().map((investment) => normalizeInvestment(investment)));
+  const [swingTrades, setSwingTrades] = useState(() => loadSwingTrades().map((trade) => normalizeSwingTrade(trade)));
   const [familyMembers, setFamilyMembers] = useState(loadPersistedFamilyMembers);
   const [storedGoals, setStoredGoals] = useState(() => loadPersistedGoals().map((goal) => normalizeGoal(goal)));
   const [loans, setLoans] = useState(() => loadPersistedLoans().map((loan) => normalizeLoan(loan)));
@@ -936,6 +963,13 @@ export function AppProvider({ children }) {
       setInvestments(items);
       // also persist locally for offline fallback
       saveInvestments(items);
+    });
+
+    const swingTradesCol = collection(db, 'users', effectiveUid, 'swingTrades');
+    const unsubSwingTrades = onSnapshot(swingTradesCol, (snap) => {
+      const items = snap.docs.map((d) => normalizeSwingTrade({ id: d.id, ...d.data() }));
+      setSwingTrades(items);
+      saveSwingTrades(items);
     });
 
     const unsubFamilyMembers = onSnapshot(familyMembersCol, (snap) => {
@@ -1064,6 +1098,7 @@ export function AppProvider({ children }) {
 
     return () => {
       unsubInv();
+      unsubSwingTrades();
       unsubFamilyMembers();
       unsubGoals();
       unsubLoans();
@@ -1117,6 +1152,50 @@ export function AppProvider({ children }) {
     setInvestments((prev) => {
       const updated = [...prev, newItem];
       saveInvestments(updated);
+      return updated;
+    });
+  }, [user]);
+
+  const addSwingTrade = useCallback((trade) => {
+    if (readOnlyRef.current) return null;
+    const newItem = normalizeSwingTrade({ ...trade, id: uuidv4() });
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'swingTrades', newItem.id);
+      setDoc(ref, newItem);
+      return;
+    }
+    setSwingTrades((prev) => {
+      const updated = [...prev, newItem];
+      saveSwingTrades(updated);
+      return updated;
+    });
+  }, [user]);
+
+  const updateSwingTrade = useCallback((id, trade) => {
+    if (readOnlyRef.current) return null;
+    const normalizedTrade = normalizeSwingTrade({ ...trade, id, lastUpdated: getTodayDateValue() });
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'swingTrades', id);
+      updateDoc(ref, { ...normalizedTrade });
+      return;
+    }
+    setSwingTrades((prev) => {
+      const updated = prev.map((item) => (item.id === id ? normalizedTrade : item));
+      saveSwingTrades(updated);
+      return updated;
+    });
+  }, [user]);
+
+  const deleteSwingTrade = useCallback((id) => {
+    if (readOnlyRef.current) return null;
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'swingTrades', id);
+      deleteDoc(ref);
+      return;
+    }
+    setSwingTrades((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      saveSwingTrades(updated);
       return updated;
     });
   }, [user]);
@@ -1741,10 +1820,19 @@ export function AppProvider({ children }) {
     return markRecurringEntryRecorded(id, nextRecordedDate);
   }, [addExpense, addInvestment, investments, markRecurringEntryRecorded, recurringEntries, updateInvestment]);
 
+  // Guard against re-recording the same due entry while its advanced nextDueDate is still in flight
+  // to Firestore. Recording triggers async writes (the new investment and the advanced nextDueDate)
+  // that round-trip through listeners; until they return, the entry still looks due and the effect
+  // can re-fire, which previously created dozens of duplicate records. Keying by id + due date means
+  // each occurrence is recorded once, while genuine future occurrences (a new nextDueDate) still run.
+  const autoRecordedRef = useRef(new Set());
   useEffect(() => {
     recurringEntries
       .filter((entry) => entry.autoCreate && entry.nextDueDate <= getTodayDateValue())
       .forEach((entry) => {
+        const occurrenceKey = `${entry.id}:${entry.nextDueDate}`;
+        if (autoRecordedRef.current.has(occurrenceKey)) return;
+        autoRecordedRef.current.add(occurrenceKey);
         recordRecurringEntryNow(entry.id, entry.nextDueDate);
       });
   }, [recordRecurringEntryNow, recurringEntries]);
@@ -2010,6 +2098,8 @@ export function AppProvider({ children }) {
     const demoCashHistory = normalizeCashHistory([], demoCash);
     const demoExpenses = getDemoExpenses();
     setInvestments(demoInv);
+    setSwingTrades([]);
+    saveSwingTrades([]);
     setFamilyMembers([]);
     setStoredGoals(demoGoals);
     setLoans(demoLoans.map((loan) => normalizeLoan(loan)));
@@ -2056,6 +2146,7 @@ export function AppProvider({ children }) {
     investmentVisibilityMemberId,
     investmentVisibilityMember,
     visibleInvestments,
+    swingTrades,
     goals,
     loans,
     cash,
@@ -2075,6 +2166,9 @@ export function AppProvider({ children }) {
     addInvestment,
     updateInvestment,
     deleteInvestment,
+    addSwingTrade,
+    updateSwingTrade,
+    deleteSwingTrade,
     addFamilyMember,
     updateFamilyMember,
     deleteFamilyMember,
