@@ -65,6 +65,14 @@ export default function Settings() {
     }));
   }
 
+  const showMotivationBanner = appSettings?.showMotivationBanner !== false;
+
+  function handleMotivationBannerToggle() {
+    updateAppSettings((current) => ({
+      showMotivationBanner: current?.showMotivationBanner === false,
+    }));
+  }
+
   return (
     <div className="settings-page">
       <header className="settings-header">
@@ -136,6 +144,20 @@ export default function Settings() {
         </div>
 
         <div className="settings-toggle-list">
+          <article className="settings-toggle-card">
+            <div>
+              <strong>Motivation Banner</strong>
+              <p>Show a small banner on the home screen that highlights an encouraging fact from your data each day.</p>
+            </div>
+            <button
+              type="button"
+              className={`settings-switch ${showMotivationBanner ? 'active' : ''}`}
+              onClick={handleMotivationBannerToggle}
+              aria-pressed={showMotivationBanner ? 'true' : 'false'}
+            >
+              <span />
+            </button>
+          </article>
           {DASHBOARD_TOGGLES.map((item) => (
             <article key={item.key} className="settings-toggle-card">
               <div>

@@ -4,6 +4,7 @@ import { useApp } from '../context/useApp';
 import { getTypeInfo, formatCurrency, formatCompactCurrency, calculateReturns, isValidDateValue } from '../utils/constants';
 import InvestmentCard from '../components/InvestmentCard';
 import GoalCard from '../components/GoalCard';
+import MotivationBanner from '../components/MotivationBanner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { TrendingUp, TrendingDown, Wallet, Target, ChevronRight, Landmark, CreditCard, CalendarRange, BellRing, Repeat, AlertTriangle } from 'lucide-react';
 import './Dashboard.css';
@@ -415,6 +416,15 @@ export default function Dashboard() {
           <p className="dash-subtitle">Investment view: {portfolioScopeLabel}</p>
         </div>
       </header>
+
+      {appSettings?.showMotivationBanner !== false ? (
+        <MotivationBanner
+          stats={stats}
+          goals={goals}
+          netWorthChange={netWorthChange}
+          netWorthRange={netWorthRange}
+        />
+      ) : null}
 
       {attentionItems.length ? (
         <section className="dash-attention">

@@ -344,6 +344,7 @@ const DEFAULT_APP_SETTINGS = {
   },
   investmentVisibilityMemberId: 'all',
   showProjectedValue: true,
+  showMotivationBanner: true,
 };
 
 function normalizeAppSettings(appSettings) {
@@ -364,6 +365,7 @@ function normalizeAppSettings(appSettings) {
         ? appSettings.investmentVisibilityMemberId.trim()
         : 'all',
     showProjectedValue: appSettings?.showProjectedValue !== false,
+    showMotivationBanner: appSettings?.showMotivationBanner !== false,
   };
 }
 
