@@ -1779,6 +1779,22 @@ export function AppProvider({ children }) {
     });
   }, [investments, user]);
 
+  // Record a fresh contribution (money added) to an existing investment: both the invested amount
+  // (cost basis) and current value rise by the contribution as of the given date, which writes a
+  // history snapshot so it shows up as an addition in transactions and the monthly review.
+  const contributeToInvestment = useCallback((id, { amount, date } = {}) => {
+    if (readOnlyRef.current) return null;
+    const contribution = Number(amount) || 0;
+    if (contribution <= 0) return null;
+    const previousInvestment = investments.find((item) => item.id === id);
+    if (!previousInvestment) return null;
+    updateInvestment(id, {
+      investedAmount: (Number(previousInvestment.investedAmount) || 0) + contribution,
+      currentValue: (Number(previousInvestment.currentValue) || 0) + contribution,
+      snapshotDate: normalizeHistoryDate(date, getTodayDateValue()),
+    });
+  }, [investments, updateInvestment]);
+
   const recordRecurringEntryNow = useCallback((id, recordedDate = getTodayDateValue()) => {
     if (readOnlyRef.current) return null;
     const entry = recurringEntries.find((item) => item.id === id);
@@ -2168,6 +2184,7 @@ export function AppProvider({ children }) {
     addInvestment,
     updateInvestment,
     deleteInvestment,
+    contributeToInvestment,
     addSwingTrade,
     updateSwingTrade,
     deleteSwingTrade,

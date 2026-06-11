@@ -186,7 +186,7 @@ function ProjectionTooltip({ active, payload }) {
 }
 
 export default function Investments() {
-  const { investments, visibleInvestments, familyMembers, investmentVisibilityMember } = useApp();
+  const { investments, visibleInvestments, familyMembers, investmentVisibilityMember, contributeToInvestment } = useApp();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -194,6 +194,27 @@ export default function Investments() {
   const [sortBy, setSortBy] = useState('value');
   const [showFilters, setShowFilters] = useState(false);
   const [progressRange, setProgressRange] = useState('month');
+  const [contributionTarget, setContributionTarget] = useState(null);
+  const [contributionAmount, setContributionAmount] = useState('');
+  const [contributionDate, setContributionDate] = useState('');
+
+  function openContribution(investment) {
+    setContributionTarget(investment);
+    setContributionAmount('');
+    setContributionDate(new Date().toISOString().slice(0, 10));
+  }
+
+  function closeContribution() {
+    setContributionTarget(null);
+  }
+
+  function submitContribution(event) {
+    event.preventDefault();
+    const amount = Number(contributionAmount) || 0;
+    if (!contributionTarget || amount <= 0) return;
+    contributeToInvestment(contributionTarget.id, { amount, date: contributionDate });
+    closeContribution();
+  }
   const portfolioScopeLabel = investmentVisibilityMember ? investmentVisibilityMember.name : 'Whole family';
   const scopedFamilyMembers = useMemo(
     () => (investmentVisibilityMember ? [investmentVisibilityMember] : familyMembers),
@@ -571,6 +592,7 @@ export default function Investments() {
             investment={investment}
             onClick={() => navigate(`/investments/edit/${investment.id}`)}
             onViewTransactions={() => navigate(`/investments/transactions?investment=${investment.id}`)}
+            onAddContribution={() => openContribution(investment)}
           />
         ))}
       </div>
@@ -594,6 +616,60 @@ export default function Investments() {
               {investments.length === 0 ? 'Add Investment' : 'Open Settings'}
             </button>
           ) : null}
+        </div>
+      ) : null}
+
+      {contributionTarget ? (
+        <div className="inv-contrib-backdrop" role="presentation" onClick={closeContribution}>
+          <div
+            className="inv-contrib-modal"
+            role="dialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="inv-contrib-head">
+              <p className="inv-contrib-label">Invest more</p>
+              <h2 className="inv-contrib-title">{contributionTarget.name}</h2>
+              <p className="inv-contrib-sub">
+                Adds to invested amount and current value, and records an addition transaction.
+              </p>
+            </div>
+            <form onSubmit={submitContribution} className="inv-contrib-form">
+              <label className="inv-contrib-field">
+                <span>Amount</span>
+                <div className="inv-contrib-input-prefix">
+                  <span>₹</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                    value={contributionAmount}
+                    onChange={(event) => setContributionAmount(event.target.value)}
+                    autoFocus
+                  />
+                </div>
+              </label>
+              <label className="inv-contrib-field">
+                <span>Date</span>
+                <input
+                  type="date"
+                  value={contributionDate}
+                  max={new Date().toISOString().slice(0, 10)}
+                  onChange={(event) => setContributionDate(event.target.value)}
+                />
+              </label>
+              <div className="inv-contrib-actions">
+                <button type="button" className="inv-contrib-cancel" onClick={closeContribution}>
+                  Cancel
+                </button>
+                <button type="submit" className="inv-contrib-save" disabled={!(Number(contributionAmount) > 0)}>
+                  Add contribution
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       ) : null}
     </div>

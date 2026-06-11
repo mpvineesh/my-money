@@ -17,6 +17,7 @@ import LoanForm from './pages/LoanForm';
 import AddPage from './pages/AddPage';
 import Login from './pages/Login';
 import RequireAuth from './components/RequireAuth';
+import SplashScreen from './components/SplashScreen';
 import Expenses from './pages/Expenses';
 import ExpenseList from './pages/ExpenseList';
 import ExpenseForm from './pages/ExpenseForm';
@@ -33,6 +34,7 @@ import './App.css';
 export default function App() {
   return (
     <BrowserRouter>
+      <SplashScreen />
       <AuthProvider>
         <AppProvider>
           <ScrollToTop />

@@ -1,5 +1,5 @@
 import { DEFAULT_FAMILY_MEMBER, getTypeInfo, formatCurrency, calculateReturns, formatDate } from '../utils/constants';
-import { TrendingUp, TrendingDown, Minus, ReceiptText } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, ReceiptText, PlusCircle } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -11,7 +11,7 @@ import {
 import { useApp } from '../context/useApp';
 import './InvestmentCard.css';
 
-export default function InvestmentCard({ investment, onClick, onViewTransactions }) {
+export default function InvestmentCard({ investment, onClick, onViewTransactions, onAddContribution }) {
   const { appSettings } = useApp();
   const showProjectedValue = appSettings?.showProjectedValue !== false;
   const typeInfo = getTypeInfo(investment.type);
@@ -64,21 +64,37 @@ export default function InvestmentCard({ investment, onClick, onViewTransactions
         </span>
       </div>
 
-       
-      {onViewTransactions ? (
-        <button
-          type="button"
-          className="inv-card-txn-btn"
-          onClick={(event) => {
-            event.stopPropagation();
-            onViewTransactions();
-          }}
-        >
-          <ReceiptText size={14} />
-          View transactions{historyCount ? ` (${historyCount})` : ''}
-        </button>
+      {onViewTransactions || onAddContribution ? (
+        <div className="inv-card-actions">
+          {onAddContribution ? (
+            <button
+              type="button"
+              className="inv-card-add-btn"
+              onClick={(event) => {
+                event.stopPropagation();
+                onAddContribution();
+              }}
+            >
+              <PlusCircle size={14} />
+              Invest more
+            </button>
+          ) : null}
+          {onViewTransactions ? (
+            <button
+              type="button"
+              className="inv-card-txn-btn"
+              onClick={(event) => {
+                event.stopPropagation();
+                onViewTransactions();
+              }}
+            >
+              <ReceiptText size={14} />
+              View transactions
+            </button>
+          ) : null}
+        </div>
       ) : null}
-     
+
 {showProjectedValue && (
       <div className="inv-card-projection">
         <div className="projection-chart">

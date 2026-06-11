@@ -159,6 +159,38 @@
   border-color: #99f6e4;
 }
 
+.inv-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.inv-card-actions .inv-card-txn-btn {
+  margin-top: 0;
+  flex: 1;
+}
+
+.inv-card-add-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid #c7d2fe;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.inv-card-add-btn:hover {
+  background: #e0e7ff;
+  border-color: #a5b4fc;
+}
+
 .inv-card-projection {
   display:flex;
   align-items:center;
