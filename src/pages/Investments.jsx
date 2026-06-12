@@ -186,7 +186,7 @@ function ProjectionTooltip({ active, payload }) {
 }
 
 export default function Investments() {
-  const { investments, visibleInvestments, familyMembers, investmentVisibilityMember, contributeToInvestment } = useApp();
+  const { investments, visibleInvestments, familyMembers, investmentVisibilityMember, contributeToInvestment, themePrimary } = useApp();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -420,7 +420,7 @@ export default function Investments() {
                 />
                 <Tooltip content={<ProgressTooltip />} />
                 <Line type="monotone" dataKey="investedAmount" stroke="#94a3b8" strokeWidth={2} dot={{ r: 3 }} />
-                <Line type="monotone" dataKey="currentValue" stroke="#6366f1" strokeWidth={3} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="currentValue" stroke={themePrimary} strokeWidth={3} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>

@@ -166,7 +166,7 @@
 }
 
 .monthly-review-panel-head a {
-  color: #4f46e5;
+  color: var(--brand-600);
   font-size: 0.78rem;
   font-weight: 800;
   text-decoration: none;

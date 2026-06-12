@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg,#f8fafc 0%, #eef2ff 45%, #fff7ed 100%);
+  background: linear-gradient(180deg,#f8fafc 0%, var(--brand-50) 45%, #fff7ed 100%);
   padding: 48px 16px;
 }
 
@@ -20,6 +20,7 @@
 }
 
 .login-brand { display:flex; align-items:center; gap:12px; justify-content:center; }
+.login-logo { width:48px; height:48px; object-fit:contain; border-radius:12px; display:block; }
 .login-brand h1 { font-size:22px; margin:0; color:#0f172a; letter-spacing:0.2px; }
 .login-sub { color:#475569; margin:14px 0 22px; font-size:14px; }
 

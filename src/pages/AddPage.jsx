@@ -17,7 +17,7 @@ export default function AddPage() {
 
       <div className="add-options">
         <button className="add-option-card" onClick={() => navigate('/investments/new')}>
-          <div className="add-option-icon" style={{ background: '#eef2ff', color: '#6366f1' }}>
+          <div className="add-option-icon" style={{ background: 'var(--brand-50)', color: 'var(--brand-500)' }}>
             <Briefcase size={28} />
           </div>
           <div className="add-option-text">
@@ -47,7 +47,7 @@ export default function AddPage() {
         </button>
 
         <button className="add-option-card" onClick={() => navigate('/expenses/scan')}>
-          <div className="add-option-icon" style={{ background: '#eef2ff', color: '#6366f1' }}>
+          <div className="add-option-icon" style={{ background: 'var(--brand-50)', color: 'var(--brand-500)' }}>
             <ScanLine size={28} />
           </div>
           <div className="add-option-text">
@@ -67,7 +67,7 @@ export default function AddPage() {
         </button>
 
         <button className="add-option-card" onClick={() => navigate('/reminders')}>
-          <div className="add-option-icon" style={{ background: '#eef2ff', color: '#4f46e5' }}>
+          <div className="add-option-icon" style={{ background: 'var(--brand-50)', color: 'var(--brand-600)' }}>
             <BellRing size={28} />
           </div>
           <div className="add-option-text">

@@ -114,7 +114,7 @@ html {
 
 /* Selection color */
 ::selection {
-  background: rgba(99, 102, 241, 0.2);
+  background: rgba(var(--brand-rgb), 0.2);
   color: #1e293b;
 }
 

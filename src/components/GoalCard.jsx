@@ -17,7 +17,7 @@ export default function GoalCard({ goal, onClick }) {
     low: '#22c55e',
   };
 
-  const progressColor = progress >= 75 ? '#22c55e' : progress >= 40 ? '#f59e0b' : '#6366f1';
+  const progressColor = progress >= 75 ? '#22c55e' : progress >= 40 ? '#f59e0b' : 'var(--brand-500)';
   const memberName = goal.memberName || FAMILY_GOAL_SCOPE.name;
   const hasAllocations = Array.isArray(goal.allocations) && goal.allocations.length > 0;
 

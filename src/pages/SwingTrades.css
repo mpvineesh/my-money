@@ -19,7 +19,7 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #6366f1;
+  color: var(--brand-500);
 }
 
 .swing-title {
@@ -262,7 +262,7 @@
 
 .swing-open-hint {
   font-size: 0.8rem;
-  color: #6366f1;
+  color: var(--brand-500);
   font-weight: 700;
 }
 

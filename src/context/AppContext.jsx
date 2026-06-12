@@ -66,6 +66,7 @@ import {
   isValidDateValue,
 } from '../utils/constants';
 import { AppContext } from './AppContextDef';
+import { THEME_IDS, DEFAULT_THEME, getThemeInfo } from '../utils/themes';
 import { useAuth } from './useAuth';
 import { db } from '../firebase';
 import { collection, doc, onSnapshot, orderBy, query, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -345,6 +346,7 @@ const DEFAULT_APP_SETTINGS = {
   investmentVisibilityMemberId: 'all',
   showProjectedValue: true,
   showMotivationBanner: true,
+  theme: DEFAULT_THEME,
 };
 
 function normalizeAppSettings(appSettings) {
@@ -366,6 +368,7 @@ function normalizeAppSettings(appSettings) {
         : 'all',
     showProjectedValue: appSettings?.showProjectedValue !== false,
     showMotivationBanner: appSettings?.showMotivationBanner !== false,
+    theme: THEME_IDS.includes(appSettings?.theme) ? appSettings.theme : DEFAULT_THEME,
   };
 }
 
@@ -870,6 +873,15 @@ export function AppProvider({ children }) {
   const [reminders, setReminders] = useState(INITIAL_REMINDERS);
   const [appSettings, setAppSettings] = useState(INITIAL_APP_SETTINGS);
   const [aiReports, setAiReports] = useState(INITIAL_AI_REPORTS);
+
+  const theme = THEME_IDS.includes(appSettings?.theme) ? appSettings.theme : DEFAULT_THEME;
+  const themePrimary = getThemeInfo(theme).primary;
+
+  // Apply the selected theme to the document root so the CSS variables in
+  // styles/themes.css re-skin the whole app.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   const investmentMemberOptions = useMemo(
     () => buildInvestmentMemberOptions(familyMembers, investments),
@@ -2180,6 +2192,8 @@ export function AppProvider({ children }) {
     recurringEntries,
     reminders,
     appSettings,
+    theme,
+    themePrimary,
     aiReports,
     addInvestment,
     updateInvestment,

@@ -61,8 +61,8 @@
 }
 
 .expense-chip-subtle {
-  background: #eef2ff;
-  color: #4338ca;
+  background: var(--brand-50);
+  color: var(--brand-700);
 }
 
 .expense-chip-outline {

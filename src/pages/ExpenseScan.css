@@ -2,8 +2,8 @@
   text-align: center;
   padding: 18px 8px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #eef2ff, #f8fafc);
-  border: 1px solid #e0e7ff;
+  background: linear-gradient(135deg, var(--brand-50), #f8fafc);
+  border: 1px solid var(--brand-100);
   margin-bottom: 16px;
 }
 
@@ -14,7 +14,7 @@
   width: 56px;
   height: 56px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-accent));
   color: #fff;
   margin-bottom: 10px;
 }
@@ -46,7 +46,7 @@
   gap: 8px;
   padding: 12px 14px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-accent));
   color: white;
   font-weight: 600;
   font-size: 0.9rem;
@@ -57,8 +57,8 @@
 
 .scan-cta-secondary {
   background: white;
-  color: #4338ca;
-  border: 1px solid #c7d2fe;
+  color: var(--brand-700);
+  border: 1px solid var(--brand-200);
 }
 
 .scan-preview {

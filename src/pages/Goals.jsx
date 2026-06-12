@@ -74,8 +74,8 @@ export default function Goals() {
                 />
                 <defs>
                   <linearGradient id="goalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#6366f1" />
-                    <stop offset="100%" stopColor="#8b5cf6" />
+                    <stop offset="0%" style={{ stopColor: 'var(--brand-500)' }} />
+                    <stop offset="100%" style={{ stopColor: 'var(--brand-accent)' }} />
                   </linearGradient>
                 </defs>
               </svg>

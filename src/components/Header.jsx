@@ -35,17 +35,7 @@ export default function Header() {
       <div className="header-inner">
         <div className="brand"><Link to="/" className="brand-link">
           <span className="logo" aria-hidden>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="0" y="0" width="24" height="24" rx="6" fill="url(#g)" />
-              <defs>
-                <linearGradient id="g" x1="0" x2="1">
-                  <stop offset="0" stopColor="#7c3aed" />
-                  <stop offset="1" stopColor="#0ea5e9" />
-                </linearGradient>
-              </defs>
-              <path d="M6 13c1.2-2 3.5-3 6-3s4.8 1 6 3" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.95" />
-              <circle cx="8" cy="9" r="1.2" fill="white" opacity="0.95" />
-            </svg>
+            <img src="/logo1.png" alt="" className="logo-img" />
           </span>
           <span className="brand-text">My Money</span>
         </Link></div>

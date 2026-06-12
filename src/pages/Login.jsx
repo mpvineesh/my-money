@@ -15,11 +15,7 @@ export default function Login() {
     <div className="login-root">
       <div className="login-card">
         <div className="login-brand">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="24" height="24" rx="6" fill="#4F46E5" />
-            <path d="M7 12h10" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M7 8h10" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
-          </svg>
+          <img src="/logo1.png" alt="" className="login-logo" width="48" height="48" />
           <h1>My Money</h1>
         </div>
 

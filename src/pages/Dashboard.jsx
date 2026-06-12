@@ -213,6 +213,7 @@ export default function Dashboard() {
     netWorthSnapshots,
     recordRecurringEntryNow,
     appSettings,
+    themePrimary,
   } = useApp();
   const navigate = useNavigate();
   const [netWorthRange, setNetWorthRange] = useState('month');
@@ -566,7 +567,7 @@ export default function Dashboard() {
                     <YAxis tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} tickFormatter={(value) => formatCompactCurrency(value)} width={52} />
                     <Tooltip content={<NetWorthTooltip />} />
                     <Line type="monotone" dataKey="portfolioValue" stroke="#14b8a6" strokeWidth={2.5} dot={{ r: 3 }} name="Portfolio" />
-                    <Line type="monotone" dataKey="netWorth" stroke="#6366f1" strokeWidth={3} dot={{ r: 3 }} name="Net worth" />
+                    <Line type="monotone" dataKey="netWorth" stroke={themePrimary} strokeWidth={3} dot={{ r: 3 }} name="Net worth" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

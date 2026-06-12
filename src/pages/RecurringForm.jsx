@@ -160,7 +160,7 @@ export default function RecurringForm() {
             <button
               type="button"
               className={`form-risk-btn ${form.kind === 'expense' ? 'active' : ''}`}
-              style={form.kind === 'expense' ? { backgroundColor: '#eef2ff', color: '#4338ca', borderColor: '#c7d2fe' } : {}}
+              style={form.kind === 'expense' ? { backgroundColor: 'var(--brand-50)', color: 'var(--brand-700)', borderColor: 'var(--brand-200)' } : {}}
               onClick={() => handleChange('kind', 'expense')}
             >
               Expense
@@ -168,7 +168,7 @@ export default function RecurringForm() {
             <button
               type="button"
               className={`form-risk-btn ${form.kind === 'investment' ? 'active' : ''}`}
-              style={form.kind === 'investment' ? { backgroundColor: '#eef2ff', color: '#4338ca', borderColor: '#c7d2fe' } : {}}
+              style={form.kind === 'investment' ? { backgroundColor: 'var(--brand-50)', color: 'var(--brand-700)', borderColor: 'var(--brand-200)' } : {}}
               onClick={() => handleChange('kind', 'investment')}
             >
               Investment

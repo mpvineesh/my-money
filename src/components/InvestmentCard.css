@@ -67,8 +67,8 @@
   margin-bottom: 12px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #eef2ff;
-  color: #4338ca;
+  background: var(--brand-50);
+  color: var(--brand-700);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -177,9 +177,9 @@
   justify-content: center;
   gap: 6px;
   padding: 8px 12px;
-  border: 1px solid #c7d2fe;
-  background: #eef2ff;
-  color: #4f46e5;
+  border: 1px solid var(--brand-200);
+  background: var(--brand-50);
+  color: var(--brand-600);
   font-size: 0.78rem;
   font-weight: 700;
   border-radius: 10px;
@@ -187,7 +187,7 @@
 }
 
 .inv-card-add-btn:hover {
-  background: #e0e7ff;
+  background: var(--brand-100);
   border-color: #a5b4fc;
 }
 

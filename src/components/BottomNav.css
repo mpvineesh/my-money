@@ -30,15 +30,15 @@
 }
 
 .nav-item:hover {
-  color: #6366f1;
+  color: var(--brand-500);
 }
 
 .nav-item.active {
-  color: #6366f1;
+  color: var(--brand-500);
 }
 
 .nav-item.active svg {
-  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.3));
+  filter: drop-shadow(0 0 6px rgba(var(--brand-rgb), 0.3));
 }
 
 .nav-item-add {
@@ -46,7 +46,7 @@
 }
 
 .nav-item-add.active {
-  color: #6366f1;
+  color: var(--brand-500);
 }
 
 @media (min-width: 768px) {

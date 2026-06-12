@@ -1,6 +1,7 @@
-import { ChevronRight, SlidersHorizontal, Users } from 'lucide-react';
+import { Check, ChevronRight, Palette, SlidersHorizontal, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
+import { THEMES, DEFAULT_THEME } from '../utils/themes';
 import './Settings.css';
 
 const DASHBOARD_TOGGLES = [
@@ -73,6 +74,12 @@ export default function Settings() {
     }));
   }
 
+  const activeTheme = appSettings?.theme || DEFAULT_THEME;
+
+  function handleThemeChange(themeId) {
+    updateAppSettings({ theme: themeId });
+  }
+
   return (
     <div className="settings-page">
       <header className="settings-header">
@@ -85,6 +92,44 @@ export default function Settings() {
           <p className="settings-subtitle">Choose which sections are visible on the dashboard home screen.</p>
         </div>
       </header>
+
+      <section className="settings-panel">
+        <div className="settings-panel-head">
+          <div>
+            <p className="settings-panel-label">Appearance</p>
+            <h2>App theme</h2>
+            <p className="settings-panel-copy">
+              Pick an accent palette. This re-colors buttons, highlights, charts, and other accents across the app.
+            </p>
+          </div>
+          <div className="settings-icon-circle settings-icon-circle--sm">
+            <Palette size={18} />
+          </div>
+        </div>
+
+        <div className="settings-theme-grid">
+          {THEMES.map((theme) => {
+            const isActive = activeTheme === theme.id;
+            return (
+              <button
+                key={theme.id}
+                type="button"
+                className={`settings-theme-card ${isActive ? 'active' : ''}`}
+                onClick={() => handleThemeChange(theme.id)}
+                aria-pressed={isActive ? 'true' : 'false'}
+              >
+                <span
+                  className="settings-theme-swatch"
+                  style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent})` }}
+                >
+                  {isActive ? <Check size={16} strokeWidth={3} /> : null}
+                </span>
+                <span className="settings-theme-name">{theme.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       <section className="settings-panel">
         <div className="settings-panel-head">

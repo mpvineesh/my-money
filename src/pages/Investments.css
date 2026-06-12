@@ -14,7 +14,7 @@
 
 .inv-page-label {
   font-size: 0.8rem;
-  color: #6366f1;
+  color: var(--brand-500);
   font-weight: 600;
   margin: 0 0 2px;
   text-transform: uppercase;
@@ -90,7 +90,7 @@
   gap: 8px;
   border: none;
   background: transparent;
-  color: #4338ca;
+  color: var(--brand-700);
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
@@ -98,7 +98,7 @@
 }
 
 .inv-manage-link:hover {
-  color: #312e81;
+  color: var(--brand-900);
 }
 
 .inv-member-summary-grid {
@@ -118,14 +118,14 @@
 }
 
 .inv-member-summary-card:hover {
-  border-color: #c7d2fe;
-  background: #eef2ff;
+  border-color: var(--brand-200);
+  background: var(--brand-50);
 }
 
 .inv-member-summary-card.active {
-  border-color: #6366f1;
-  background: #eef2ff;
-  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.08);
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+  box-shadow: 0 0 0 1px rgba(var(--brand-rgb), 0.08);
 }
 
 .inv-member-summary-top,
@@ -181,7 +181,7 @@
 
 .inv-progress-label {
   font-size: 0.72rem;
-  color: #6366f1;
+  color: var(--brand-500);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -198,7 +198,7 @@
   display: inline-flex;
   gap: 4px;
   padding: 4px;
-  background: #eef2ff;
+  background: var(--brand-50);
   border-radius: 14px;
 }
 
@@ -215,7 +215,7 @@
 
 .inv-progress-toggle button.active {
   background: white;
-  color: #4338ca;
+  color: var(--brand-700);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
@@ -306,8 +306,8 @@
 }
 
 .inv-search-bar:focus-within {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.1);
 }
 
 .inv-search-icon {
@@ -343,8 +343,8 @@
 
 .inv-filter-toggle:hover,
 .inv-filter-toggle.active {
-  color: #6366f1;
-  background: #eef2ff;
+  color: var(--brand-500);
+  background: var(--brand-50);
 }
 
 .inv-filters {
@@ -404,14 +404,14 @@
 }
 
 .filter-chip:hover {
-  border-color: #6366f1;
-  color: #6366f1;
+  border-color: var(--brand-500);
+  color: var(--brand-500);
 }
 
 .filter-chip.active {
-  background: #eef2ff;
-  border-color: #c7d2fe;
-  color: #6366f1;
+  background: var(--brand-50);
+  border-color: var(--brand-200);
+  color: var(--brand-500);
   font-weight: 600;
 }
 
@@ -427,7 +427,7 @@
 }
 
 .inv-sort-select:focus {
-  border-color: #6366f1;
+  border-color: var(--brand-500);
 }
 
 .inv-count {
@@ -509,7 +509,7 @@
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #4f46e5;
+  color: var(--brand-600);
 }
 
 .inv-contrib-title {
@@ -558,8 +558,8 @@
 }
 
 .inv-contrib-field input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.1);
 }
 
 .inv-contrib-input-prefix {
@@ -589,8 +589,8 @@
 }
 
 .inv-contrib-input-prefix:focus-within {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.1);
 }
 
 .inv-contrib-actions {

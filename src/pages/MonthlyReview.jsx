@@ -116,6 +116,7 @@ export default function MonthlyReview() {
     goals,
     recurringEntries,
     reminders,
+    themePrimary,
   } = useApp();
   const [periodKey, setPeriodKey] = useState(getCurrentMonthValue);
 
@@ -282,7 +283,7 @@ export default function MonthlyReview() {
                 />
                 <Tooltip content={<TrendTooltip />} cursor={{ fill: 'rgba(15, 118, 110, 0.06)' }} />
                 <Bar dataKey="invested" fill="#0f766e" radius={[6, 6, 0, 0]} maxBarSize={36} name="Invested" />
-                <Line type="monotone" dataKey="cumulative" stroke="#6366f1" strokeWidth={2} dot={false} name="Total invested" />
+                <Line type="monotone" dataKey="cumulative" stroke={themePrimary} strokeWidth={2} dot={false} name="Total invested" />
               </ComposedChart>
             </ResponsiveContainer>
           </div>

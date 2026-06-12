@@ -5,9 +5,9 @@
   margin: 0 0 16px;
   padding: 14px 14px 14px 16px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #eef2ff 0%, #ecfeff 55%, #f0fdf4 100%);
-  border: 1px solid #e0e7ff;
-  box-shadow: 0 8px 22px rgba(79, 70, 229, 0.07);
+  background: linear-gradient(135deg, var(--brand-50) 0%, #ecfeff 55%, #f0fdf4 100%);
+  border: 1px solid var(--brand-100);
+  box-shadow: 0 8px 22px rgba(var(--brand-rgb), 0.07);
 }
 
 .motiv-emoji {
