@@ -347,6 +347,7 @@ const DEFAULT_APP_SETTINGS = {
   showProjectedValue: true,
   showMotivationBanner: true,
   theme: DEFAULT_THEME,
+  ownerName: DEFAULT_FAMILY_MEMBER.name,
 };
 
 function normalizeAppSettings(appSettings) {
@@ -369,6 +370,10 @@ function normalizeAppSettings(appSettings) {
     showProjectedValue: appSettings?.showProjectedValue !== false,
     showMotivationBanner: appSettings?.showMotivationBanner !== false,
     theme: THEME_IDS.includes(appSettings?.theme) ? appSettings.theme : DEFAULT_THEME,
+    ownerName:
+      typeof appSettings?.ownerName === 'string' && appSettings.ownerName.trim()
+        ? appSettings.ownerName.trim().slice(0, 40)
+        : DEFAULT_FAMILY_MEMBER.name,
   };
 }
 
@@ -2167,22 +2172,66 @@ export function AppProvider({ children }) {
     setAiReports([]);
   }, []);
 
+  // --- Member-mode scoping --------------------------------------------------
+  // When a family member is signed in (read-only), restrict every section to
+  // just their own data. Investments, swing trades and goals link by memberId;
+  // expenses link only by payer name (payers are a separate id space from
+  // family members); loans and cash are household-level, so they are hidden.
+  const memberScopeId = household?.mode === 'member' ? (household.memberId || null) : null;
+  const memberScopeName = String(household?.memberName || '').trim().toLowerCase();
+
+  const scopedInvestments = memberScopeId ? visibleInvestments : investments;
+  const scopedSwingTrades = memberScopeId
+    ? swingTrades.filter((trade) => (trade.memberId || DEFAULT_FAMILY_MEMBER.id) === memberScopeId)
+    : swingTrades;
+  const scopedGoals = memberScopeId ? goals.filter((goal) => goal.memberId === memberScopeId) : goals;
+  const scopedExpenses = !memberScopeId
+    ? expenses
+    : (memberScopeName
+        ? expenses.filter((expense) => String(expense.paidByName || '').trim().toLowerCase() === memberScopeName)
+        : []);
+  const scopedLoans = memberScopeId ? [] : loans;
+  const scopedCash = memberScopeId ? 0 : cash;
+  const scopedCashHistory = memberScopeId ? [] : cashHistory;
+  const scopedNetWorthSnapshots = memberScopeId ? [] : derivedNetWorthSnapshots;
+
+  // --- Owner display name ---------------------------------------------------
+  // The owner is the fixed member id 'me'. Its label is editable (Settings) and
+  // stored as appSettings.ownerName. Substitute it for the stored 'Me' default
+  // wherever the owner's name is displayed, without rewriting saved records.
+  const ownerName = String(appSettings?.ownerName || '').trim() || DEFAULT_FAMILY_MEMBER.name;
+  const renameOwner = (list, idField, nameField) =>
+    ownerName === DEFAULT_FAMILY_MEMBER.name
+      ? list
+      : list.map((item) =>
+          (item?.[idField] || DEFAULT_FAMILY_MEMBER.id) === DEFAULT_FAMILY_MEMBER.id
+            ? { ...item, [nameField]: ownerName }
+            : item);
+  const ownerMemberOptions = ownerName === DEFAULT_FAMILY_MEMBER.name
+    ? investmentMemberOptions
+    : investmentMemberOptions.map((member) =>
+        member.id === DEFAULT_FAMILY_MEMBER.id ? { ...member, name: ownerName } : member);
+  const ownerVisibilityMember = investmentVisibilityMember && investmentVisibilityMember.id === DEFAULT_FAMILY_MEMBER.id
+    ? { ...investmentVisibilityMember, name: ownerName }
+    : investmentVisibilityMember;
+
   const value = {
     household,
     isReadOnly,
-    investments,
+    ownerName,
+    investments: renameOwner(scopedInvestments, 'memberId', 'memberName'),
     familyMembers,
-    investmentMemberOptions,
+    investmentMemberOptions: ownerMemberOptions,
     investmentVisibilityMemberId,
-    investmentVisibilityMember,
-    visibleInvestments,
-    swingTrades,
-    goals,
-    loans,
-    cash,
-    cashHistory,
-    netWorthSnapshots: derivedNetWorthSnapshots,
-    expenses,
+    investmentVisibilityMember: ownerVisibilityMember,
+    visibleInvestments: renameOwner(visibleInvestments, 'memberId', 'memberName'),
+    swingTrades: renameOwner(scopedSwingTrades, 'memberId', 'memberName'),
+    goals: renameOwner(scopedGoals, 'memberId', 'memberName'),
+    loans: scopedLoans,
+    cash: scopedCash,
+    cashHistory: scopedCashHistory,
+    netWorthSnapshots: scopedNetWorthSnapshots,
+    expenses: renameOwner(scopedExpenses, 'paidById', 'paidByName'),
     expensePayers,
     expenseProjects,
     expenseCategories,

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Briefcase, Mail, Pencil, Plus, Save, Trash2, Users, X } from 'lucide-react';
 import { useApp } from '../context/useApp';
 import { DEFAULT_FAMILY_MEMBER, FAMILY_RELATIONS, formatCurrency, getRelationLabel } from '../utils/constants';
@@ -7,10 +7,10 @@ import './FamilyMembers.css';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function buildMemberSummaries(familyMembers, investments) {
+function buildMemberSummaries(familyMembers, investments, ownerName = DEFAULT_FAMILY_MEMBER.name) {
   const summaryMap = new Map();
 
-  [DEFAULT_FAMILY_MEMBER, ...familyMembers].forEach((member) => {
+  [{ ...DEFAULT_FAMILY_MEMBER, name: ownerName }, ...familyMembers].forEach((member) => {
     summaryMap.set(member.id, {
       ...member,
       investedAmount: 0,
@@ -48,7 +48,7 @@ function buildMemberSummaries(familyMembers, investments) {
 
 export default function FamilyMembers() {
   const navigate = useNavigate();
-  const { familyMembers, investments, addFamilyMember, updateFamilyMember, deleteFamilyMember } = useApp();
+  const { familyMembers, investments, ownerName, isReadOnly, addFamilyMember, updateFamilyMember, deleteFamilyMember } = useApp();
   const [newMemberName, setNewMemberName] = useState('');
   const [newMemberRelation, setNewMemberRelation] = useState('');
   const [newMemberEmail, setNewMemberEmail] = useState('');
@@ -61,14 +61,17 @@ export default function FamilyMembers() {
   const [pendingDeleteId, setPendingDeleteId] = useState('');
 
   const memberSummaries = useMemo(
-    () => buildMemberSummaries(familyMembers, investments),
-    [familyMembers, investments],
+    () => buildMemberSummaries(familyMembers, investments, ownerName),
+    [familyMembers, investments, ownerName],
   );
 
   const totalFamilyValue = useMemo(
     () => memberSummaries.reduce((sum, member) => sum + member.currentValue, 0),
     [memberSummaries],
   );
+
+  // Family management is owner-only. A signed-in family member is redirected home.
+  if (isReadOnly) return <Navigate to="/" replace />;
 
   const handleAddMember = () => {
     const email = newMemberEmail.trim();
@@ -360,7 +363,7 @@ export default function FamilyMembers() {
                 {isDeleteOpen ? (
                   <div className="family-delete-note">
                     <p>
-                      Delete this member? {member.holdings.length} investment{member.holdings.length === 1 ? '' : 's'} will be reassigned to {DEFAULT_FAMILY_MEMBER.name}.
+                      Delete this member? {member.holdings.length} investment{member.holdings.length === 1 ? '' : 's'} will be reassigned to {ownerName}.
                     </p>
                     <div className="family-delete-actions">
                       <button type="button" className="btn-cancel" onClick={() => setPendingDeleteId('')}>

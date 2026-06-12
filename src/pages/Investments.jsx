@@ -70,8 +70,8 @@ function buildProgressSeries(investments, range) {
   });
 }
 
-function buildMemberOptions(familyMembers, investments) {
-  const options = new Map([[DEFAULT_FAMILY_MEMBER.id, DEFAULT_FAMILY_MEMBER]]);
+function buildMemberOptions(familyMembers, investments, ownerName = DEFAULT_FAMILY_MEMBER.name) {
+  const options = new Map([[DEFAULT_FAMILY_MEMBER.id, { id: DEFAULT_FAMILY_MEMBER.id, name: ownerName }]]);
 
   familyMembers.forEach((member) => {
     options.set(member.id, member);
@@ -186,7 +186,7 @@ function ProjectionTooltip({ active, payload }) {
 }
 
 export default function Investments() {
-  const { investments, visibleInvestments, familyMembers, investmentVisibilityMember, contributeToInvestment, themePrimary } = useApp();
+  const { investments, visibleInvestments, familyMembers, investmentVisibilityMember, contributeToInvestment, themePrimary, ownerName } = useApp();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -222,8 +222,8 @@ export default function Investments() {
   );
 
   const memberOptions = useMemo(
-    () => buildMemberOptions(scopedFamilyMembers, visibleInvestments),
-    [scopedFamilyMembers, visibleInvestments],
+    () => buildMemberOptions(scopedFamilyMembers, visibleInvestments, ownerName),
+    [scopedFamilyMembers, visibleInvestments, ownerName],
   );
   const memberSummaries = useMemo(
     () => buildMemberSummaries(visibleInvestments, memberOptions),

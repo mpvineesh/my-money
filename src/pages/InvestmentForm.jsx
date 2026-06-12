@@ -7,7 +7,7 @@ import './InvestmentForm.css';
 
 const ADD_MEMBER_VALUE = '__add_member__';
 
-function getInitialForm(investments, id, prefill = null) {
+function getInitialForm(investments, id, prefill = null, ownerName = DEFAULT_FAMILY_MEMBER.name) {
   const today = new Date().toISOString().slice(0, 10);
   if (id) {
     const inv = investments.find((i) => i.id === id);
@@ -15,7 +15,7 @@ function getInitialForm(investments, id, prefill = null) {
       return {
         name: inv.name || '',
         memberId: inv.memberId || DEFAULT_FAMILY_MEMBER.id,
-        memberName: inv.memberName || DEFAULT_FAMILY_MEMBER.name,
+        memberName: inv.memberName || ownerName,
         type: inv.type || 'mutual_funds',
         investedAmount: inv.investedAmount || '',
         currentValue: inv.currentValue || '',
@@ -31,7 +31,7 @@ function getInitialForm(investments, id, prefill = null) {
   const baseForm = {
     name: '',
     memberId: DEFAULT_FAMILY_MEMBER.id,
-    memberName: DEFAULT_FAMILY_MEMBER.name,
+    memberName: ownerName,
     type: 'mutual_funds',
     investedAmount: '',
     currentValue: '',
@@ -68,6 +68,7 @@ export default function InvestmentForm() {
   const {
     investments,
     familyMembers,
+    ownerName,
     addInvestment,
     updateInvestment,
     deleteInvestment,
@@ -75,13 +76,13 @@ export default function InvestmentForm() {
     markRecurringEntryRecorded,
   } = useApp();
 
-  const [form, setForm] = useState(() => getInitialForm(investments, id, prefill));
+  const [form, setForm] = useState(() => getInitialForm(investments, id, prefill, ownerName));
   const [showDelete, setShowDelete] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [memberModalName, setMemberModalName] = useState('');
 
   const memberOptions = useMemo(() => {
-    const options = new Map([[DEFAULT_FAMILY_MEMBER.id, DEFAULT_FAMILY_MEMBER]]);
+    const options = new Map([[DEFAULT_FAMILY_MEMBER.id, { id: DEFAULT_FAMILY_MEMBER.id, name: ownerName }]]);
 
     familyMembers.forEach((member) => {
       options.set(member.id, member);
@@ -105,7 +106,7 @@ export default function InvestmentForm() {
       if (right.id === DEFAULT_FAMILY_MEMBER.id) return 1;
       return left.name.localeCompare(right.name);
     });
-  }, [familyMembers, form.memberId, form.memberName, investments]);
+  }, [familyMembers, form.memberId, form.memberName, investments, ownerName]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));

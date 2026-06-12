@@ -1,4 +1,5 @@
-import { Check, ChevronRight, Palette, SlidersHorizontal, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, ChevronRight, Palette, SlidersHorizontal, UserRound, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
 import { THEMES, DEFAULT_THEME } from '../utils/themes';
@@ -39,9 +40,21 @@ export default function Settings() {
     investmentMemberOptions,
     investmentVisibilityMemberId,
     investmentVisibilityMember,
+    ownerName,
+    isReadOnly,
     updateAppSettings,
   } = useApp();
   const dashboardSections = appSettings?.dashboardSections || {};
+
+  const [nameDraft, setNameDraft] = useState(ownerName);
+  useEffect(() => { setNameDraft(ownerName); }, [ownerName]);
+  const trimmedName = nameDraft.trim();
+  const nameDirty = trimmedName && trimmedName !== ownerName;
+
+  function handleSaveName() {
+    if (!trimmedName || trimmedName === ownerName) return;
+    updateAppSettings({ ownerName: trimmedName });
+  }
 
   function handleToggle(key) {
     updateAppSettings((current) => ({
@@ -92,6 +105,43 @@ export default function Settings() {
           <p className="settings-subtitle">Choose which sections are visible on the dashboard home screen.</p>
         </div>
       </header>
+
+      {!isReadOnly ? (
+        <section className="settings-panel">
+          <div className="settings-panel-head">
+            <div>
+              <p className="settings-panel-label">Profile</p>
+              <h2>Your name</h2>
+              <p className="settings-panel-copy">
+                This is how you appear across the app (on your investments, goals, and the member filter) instead of &ldquo;Me&rdquo;.
+              </p>
+            </div>
+            <div className="settings-icon-circle settings-icon-circle--sm">
+              <UserRound size={18} />
+            </div>
+          </div>
+
+          <div className="settings-name-row">
+            <input
+              type="text"
+              className="settings-input"
+              value={nameDraft}
+              maxLength={40}
+              placeholder="Me"
+              onChange={(event) => setNameDraft(event.target.value)}
+              onKeyDown={(event) => { if (event.key === 'Enter') handleSaveName(); }}
+            />
+            <button
+              type="button"
+              className="settings-name-save"
+              onClick={handleSaveName}
+              disabled={!nameDirty}
+            >
+              Save
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       <section className="settings-panel">
         <div className="settings-panel-head">
@@ -222,25 +272,27 @@ export default function Settings() {
         </div>
       </section>
 
-      <section className="settings-panel settings-panel-secondary">
-        <div className="settings-panel-head">
-          <div>
-            <p className="settings-panel-label">Household</p>
-            <h2>Family members</h2>
+      {!isReadOnly ? (
+        <section className="settings-panel settings-panel-secondary">
+          <div className="settings-panel-head">
+            <div>
+              <p className="settings-panel-label">Household</p>
+              <h2>Family members</h2>
+            </div>
           </div>
-        </div>
 
-        <button type="button" className="settings-link-card" onClick={() => navigate('/family-members')}>
-          <div className="settings-link-icon">
-            <Users size={20} />
-          </div>
-          <div className="settings-link-copy">
-            <strong>Manage members and holdings</strong>
-            <p>Add family members once, then assign and review their investments from one place.</p>
-          </div>
-          <ChevronRight size={18} />
-        </button>
-      </section>
+          <button type="button" className="settings-link-card" onClick={() => navigate('/family-members')}>
+            <div className="settings-link-icon">
+              <Users size={20} />
+            </div>
+            <div className="settings-link-copy">
+              <strong>Manage members and holdings</strong>
+              <p>Add family members once, then assign and review their investments from one place.</p>
+            </div>
+            <ChevronRight size={18} />
+          </button>
+        </section>
+      ) : null}
     </div>
   );
 }

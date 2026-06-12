@@ -4,6 +4,20 @@ import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { AuthContext } from './AuthContextDef';
 
+const HH_CACHE_PREFIX = 'household:';
+
+function readCachedMembership(email, uid) {
+  try {
+    const cached = localStorage.getItem(HH_CACHE_PREFIX + email);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached);
+    if (parsed?.mode === 'member' && parsed.ownerUid && parsed.ownerUid !== uid) return parsed;
+  } catch {
+    // ignore malformed cache
+  }
+  return null;
+}
+
 async function resolveHousehold(user) {
   const email = (user?.email || '').toLowerCase();
   if (!email) return { mode: 'owner', ownerUid: user.uid };
@@ -12,7 +26,7 @@ async function resolveHousehold(user) {
     if (snap.exists()) {
       const data = snap.data();
       if (data.ownerUid && data.ownerUid !== user.uid) {
-        return {
+        const resolved = {
           mode: 'member',
           ownerUid: data.ownerUid,
           ownerName: data.ownerName || '',
@@ -20,12 +34,22 @@ async function resolveHousehold(user) {
           memberName: data.memberName || '',
           role: data.role || 'reader',
         };
+        // Cache so a later transient read failure can't drop a known member to an empty owner view.
+        try { localStorage.setItem(HH_CACHE_PREFIX + email, JSON.stringify(resolved)); } catch { /* ignore */ }
+        return resolved;
       }
     }
+    // Lookup succeeded and they are not a member -> genuine owner. Clear any stale cache.
+    try { localStorage.removeItem(HH_CACHE_PREFIX + email); } catch { /* ignore */ }
+    return { mode: 'owner', ownerUid: user.uid };
   } catch (err) {
-    console.warn('Household resolution failed', err);
+    // Transient failure (e.g. Firestore quota exhausted, offline). Fall back to a
+    // previously-cached membership instead of silently showing an empty owner view.
+    console.warn('Household resolution failed; falling back to cached membership if available', err);
+    const cached = readCachedMembership(email, user.uid);
+    if (cached) return cached;
+    return { mode: 'owner', ownerUid: user.uid };
   }
-  return { mode: 'owner', ownerUid: user.uid };
 }
 
 export function AuthProvider({ children }) {
