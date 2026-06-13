@@ -4,8 +4,7 @@ import { useAuth } from '../context/useAuth';
 import './Header.css';
 
 export default function Header() {
-  const { user, household, signOutUser } = useAuth();
-  const isMember = household?.mode === 'member';
+  const { user, signOutUser } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef();
 
@@ -23,15 +22,6 @@ export default function Header() {
 
   return (
     <header className="app-header">
-      {isMember ? (
-        <div className="household-banner">
-          <span>
-            Viewing <strong>{household.ownerName || 'household'}</strong>
-            {household.memberName ? <> as <strong>{household.memberName}</strong></> : null}
-            <span className="household-banner-tag">read-only</span>
-          </span>
-        </div>
-      ) : null}
       <div className="header-inner">
         <div className="brand"><Link to="/" className="brand-link">
           <span className="logo" aria-hidden>
