@@ -33,6 +33,16 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
+    // Zero-knowledge password vault. Kept at a top-level path (NOT under /users)
+    // so the family-member read rule above can never reach it. Stored data is
+    // ciphertext only; this rule is defense-in-depth. Owner-only, no member access.
+    match /vaults/{ownerUid} {
+      allow read, write: if isOwner(ownerUid);
+      match /items/{itemId} {
+        allow read, write: if isOwner(ownerUid);
+      }
+    }
+
     // /memberAccess maps a member's email -> { ownerUid, memberId, role, ... }.
     // The doc id is the lower-cased email of the family member.
     match /memberAccess/{email} {

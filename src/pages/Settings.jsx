@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Check, ChevronRight, Palette, SlidersHorizontal, UserRound, Users } from 'lucide-react';
+import { Check, ChevronRight, KeyRound, Palette, SlidersHorizontal, UserRound, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
 import { THEMES, DEFAULT_THEME } from '../utils/themes';
+import { FEATURES } from '../config';
 import './Settings.css';
 
 const DASHBOARD_TOGGLES = [
@@ -271,6 +272,28 @@ export default function Settings() {
           ))}
         </div>
       </section>
+
+      {FEATURES.passwordVault && !isReadOnly ? (
+        <section className="settings-panel">
+          <div className="settings-panel-head">
+            <div>
+              <p className="settings-panel-label">Security</p>
+              <h2>Password vault</h2>
+            </div>
+          </div>
+
+          <button type="button" className="settings-link-card" onClick={() => navigate('/vault')}>
+            <div className="settings-link-icon">
+              <KeyRound size={20} />
+            </div>
+            <div className="settings-link-copy">
+              <strong>Open password vault</strong>
+              <p>Store passwords end-to-end encrypted with a master password. Only you can read them.</p>
+            </div>
+            <ChevronRight size={18} />
+          </button>
+        </section>
+      ) : null}
 
       {!isReadOnly ? (
         <section className="settings-panel settings-panel-secondary">

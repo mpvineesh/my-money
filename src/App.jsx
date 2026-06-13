@@ -29,6 +29,9 @@ import RecurringForm from './pages/RecurringForm';
 import Reminders from './pages/Reminders';
 import Settings from './pages/Settings';
 import FamilyMembers from './pages/FamilyMembers';
+import Vault from './pages/Vault';
+import { VaultProvider } from './context/VaultContext';
+import { FEATURES } from './config';
 import './App.css';
 
 export default function App() {
@@ -37,6 +40,7 @@ export default function App() {
       <SplashScreen />
       <AuthProvider>
         <AppProvider>
+          <VaultProvider>
           <ScrollToTop />
           <div className="app-container">
             <Header />
@@ -71,10 +75,14 @@ export default function App() {
                 <Route path="/monthly-review" element={<RequireAuth><MonthlyReview /></RequireAuth>} />
                 <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
                 <Route path="/family-members" element={<RequireAuth><FamilyMembers /></RequireAuth>} />
+                {FEATURES.passwordVault ? (
+                  <Route path="/vault" element={<RequireAuth><Vault /></RequireAuth>} />
+                ) : null}
               </Routes>
             </main>
             <BottomNav />
           </div>
+          </VaultProvider>
         </AppProvider>
       </AuthProvider>
     </BrowserRouter>
