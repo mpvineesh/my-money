@@ -1,0 +1,82 @@
+.lockgate {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  background: linear-gradient(160deg, #0f172a, #1e293b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.lockgate-card {
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+  color: #fff;
+}
+
+.lockgate-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  margin: 0 auto 16px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lockgate-title { margin: 0 0 4px; font-size: 1.4rem; font-weight: 800; }
+.lockgate-sub { margin: 0 0 24px; color: #94a3b8; font-size: 0.9rem; }
+
+.lockgate-dots {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.lockgate-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.lockgate-dot.filled { background: #fff; border-color: #fff; }
+
+.lockgate-error { color: #fca5a5; font-size: 0.85rem; margin: 0 0 8px; min-height: 1em; }
+
+.lockgate-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 16px 0 8px;
+}
+.lockgate-key {
+  height: 64px;
+  border-radius: 16px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+.lockgate-key:active { background: rgba(255, 255, 255, 0.22); transform: scale(0.96); }
+.lockgate-key.empty { background: transparent; cursor: default; }
+
+.lockgate-forgot {
+  margin-top: 18px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}

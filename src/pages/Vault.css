@@ -333,3 +333,21 @@
   text-align: left;
 }
 .vault-reset-actions { display: flex; gap: 10px; justify-content: center; }
+
+.vault-pw-row { display: flex; gap: 8px; }
+.vault-pw-row .vault-input { flex: 1; min-width: 0; }
+.vault-gen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--brand-200);
+  background: var(--brand-50);
+  color: var(--brand-700);
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.vault-gen:hover { background: var(--brand-100); }

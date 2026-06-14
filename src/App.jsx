@@ -18,6 +18,7 @@ import AddPage from './pages/AddPage';
 import Login from './pages/Login';
 import RequireAuth from './components/RequireAuth';
 import SplashScreen from './components/SplashScreen';
+import LockGate from './components/LockGate';
 import Expenses from './pages/Expenses';
 import ExpenseList from './pages/ExpenseList';
 import ExpenseForm from './pages/ExpenseForm';
@@ -30,6 +31,7 @@ import Reminders from './pages/Reminders';
 import Settings from './pages/Settings';
 import FamilyMembers from './pages/FamilyMembers';
 import Vault from './pages/Vault';
+import Insights from './pages/Insights';
 import { VaultProvider } from './context/VaultContext';
 import { FEATURES } from './config';
 import './App.css';
@@ -39,6 +41,7 @@ export default function App() {
     <BrowserRouter>
       <SplashScreen />
       <AuthProvider>
+        <LockGate>
         <AppProvider>
           <VaultProvider>
           <ScrollToTop />
@@ -73,6 +76,7 @@ export default function App() {
                 <Route path="/reminders" element={<RequireAuth><Reminders /></RequireAuth>} />
                 <Route path="/ai-insights" element={<RequireAuth><AiInsights /></RequireAuth>} />
                 <Route path="/monthly-review" element={<RequireAuth><MonthlyReview /></RequireAuth>} />
+                <Route path="/insights" element={<RequireAuth><Insights /></RequireAuth>} />
                 <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
                 <Route path="/family-members" element={<RequireAuth><FamilyMembers /></RequireAuth>} />
                 {FEATURES.passwordVault ? (
@@ -84,6 +88,7 @@ export default function App() {
           </div>
           </VaultProvider>
         </AppProvider>
+        </LockGate>
       </AuthProvider>
     </BrowserRouter>
   );

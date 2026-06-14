@@ -537,3 +537,74 @@ input[type='datetime-local'].form-input {
     grid-template-columns: 1fr;
   }
 }
+
+/* Live NAV tracking */
+.nav-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--brand-700);
+  background: var(--brand-50);
+  border: 1px solid var(--brand-200);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.nav-search { position: relative; }
+.nav-results {
+  margin-top: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.nav-result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+  color: #334155;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.nav-result:hover { background: var(--brand-50); color: var(--brand-700); }
+.nav-result:last-child { border-bottom: none; }
+
+.nav-linked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--brand-200);
+  background: var(--brand-50);
+  border-radius: 12px;
+}
+.nav-linked-info { flex: 1; min-width: 0; }
+.nav-linked-info strong { display: block; color: #0f172a; font-size: 0.92rem; }
+.nav-linked-info span { color: #64748b; font-size: 0.8rem; }
+.nav-unlink {
+  width: 32px; height: 32px; flex-shrink: 0;
+  border: none; border-radius: 8px; background: #fff; color: #64748b; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+.nav-units-row { display: flex; gap: 8px; margin-top: 10px; align-items: stretch; flex-wrap: wrap; }
+.nav-units-input { flex: 1; min-width: 120px; }
+.nav-mini-btn {
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.nav-mini-btn.primary { background: var(--brand-500); border-color: var(--brand-500); color: #fff; }
+.nav-mini-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.nav-hint { margin: 8px 0 0; color: #94a3b8; font-size: 0.8rem; }

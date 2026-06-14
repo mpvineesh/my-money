@@ -54,3 +54,5 @@
 .menu-item:hover { background:rgba(2,6,23,0.03); }
 .menu-item-danger { color: #ef4444; }
 .menu-item-danger:hover { background: rgba(239,68,68,0.06); }
+
+.header-actions { display: flex; align-items: center; gap: 10px; }

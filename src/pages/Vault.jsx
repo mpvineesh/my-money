@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ShieldCheck, Lock, LockKeyhole, Plus, Eye, EyeOff, Copy, Check,
-  Pencil, Trash2, Save, X, KeyRound, AlertTriangle,
+  Pencil, Trash2, Save, X, KeyRound, AlertTriangle, Wand2,
 } from 'lucide-react';
 import { useVault } from '../context/useVault';
+import { generatePassword } from '../utils/passwordGen';
 import './Vault.css';
 
 const EMPTY_ITEM = { id: '', title: '', username: '', password: '', url: '', notes: '' };
@@ -311,8 +312,14 @@ export default function Vault() {
                 autoFocus onChange={(e) => setEditing({ ...editing, title: e.target.value })} />
               <input className="vault-input" placeholder="Username / email" value={editing.username}
                 autoComplete="off" onChange={(e) => setEditing({ ...editing, username: e.target.value })} />
-              <input className="vault-input" placeholder="Password" value={editing.password}
-                autoComplete="off" onChange={(e) => setEditing({ ...editing, password: e.target.value })} />
+              <div className="vault-pw-row">
+                <input className="vault-input" placeholder="Password" value={editing.password}
+                  autoComplete="off" onChange={(e) => setEditing({ ...editing, password: e.target.value })} />
+                <button type="button" className="vault-gen" title="Generate strong password"
+                  onClick={() => setEditing({ ...editing, password: generatePassword() })}>
+                  <Wand2 size={16} /> Generate
+                </button>
+              </div>
               <input className="vault-input" placeholder="URL (optional)" value={editing.url}
                 autoComplete="off" onChange={(e) => setEditing({ ...editing, url: e.target.value })} />
               <textarea className="vault-input vault-textarea" placeholder="Notes (optional)" rows={3}

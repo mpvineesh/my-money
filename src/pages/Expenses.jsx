@@ -352,6 +352,9 @@ export default function Expenses() {
           <h1 className="expense-home-title">Expenses</h1>
         </div>
         <div className="expense-home-actions">
+          <Link to="/insights" className="expense-home-link">
+            Insights
+          </Link>
           <Link to="/expenses/list" className="expense-home-link">
             View All Expenses
           </Link>

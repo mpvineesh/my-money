@@ -631,3 +631,58 @@
     align-items: center;
   }
 }
+
+.inv-nav-msg { margin: 4px 0 0; color: var(--brand-600); font-size: 0.82rem; font-weight: 600; }
+.inv-nav-spin { animation: invNavSpin 0.8s linear infinite; }
+@keyframes invNavSpin { to { transform: rotate(360deg); } }
+
+/* Returns & tax panel */
+.inv-returns-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.inv-returns-stat {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
+}
+.inv-returns-grow { flex: 1; min-width: 0; }
+.inv-returns-icon {
+  width: 38px; height: 38px; flex-shrink: 0;
+  border-radius: 11px;
+  background: var(--brand-50);
+  color: var(--brand-600);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.inv-returns-label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  font-weight: 700;
+}
+.inv-returns-value { display: block; font-size: 1.25rem; color: #0f172a; margin: 2px 0; }
+.inv-returns-value em { font-size: 0.85rem; font-style: normal; color: #94a3b8; font-weight: 600; }
+.inv-returns-value.positive { color: #16a34a; }
+.inv-returns-value.negative { color: #dc2626; }
+.inv-returns-note { font-size: 0.78rem; color: #94a3b8; }
+.inv-80c-bar {
+  height: 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  overflow: hidden;
+  margin: 8px 0 6px;
+}
+.inv-80c-bar > div {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand-500), var(--brand-accent));
+}

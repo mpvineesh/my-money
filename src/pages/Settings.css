@@ -343,3 +343,36 @@
 .settings-name-save:not(:disabled):hover {
   background: var(--brand-600);
 }
+
+.settings-data-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.settings-data-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.settings-data-btn:hover:not(:disabled) {
+  border-color: var(--brand-200);
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.settings-data-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.settings-pin-row { flex-wrap: wrap; }
+.settings-pin-row .settings-input { flex: 1 1 120px; }

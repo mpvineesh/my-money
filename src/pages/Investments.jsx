@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
 import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency, formatCompactCurrency, isValidDateValue } from '../utils/constants';
 import InvestmentCard from '../components/InvestmentCard';
-import { Briefcase, CalendarRange, ReceiptText, Search, SlidersHorizontal, TrendingUp, Users } from 'lucide-react';
+import { Briefcase, CalendarRange, Landmark, ReceiptText, RefreshCw, Search, SlidersHorizontal, TrendingUp, Users } from 'lucide-react';
+import { computePortfolioXirr, compute80C } from '../utils/finance';
 import { Area, ComposedChart, LineChart, Line, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import './Investments.css';
 
@@ -186,7 +187,24 @@ function ProjectionTooltip({ active, payload }) {
 }
 
 export default function Investments() {
-  const { investments, visibleInvestments, familyMembers, investmentVisibilityMember, contributeToInvestment, themePrimary, ownerName } = useApp();
+  const { investments, visibleInvestments, familyMembers, investmentVisibilityMember, contributeToInvestment, themePrimary, ownerName, refreshNavPrices } = useApp();
+  const [navBusy, setNavBusy] = useState(false);
+  const [navMsg, setNavMsg] = useState('');
+  const hasLinkedFunds = visibleInvestments.some((inv) => inv.schemeCode && Number(inv.units) > 0);
+
+  async function handleRefreshNav() {
+    setNavBusy(true);
+    setNavMsg('');
+    const res = await refreshNavPrices();
+    setNavBusy(false);
+    if (!res?.ok) setNavMsg(res?.error || 'Could not refresh NAVs.');
+    else if (!res.updated) setNavMsg(res.message || 'No linked funds to update.');
+    else setNavMsg(`Updated ${res.updated} of ${res.total} fund${res.total === 1 ? '' : 's'}.`);
+    setTimeout(() => setNavMsg(''), 4000);
+  }
+
+  const portfolioXirr = useMemo(() => computePortfolioXirr(visibleInvestments), [visibleInvestments]);
+  const tax80c = useMemo(() => compute80C(visibleInvestments), [visibleInvestments]);
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -308,8 +326,15 @@ export default function Investments() {
           <p className="inv-page-label">Portfolio</p>
           <h1 className="inv-page-title">My Investments</h1>
           <p className="inv-page-scope">Showing: {portfolioScopeLabel}</p>
+          {navMsg ? <p className="inv-nav-msg">{navMsg}</p> : null}
         </div>
         <div className="inv-page-header-right">
+          {hasLinkedFunds ? (
+            <button type="button" className="inv-transactions-link" onClick={handleRefreshNav} disabled={navBusy}>
+              <RefreshCw size={16} className={navBusy ? 'inv-nav-spin' : ''} />
+              {navBusy ? 'Refreshing…' : 'Refresh NAV'}
+            </button>
+          ) : null}
           <button type="button" className="inv-transactions-link" onClick={() => navigate('/investments/transactions')}>
             <ReceiptText size={16} />
             Transactions
@@ -320,6 +345,36 @@ export default function Investments() {
           </div>
         </div>
       </header>
+
+      {(portfolioXirr != null || tax80c.eligibleCount > 0) ? (
+        <section className="inv-returns-panel">
+          {portfolioXirr != null ? (
+            <div className="inv-returns-stat">
+              <div className="inv-returns-icon"><TrendingUp size={18} /></div>
+              <div>
+                <span className="inv-returns-label">True return (XIRR)</span>
+                <strong className={`inv-returns-value ${portfolioXirr >= 0 ? 'positive' : 'negative'}`}>
+                  {portfolioXirr >= 0 ? '+' : ''}{(portfolioXirr * 100).toFixed(1)}%
+                </strong>
+                <span className="inv-returns-note">annualised across holdings</span>
+              </div>
+            </div>
+          ) : null}
+          {tax80c.eligibleCount > 0 ? (
+            <div className="inv-returns-stat">
+              <div className="inv-returns-icon"><Landmark size={18} /></div>
+              <div className="inv-returns-grow">
+                <span className="inv-returns-label">80C used · {tax80c.fyLabel}</span>
+                <strong className="inv-returns-value">
+                  {formatCurrency(tax80c.used)} <em>/ {formatCurrency(tax80c.limit)}</em>
+                </strong>
+                <div className="inv-80c-bar"><div style={{ width: `${tax80c.percent}%` }} /></div>
+                <span className="inv-returns-note">{formatCurrency(tax80c.remaining)} of headroom left</span>
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       {visibleInvestments.length > 0 ? (
         <section className="inv-family-panel">

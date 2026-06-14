@@ -67,6 +67,8 @@ import {
 } from '../utils/constants';
 import { AppContext } from './AppContextDef';
 import { THEME_IDS, DEFAULT_THEME, getThemeInfo } from '../utils/themes';
+import { BACKUP_VERSION, BACKUP_COLLECTIONS } from '../utils/backup';
+import { fetchLatestNav } from '../utils/navService';
 import { useAuth } from './useAuth';
 import { db } from '../firebase';
 import { collection, doc, onSnapshot, orderBy, query, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -879,6 +881,26 @@ export function AppProvider({ children }) {
   const [appSettings, setAppSettings] = useState(INITIAL_APP_SETTINGS);
   const [aiReports, setAiReports] = useState(INITIAL_AI_REPORTS);
 
+  // Snapshot callbacks for budgets/recurring read the latest categories via refs, so
+  // the listener effect does NOT depend on those state values. Depending on them caused
+  // every snapshot (new array reference) to tear down and re-open all listeners — an
+  // infinite re-subscription loop that hammered Firestore and burned the read quota.
+  const expenseCategoriesRef = useRef(expenseCategories);
+  const expenseSubcategoriesRef = useRef(expenseSubcategories);
+  useEffect(() => { expenseCategoriesRef.current = expenseCategories; }, [expenseCategories]);
+  useEffect(() => { expenseSubcategoriesRef.current = expenseSubcategories; }, [expenseSubcategories]);
+
+  // Keep budget/recurring labels fresh as categories change — derived via memo (no extra
+  // state, no listeners), which replaces the freshness the old re-subscription loop gave.
+  const displayExpenseBudgets = useMemo(
+    () => normalizeExpenseBudgets(expenseBudgets, expenseCategories, expenseSubcategories),
+    [expenseBudgets, expenseCategories, expenseSubcategories],
+  );
+  const displayRecurringEntries = useMemo(
+    () => normalizeRecurringEntries(recurringEntries, expenseCategories, expenseSubcategories),
+    [recurringEntries, expenseCategories, expenseSubcategories],
+  );
+
   const theme = THEME_IDS.includes(appSettings?.theme) ? appSettings.theme : DEFAULT_THEME;
   const themePrimary = getThemeInfo(theme).primary;
 
@@ -1076,8 +1098,8 @@ export function AppProvider({ children }) {
     const unsubExpenseBudgets = onSnapshot(expenseBudgetsCol, (snap) => {
       const items = normalizeExpenseBudgets(
         snap.docs.map((d) => ({ id: d.id, ...d.data() })),
-        expenseCategories,
-        expenseSubcategories,
+        expenseCategoriesRef.current,
+        expenseSubcategoriesRef.current,
       );
       setExpenseBudgets(items);
       saveExpenseBudgets(items);
@@ -1087,8 +1109,8 @@ export function AppProvider({ children }) {
     const unsubRecurringEntries = onSnapshot(recurringEntriesCol, (snap) => {
       const items = normalizeRecurringEntries(
         snap.docs.map((d) => ({ id: d.id, ...d.data() })),
-        expenseCategories,
-        expenseSubcategories,
+        expenseCategoriesRef.current,
+        expenseSubcategoriesRef.current,
       );
       setRecurringEntries(items);
       saveRecurringEntries(items);
@@ -1135,7 +1157,7 @@ export function AppProvider({ children }) {
       unsubAppSettings();
       unsubAiReports();
     };
-  }, [expenseCategories, expenseSubcategories, effectiveUid]);
+  }, [effectiveUid]);
 
   const addExpenseProject = useCallback((projectName) => {
     if (readOnlyRef.current) return null;
@@ -1796,6 +1818,26 @@ export function AppProvider({ children }) {
     });
   }, [investments, user]);
 
+  // Revalue mutual funds linked to an AMFI scheme: currentValue = units × latest NAV.
+  const refreshNavPrices = useCallback(async () => {
+    if (readOnlyRef.current) return { ok: false, updated: 0, error: 'Read-only access.' };
+    const linked = investments.filter((inv) => inv.schemeCode && Number(inv.units) > 0);
+    if (!linked.length) return { ok: true, updated: 0, message: 'No funds are linked to a scheme yet.' };
+    const today = getTodayDateValue();
+    let updated = 0;
+    for (const inv of linked) {
+      try {
+        const { nav, date } = await fetchLatestNav(inv.schemeCode);
+        const newValue = Math.round(Number(inv.units) * nav);
+        updateInvestment(inv.id, { ...inv, currentValue: newValue, snapshotDate: today, navValue: nav, navDate: date });
+        updated += 1;
+      } catch {
+        // skip funds whose NAV could not be fetched
+      }
+    }
+    return { ok: true, updated, total: linked.length };
+  }, [investments, updateInvestment]);
+
   // Record a fresh contribution (money added) to an existing investment: both the invested amount
   // (cost basis) and current value rise by the contribution as of the given date, which writes a
   // history snapshot so it shows up as an addition in transactions and the monthly review.
@@ -2172,6 +2214,36 @@ export function AppProvider({ children }) {
     setAiReports([]);
   }, []);
 
+  // Restore a JSON backup: writes each record back to Firestore by id (merge), for
+  // the allow-listed collections only. Additive — it does not delete records that
+  // are absent from the backup.
+  const restoreBackup = useCallback(async (backup) => {
+    if (!user || readOnlyRef.current) return { ok: false, error: 'Restore is available to the account owner only.' };
+    if (!backup || backup.version !== BACKUP_VERSION || !backup.collections) {
+      return { ok: false, error: 'That is not a valid My Money backup file.' };
+    }
+    const uid = user.uid;
+    let count = 0;
+    try {
+      for (const coll of BACKUP_COLLECTIONS) {
+        const items = backup.collections[coll];
+        if (!Array.isArray(items)) continue;
+        for (const item of items) {
+          if (!item || typeof item !== 'object' || !item.id) continue;
+          const { id, ...rest } = item;
+          await setDoc(doc(db, 'users', uid, coll, String(id)), rest, { merge: true });
+          count += 1;
+        }
+      }
+      if (backup.settings && typeof backup.settings === 'object') {
+        await setDoc(doc(db, 'users', uid, 'settings', 'preferences'), normalizeAppSettings(backup.settings), { merge: true });
+      }
+      return { ok: true, count };
+    } catch {
+      return { ok: false, error: 'Restore failed partway through. Some records may not have been written.' };
+    }
+  }, [user]);
+
   // --- Member-mode scoping --------------------------------------------------
   // When a family member is signed in (read-only), restrict every section to
   // just their own data. Investments, swing trades and goals link by memberId;
@@ -2237,8 +2309,8 @@ export function AppProvider({ children }) {
     expenseCategories,
     expenseSubcategories,
     expenseTypes,
-    expenseBudgets,
-    recurringEntries,
+    expenseBudgets: displayExpenseBudgets,
+    recurringEntries: displayRecurringEntries,
     reminders,
     appSettings,
     theme,
@@ -2248,6 +2320,7 @@ export function AppProvider({ children }) {
     updateInvestment,
     deleteInvestment,
     contributeToInvestment,
+    refreshNavPrices,
     addSwingTrade,
     updateSwingTrade,
     deleteSwingTrade,
@@ -2282,6 +2355,7 @@ export function AppProvider({ children }) {
     deleteReminder,
     markReminderDone,
     updateAppSettings,
+    restoreBackup,
     generateMonthlyAiReport,
     askAi,
     parseReceipt,

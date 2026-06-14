@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import GlobalSearch from './GlobalSearch';
 import './Header.css';
 
 export default function Header() {
@@ -29,6 +30,8 @@ export default function Header() {
           </span>
           <span className="brand-text">My Money</span>
         </Link></div>
+        <div className="header-actions">
+          <GlobalSearch />
         <div className="profile" ref={ref}>
           <button className="profile-btn" onClick={() => setOpen(v => !v)} aria-haspopup>
             <span className="avatar">{initials}</span>
@@ -45,6 +48,7 @@ export default function Header() {
               <button className="menu-item menu-item-danger" onClick={signOutUser}>Sign out</button>
             </div>
           )}
+        </div>
         </div>
       </div>
     </header>

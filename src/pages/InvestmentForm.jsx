@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../context/useApp';
 import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, RISK_LEVELS } from '../utils/constants';
+import { searchSchemes, fetchLatestNav } from '../utils/navService';
 import { ArrowLeft, Plus, Save, Trash2, Users, X } from 'lucide-react';
 import './InvestmentForm.css';
 
@@ -25,6 +26,9 @@ function getInitialForm(investments, id, prefill = null, ownerName = DEFAULT_FAM
         interestRate: inv.interestRate || '',
         snapshotDate: inv.lastUpdated || today,
         notes: inv.notes || '',
+        schemeCode: inv.schemeCode || '',
+        schemeName: inv.schemeName || '',
+        units: inv.units || '',
       };
     }
   }
@@ -41,6 +45,9 @@ function getInitialForm(investments, id, prefill = null, ownerName = DEFAULT_FAM
     interestRate: '',
     snapshotDate: today,
     notes: '',
+    schemeCode: '',
+    schemeName: '',
+    units: '',
   };
 
   if (!prefill) return baseForm;
@@ -80,6 +87,54 @@ export default function InvestmentForm() {
   const [showDelete, setShowDelete] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [memberModalName, setMemberModalName] = useState('');
+  const [schemeQuery, setSchemeQuery] = useState('');
+  const [schemeResults, setSchemeResults] = useState([]);
+  const [schemeLoading, setSchemeLoading] = useState(false);
+  const [navInfo, setNavInfo] = useState(null);
+
+  // Load the latest NAV for an already-linked fund (and clear it when unlinked).
+  useEffect(() => {
+    let active = true;
+    if (form.schemeCode) {
+      fetchLatestNav(form.schemeCode).then((info) => { if (active) setNavInfo(info); }).catch(() => {});
+    } else {
+      setNavInfo(null);
+    }
+    return () => { active = false; };
+  }, [form.schemeCode]);
+
+  async function handleSchemeSearch(value) {
+    setSchemeQuery(value);
+    if (value.trim().length < 3) { setSchemeResults([]); return; }
+    setSchemeLoading(true);
+    try { setSchemeResults(await searchSchemes(value)); }
+    catch { setSchemeResults([]); }
+    finally { setSchemeLoading(false); }
+  }
+
+  function selectScheme(scheme) {
+    setForm((prev) => {
+      const next = { ...prev, schemeCode: scheme.schemeCode, schemeName: scheme.schemeName };
+      return next;
+    });
+    setSchemeQuery('');
+    setSchemeResults([]);
+  }
+
+  function clearScheme() {
+    setForm((prev) => ({ ...prev, schemeCode: '', schemeName: '', units: '' }));
+    setNavInfo(null);
+  }
+
+  function applyNavValue() {
+    if (!navInfo || !form.units) return;
+    handleChange('currentValue', String(Math.round(Number(form.units) * navInfo.nav)));
+  }
+
+  function suggestUnits() {
+    if (!navInfo || !form.currentValue) return;
+    handleChange('units', (Number(form.currentValue) / navInfo.nav).toFixed(3));
+  }
 
   const memberOptions = useMemo(() => {
     const options = new Map([[DEFAULT_FAMILY_MEMBER.id, { id: DEFAULT_FAMILY_MEMBER.id, name: ownerName }]]);
@@ -279,6 +334,70 @@ export default function InvestmentForm() {
             </div>
           </div>
         </div>
+
+        {form.type === 'mutual_funds' ? (
+          <div className="form-group">
+            <div className="form-label-row">
+              <label className="form-label">Live NAV tracking</label>
+              <span className="nav-badge">Auto-update from AMFI</span>
+            </div>
+
+            {form.schemeCode ? (
+              <>
+                <div className="nav-linked">
+                  <div className="nav-linked-info">
+                    <strong>{form.schemeName}</strong>
+                    <span>Code {form.schemeCode}{navInfo ? ` · NAV ₹${navInfo.nav} on ${navInfo.date}` : ''}</span>
+                  </div>
+                  <button type="button" className="nav-unlink" onClick={clearScheme} title="Unlink">
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="nav-units-row">
+                  <div className="form-input-prefix nav-units-input">
+                    <input
+                      type="number"
+                      className="form-input"
+                      placeholder="Units held"
+                      value={form.units}
+                      onChange={(event) => handleChange('units', event.target.value)}
+                      min="0"
+                      step="any"
+                    />
+                  </div>
+                  <button type="button" className="nav-mini-btn" onClick={suggestUnits} disabled={!navInfo || !form.currentValue}>
+                    Units from value
+                  </button>
+                  <button type="button" className="nav-mini-btn primary" onClick={applyNavValue} disabled={!navInfo || !form.units}>
+                    Value from NAV
+                  </button>
+                </div>
+                <p className="nav-hint">Current value = units × NAV. Refresh all linked funds from the Investments page.</p>
+              </>
+            ) : (
+              <div className="nav-search">
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Search fund by name (min 3 characters)"
+                  value={schemeQuery}
+                  onChange={(event) => handleSchemeSearch(event.target.value)}
+                />
+                {schemeLoading ? <p className="nav-hint">Searching…</p> : null}
+                {schemeResults.length ? (
+                  <div className="nav-results">
+                    {schemeResults.map((scheme) => (
+                      <button type="button" key={scheme.schemeCode} className="nav-result" onClick={() => selectScheme(scheme)}>
+                        {scheme.schemeName}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+        ) : null}
 
         <div className="form-group">
           <label className="form-label">Risk Level</label>
