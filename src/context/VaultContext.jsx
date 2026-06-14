@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { useAuth } from './useAuth';
 import { VaultContext } from './VaultContextDef';
 import { FEATURES } from '../config';
-import { createVault, unlockVault, encryptItem, decryptItem } from '../utils/vaultCrypto';
+import { createVault, unlockVault, recoverVault, rewrapMaster, encryptItem, decryptItem } from '../utils/vaultCrypto';
 
 const AUTO_LOCK_MS = 5 * 60 * 1000; // lock after 5 minutes of inactivity
 
@@ -84,23 +84,66 @@ export function VaultProvider({ children }) {
     setItems(out);
   }, [itemsCol]);
 
+  // Returns the one-time recovery code on success (show it once), or null on failure.
   const setup = useCallback(async (masterPassword) => {
-    if (!enabled) return false;
+    if (!enabled) return null;
     setError(''); setBusy(true);
     try {
-      const { meta, vaultKey } = await createVault(masterPassword);
+      const { meta, vaultKey, recoveryCode } = await createVault(masterPassword);
       await setDoc(metaDoc(), meta);
       metaRef.current = meta;
       vaultKeyRef.current = vaultKey;
       setItems([]);
       setStatus('unlocked');
       resetLockTimer();
-      return true;
+      return recoveryCode;
     } catch {
       setError('Could not create the vault.');
-      return false;
+      return null;
     } finally { setBusy(false); }
   }, [enabled, metaDoc, resetLockTimer]);
+
+  // Recover a forgotten master password: unlock via the recovery code, then set a
+  // brand-new master password (re-wraps the same Vault Key; entries are preserved).
+  const recoverWithCode = useCallback(async (recoveryCode, newPassword) => {
+    setError(''); setBusy(true);
+    try {
+      let meta = metaRef.current;
+      if (!meta) { meta = (await getDoc(metaDoc())).data(); metaRef.current = meta; }
+      const vaultKey = await recoverVault(meta, recoveryCode);
+      const newMeta = await rewrapMaster(meta, vaultKey, newPassword);
+      await setDoc(metaDoc(), newMeta);
+      metaRef.current = newMeta;
+      vaultKeyRef.current = vaultKey;
+      await loadItems(vaultKey);
+      setStatus('unlocked');
+      resetLockTimer();
+      return true;
+    } catch {
+      setError('Incorrect recovery code.');
+      return false;
+    } finally { setBusy(false); }
+  }, [metaDoc, loadItems, resetLockTimer]);
+
+  // Last resort: permanently delete the vault and all entries, then start fresh.
+  const resetVault = useCallback(async () => {
+    if (!enabled) return false;
+    setBusy(true);
+    try {
+      const snap = await getDocs(itemsCol());
+      await Promise.all(snap.docs.map((d) => deleteDoc(doc(db, 'vaults', uid, 'items', d.id))));
+      await deleteDoc(metaDoc());
+      vaultKeyRef.current = null;
+      metaRef.current = null;
+      setItems([]);
+      setError('');
+      setStatus('absent');
+      return true;
+    } catch {
+      setError('Could not reset the vault.');
+      return false;
+    } finally { setBusy(false); }
+  }, [enabled, itemsCol, metaDoc, uid]);
 
   const unlock = useCallback(async (masterPassword) => {
     setError(''); setBusy(true);
@@ -148,6 +191,8 @@ export function VaultProvider({ children }) {
     busy,
     setup,
     unlock,
+    recoverWithCode,
+    resetVault,
     lock,
     saveItem,
     deleteItem,

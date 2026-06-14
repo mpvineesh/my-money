@@ -273,3 +273,63 @@
   .vault-modal-backdrop { align-items: center; padding: 20px; }
   .vault-modal { border-radius: 24px; }
 }
+
+.vault-reccode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.vault-reccode code {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  color: #0f172a;
+  overflow-wrap: anywhere;
+}
+
+.vault-ack {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  font-size: 0.88rem;
+  color: #475569;
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+.vault-ack input { margin-top: 2px; flex-shrink: 0; }
+
+.vault-textlink {
+  display: inline-block;
+  margin-top: 14px;
+  background: none;
+  border: none;
+  color: var(--brand-600);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.vault-textlink.danger { color: #dc2626; }
+
+.vault-reset {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+.vault-reset-confirm p {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin: 0 0 12px;
+  text-align: left;
+}
+.vault-reset-actions { display: flex; gap: 10px; justify-content: center; }

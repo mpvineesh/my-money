@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ShieldCheck, Lock, LockKeyhole, Plus, Eye, EyeOff, Copy, Check,
-  Pencil, Trash2, Save, X, KeyRound,
+  Pencil, Trash2, Save, X, KeyRound, AlertTriangle,
 } from 'lucide-react';
 import { useVault } from '../context/useVault';
 import './Vault.css';
@@ -17,7 +17,6 @@ function CopyButton({ value, label }) {
       await navigator.clipboard.writeText(value);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-      // Best-effort: clear the clipboard after 20s so it doesn't linger.
       setTimeout(() => { navigator.clipboard.writeText('').catch(() => {}); }, 20000);
     } catch { /* clipboard blocked */ }
   };
@@ -30,12 +29,20 @@ function CopyButton({ value, label }) {
 
 export default function Vault() {
   const navigate = useNavigate();
-  const { enabled, status, items, error, busy, setup, unlock, lock, saveItem, deleteItem, resetLockTimer } = useVault();
+  const {
+    enabled, status, items, error, busy,
+    setup, unlock, recoverWithCode, resetVault, lock, saveItem, deleteItem, resetLockTimer,
+  } = useVault();
 
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
   const [localError, setLocalError] = useState('');
-  const [editing, setEditing] = useState(null); // null | item object being added/edited
+  const [newRecoveryCode, setNewRecoveryCode] = useState(''); // shown once after setup
+  const [ackSaved, setAckSaved] = useState(false);
+  const [lockedMode, setLockedMode] = useState('unlock'); // 'unlock' | 'recover'
+  const [recCode, setRecCode] = useState('');
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [revealId, setRevealId] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState('');
 
@@ -46,14 +53,23 @@ export default function Vault() {
     setLocalError('');
     if (pw.length < 8) { setLocalError('Use at least 8 characters for your master password.'); return; }
     if (pw !== pw2) { setLocalError('The two master passwords do not match.'); return; }
-    const ok = await setup(pw);
-    if (ok) { setPw(''); setPw2(''); }
+    const code = await setup(pw);
+    if (code) { setPw(''); setPw2(''); setNewRecoveryCode(code); setAckSaved(false); }
   }
 
   async function handleUnlock(e) {
     e.preventDefault();
     const ok = await unlock(pw);
     if (ok) setPw('');
+  }
+
+  async function handleRecover(e) {
+    e.preventDefault();
+    setLocalError('');
+    if (pw.length < 8) { setLocalError('Use at least 8 characters for your new master password.'); return; }
+    if (pw !== pw2) { setLocalError('The two new master passwords do not match.'); return; }
+    const ok = await recoverWithCode(recCode, pw);
+    if (ok) { setPw(''); setPw2(''); setRecCode(''); setLockedMode('unlock'); }
   }
 
   async function handleSaveItem(e) {
@@ -72,13 +88,42 @@ export default function Vault() {
         <p className="vault-label">Security</p>
         <h1 className="vault-title">Password Vault</h1>
       </div>
-      {status === 'unlocked' ? (
+      {status === 'unlocked' && !newRecoveryCode ? (
         <button type="button" className="vault-lock-btn" onClick={lock} title="Lock vault">
           <Lock size={16} /> Lock
         </button>
       ) : null}
     </header>
   );
+
+  // --- One-time recovery code screen (after creating a vault) ---
+  if (newRecoveryCode) {
+    return (
+      <div className="vault-page">
+        {header}
+        <section className="vault-card vault-gate">
+          <div className="vault-gate-icon"><KeyRound size={28} /></div>
+          <h2>Save your recovery code</h2>
+          <p className="vault-gate-copy">
+            This is the <strong>only</strong> way back in if you forget your master password. Store it
+            somewhere safe and offline. It will not be shown again.
+          </p>
+          <div className="vault-reccode">
+            <code>{newRecoveryCode}</code>
+            <CopyButton value={newRecoveryCode} label="recovery code" />
+          </div>
+          <label className="vault-ack">
+            <input type="checkbox" checked={ackSaved} onChange={(e) => setAckSaved(e.target.checked)} />
+            <span>I&apos;ve saved my recovery code somewhere safe.</span>
+          </label>
+          <button type="button" className="vault-primary" disabled={!ackSaved}
+            onClick={() => { setNewRecoveryCode(''); setAckSaved(false); }}>
+            Continue to vault
+          </button>
+        </section>
+      </div>
+    );
+  }
 
   // --- Setup (no vault yet) ---
   if (status === 'absent') {
@@ -90,7 +135,7 @@ export default function Vault() {
           <h2>Create your vault</h2>
           <p className="vault-gate-copy">
             Choose a <strong>master password</strong>. It encrypts everything on this device and is
-            never stored or sent anywhere. If you forget it, the vault cannot be recovered.
+            never stored or sent anywhere. You&apos;ll get a recovery code on the next screen.
           </p>
           <form onSubmit={handleSetup} className="vault-form">
             <input type="password" className="vault-input" placeholder="Master password"
@@ -107,25 +152,75 @@ export default function Vault() {
     );
   }
 
-  // --- Locked ---
+  // --- Locked (unlock or recover) ---
   if (status === 'locked' || status === 'loading' || status === 'error') {
     return (
       <div className="vault-page">
         {header}
-        <section className="vault-card vault-gate">
-          <div className="vault-gate-icon"><LockKeyhole size={28} /></div>
-          <h2>Vault locked</h2>
-          <p className="vault-gate-copy">Enter your master password to unlock.</p>
-          <form onSubmit={handleUnlock} className="vault-form">
-            <input type="password" className="vault-input" placeholder="Master password"
-              value={pw} autoComplete="current-password" autoFocus
-              onChange={(e) => setPw(e.target.value)} disabled={status === 'loading'} />
-            {error ? <p className="vault-error">{error}</p> : null}
-            <button type="submit" className="vault-primary" disabled={busy || status === 'loading' || !pw}>
-              {busy ? 'Unlocking…' : status === 'loading' ? 'Loading…' : 'Unlock'}
+        {lockedMode === 'unlock' ? (
+          <section className="vault-card vault-gate">
+            <div className="vault-gate-icon"><LockKeyhole size={28} /></div>
+            <h2>Vault locked</h2>
+            <p className="vault-gate-copy">Enter your master password to unlock.</p>
+            <form onSubmit={handleUnlock} className="vault-form">
+              <input type="password" className="vault-input" placeholder="Master password"
+                value={pw} autoComplete="current-password" autoFocus
+                onChange={(e) => setPw(e.target.value)} disabled={status === 'loading'} />
+              {error ? <p className="vault-error">{error}</p> : null}
+              <button type="submit" className="vault-primary" disabled={busy || status === 'loading' || !pw}>
+                {busy ? 'Unlocking…' : status === 'loading' ? 'Loading…' : 'Unlock'}
+              </button>
+            </form>
+            <button type="button" className="vault-textlink"
+              onClick={() => { setLockedMode('recover'); setPw(''); setLocalError(''); }}>
+              Forgot master password?
             </button>
-          </form>
-        </section>
+          </section>
+        ) : (
+          <section className="vault-card vault-gate">
+            <div className="vault-gate-icon"><KeyRound size={28} /></div>
+            <h2>Recover with code</h2>
+            <p className="vault-gate-copy">
+              Enter your recovery code and choose a new master password. Your entries are kept.
+            </p>
+            <form onSubmit={handleRecover} className="vault-form">
+              <input type="text" className="vault-input" placeholder="Recovery code"
+                value={recCode} autoFocus autoComplete="off" autoCapitalize="characters"
+                onChange={(e) => setRecCode(e.target.value)} />
+              <input type="password" className="vault-input" placeholder="New master password"
+                value={pw} autoComplete="new-password" onChange={(e) => setPw(e.target.value)} />
+              <input type="password" className="vault-input" placeholder="Confirm new master password"
+                value={pw2} autoComplete="new-password" onChange={(e) => setPw2(e.target.value)} />
+              {(localError || error) ? <p className="vault-error">{localError || error}</p> : null}
+              <button type="submit" className="vault-primary" disabled={busy || !recCode || !pw}>
+                {busy ? 'Recovering…' : 'Recover vault'}
+              </button>
+            </form>
+            <button type="button" className="vault-textlink"
+              onClick={() => { setLockedMode('unlock'); setPw(''); setPw2(''); setRecCode(''); setLocalError(''); }}>
+              Back to unlock
+            </button>
+
+            <div className="vault-reset">
+              {confirmReset ? (
+                <div className="vault-reset-confirm">
+                  <p><AlertTriangle size={15} /> This permanently deletes the vault and <strong>all entries</strong>. This cannot be undone.</p>
+                  <div className="vault-reset-actions">
+                    <button type="button" className="vault-cancel" onClick={() => setConfirmReset(false)}>Cancel</button>
+                    <button type="button" className="vault-danger" disabled={busy}
+                      onClick={async () => { await resetVault(); setConfirmReset(false); setLockedMode('unlock'); }}>
+                      Delete &amp; reset
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" className="vault-textlink danger" onClick={() => setConfirmReset(true)}>
+                  Lost your recovery code too? Reset the vault
+                </button>
+              )}
+            </div>
+          </section>
+        )}
       </div>
     );
   }
