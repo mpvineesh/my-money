@@ -16,8 +16,8 @@
   height: 40px;
   border-radius: 12px;
   border: 1px solid #dbe4ee;
-  background: white;
-  color: #475569;
+  background: var(--surface);
+  color: var(--text-muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -50,20 +50,20 @@
   margin: 0 0 4px;
   font-size: 1.7rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .family-subtitle {
   margin: 0;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.92rem;
 }
 
 .family-hero-card,
 .family-panel,
 .family-member-card {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 24px;
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.05);
 }
@@ -74,7 +74,7 @@
   gap: 16px;
   padding: 20px;
   margin-bottom: 16px;
-  background: linear-gradient(135deg, #f8fafc, var(--brand-50));
+  background: linear-gradient(135deg, var(--surface-3), var(--brand-50));
 }
 
 .family-hero-icon {
@@ -92,12 +92,12 @@
 .family-hero-value {
   display: block;
   font-size: 1.6rem;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .family-hero-note {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.9rem;
 }
 
@@ -108,7 +108,7 @@
 
 .family-panel-head h2 {
   margin: 0 0 16px;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .family-add-form,
@@ -129,7 +129,7 @@
   border-radius: 14px;
   padding: 12px 14px;
   font-size: 0.92rem;
-  color: #0f172a;
+  color: var(--text);
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -190,7 +190,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.82rem;
   font-weight: 500;
   word-break: break-all;
@@ -230,7 +230,7 @@
 
 .family-member-name {
   margin: 0;
-  color: #0f172a;
+  color: var(--text);
   font-size: 1.15rem;
 }
 
@@ -244,8 +244,8 @@
   height: 38px;
   border-radius: 12px;
   border: 1px solid #dbe4ee;
-  background: white;
-  color: #475569;
+  background: var(--surface);
+  color: var(--text-muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -284,8 +284,8 @@
 
 .family-metrics-grid > div {
   border-radius: 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
   padding: 12px;
   display: grid;
   gap: 4px;
@@ -293,14 +293,14 @@
 
 .family-metrics-grid span {
   font-size: 0.74rem;
-  color: #64748b;
+  color: var(--text-soft);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 600;
 }
 
 .family-metrics-grid strong {
-  color: #0f172a;
+  color: var(--text);
   font-size: 0.96rem;
 }
 
@@ -324,7 +324,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.84rem;
   font-weight: 700;
 }
@@ -356,8 +356,8 @@
   width: 100%;
   padding: 12px 14px;
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border: 1px solid var(--border);
+  background: var(--surface-3);
   cursor: pointer;
   text-align: left;
   transition: all 0.2s ease;
@@ -370,12 +370,12 @@
 
 .family-holding-item strong {
   display: block;
-  color: #0f172a;
+  color: var(--text);
   margin-bottom: 2px;
 }
 
 .family-holding-item span {
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.84rem;
 }
 
@@ -383,9 +383,9 @@
   margin: 0;
   padding: 14px;
   border-radius: 16px;
-  background: #f8fafc;
-  color: #64748b;
-  border: 1px dashed #cbd5e1;
+  background: var(--surface-3);
+  color: var(--text-soft);
+  border: 1px dashed var(--border-strong);
   text-align: center;
 }
 

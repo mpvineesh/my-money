@@ -25,13 +25,13 @@
 .swing-title {
   margin: 2px 0 4px;
   font-size: 1.5rem;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .swing-subtitle {
   margin: 0;
   font-size: 0.86rem;
-  color: #64748b;
+  color: var(--text-soft);
 }
 
 .swing-new-btn {
@@ -57,8 +57,8 @@
 }
 
 .swing-stat {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 12px;
   display: flex;
@@ -71,18 +71,18 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #64748b;
+  color: var(--text-soft);
 }
 
 .swing-stat strong {
   font-size: 1.15rem;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .swing-stat p {
   margin: 0;
   font-size: 0.74rem;
-  color: #94a3b8;
+  color: var(--text-faint);
 }
 
 .swing-stat.positive strong {
@@ -97,11 +97,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px 12px;
-  color: #94a3b8;
+  color: var(--text-faint);
   margin-bottom: 12px;
 }
 
@@ -110,7 +110,7 @@
   outline: none;
   flex: 1;
   font-size: 0.9rem;
-  color: #0f172a;
+  color: var(--text);
   background: transparent;
 }
 
@@ -122,19 +122,19 @@
 
 .swing-filter {
   padding: 8px 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: white;
-  color: #64748b;
+  background: var(--surface);
+  color: var(--text-soft);
   font-size: 0.84rem;
   font-weight: 700;
   cursor: pointer;
 }
 
 .swing-filter.active {
-  background: #0f172a;
+  background: var(--text);
   color: white;
-  border-color: #0f172a;
+  border-color: var(--text);
 }
 
 .swing-list {
@@ -147,8 +147,8 @@
   display: block;
   width: 100%;
   text-align: left;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 18px;
   padding: 14px;
   cursor: pointer;
@@ -157,7 +157,7 @@
 
 .swing-card:hover {
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
-  border-color: #cbd5e1;
+  border-color: var(--border-strong);
 }
 
 .swing-card-top {
@@ -170,13 +170,13 @@
 .swing-card-symbol h3 {
   margin: 0;
   font-size: 1.05rem;
-  color: #0f172a;
+  color: var(--text);
   font-weight: 800;
 }
 
 .swing-card-segment {
   font-size: 0.74rem;
-  color: #64748b;
+  color: var(--text-soft);
 }
 
 .swing-badge {
@@ -213,13 +213,13 @@
 
 .swing-k {
   font-size: 0.72rem;
-  color: #94a3b8;
+  color: var(--text-faint);
   font-weight: 600;
 }
 
 .swing-v {
   font-size: 0.88rem;
-  color: #0f172a;
+  color: var(--text);
   font-weight: 600;
 }
 
@@ -227,13 +227,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--surface-2);
   padding-top: 10px;
 }
 
 .swing-charges {
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--text-soft);
   font-weight: 600;
 }
 
@@ -273,12 +273,12 @@
   gap: 12px;
   text-align: center;
   padding: 48px 16px;
-  color: #94a3b8;
+  color: var(--text-faint);
 }
 
 .swing-empty p {
   margin: 0;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.95rem;
 }
 

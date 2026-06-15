@@ -3,7 +3,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(var(--surface-rgb), 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid #e5e7eb;
@@ -23,7 +23,7 @@
   padding: 6px 12px;
   border-radius: 12px;
   text-decoration: none;
-  color: #94a3b8;
+  color: var(--text-faint);
   font-size: 0.65rem;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -42,7 +42,7 @@
 }
 
 .nav-item-add {
-  color: #94a3b8;
+  color: var(--text-faint);
 }
 
 .nav-item-add.active {
@@ -66,7 +66,7 @@
   right: 8px;
   left: auto;
   min-width: 160px;
-  background: white;
+  background: var(--surface);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(2,6,23,0.12);
   border: 1px solid rgba(2,6,23,0.06);
@@ -80,7 +80,7 @@
   padding: 10px 14px;
   text-align: left;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--text);
   cursor: pointer;
 }
 .more-item + .more-item { border-top: 1px solid rgba(2,6,23,0.04); }

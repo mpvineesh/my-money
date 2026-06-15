@@ -31,13 +31,13 @@
 .add-title {
   font-size: 1.3rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
   margin: 0 0 6px;
 }
 
 .add-subtitle {
   font-size: 0.85rem;
-  color: #94a3b8;
+  color: var(--text-faint);
   margin: 0;
   font-weight: 500;
 }
@@ -54,9 +54,9 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: white;
+  background: var(--surface);
   border-radius: 16px;
-  border: 1.5px solid #f1f5f9;
+  border: 1.5px solid var(--surface-2);
   cursor: pointer;
   transition: all 0.2s;
   text-align: left;
@@ -67,7 +67,7 @@
 .add-option-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-  border-color: #e2e8f0;
+  border-color: var(--border);
 }
 
 .add-option-card:active {
@@ -91,13 +91,13 @@
 .add-option-text h3 {
   font-size: 1rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text);
   margin: 0 0 4px;
 }
 
 .add-option-text p {
   font-size: 0.78rem;
-  color: #94a3b8;
+  color: var(--text-faint);
   margin: 0;
   line-height: 1.4;
 }

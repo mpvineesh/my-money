@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
-import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency, formatCompactCurrency, isValidDateValue } from '../utils/constants';
+import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency, formatCompactCurrency, calculateReturns, isValidDateValue } from '../utils/constants';
 import InvestmentCard from '../components/InvestmentCard';
-import { Briefcase, CalendarRange, Landmark, ReceiptText, RefreshCw, Search, SlidersHorizontal, TrendingUp, Users } from 'lucide-react';
+import { Briefcase, CalendarRange, ChevronRight, Landmark, Layers, ReceiptText, RefreshCw, Search, SlidersHorizontal, TrendingUp, Users } from 'lucide-react';
 import { computePortfolioXirr, compute80C } from '../utils/finance';
 import { Area, ComposedChart, LineChart, Line, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import './Investments.css';
@@ -301,6 +301,17 @@ export default function Investments() {
 
     return result;
   }, [filterType, memberScopedInvestments, search, sortBy]);
+
+  // Mutual funds are managed on their own screen; collapse them into one summary card here.
+  const otherInvestments = useMemo(() => filtered.filter((inv) => inv.type !== 'mutual_funds'), [filtered]);
+  const mfAggregate = useMemo(() => {
+    const mf = filtered.filter((inv) => inv.type === 'mutual_funds');
+    if (!mf.length) return null;
+    const invested = mf.reduce((s, inv) => s + (Number(inv.investedAmount) || 0), 0);
+    const current = mf.reduce((s, inv) => s + (Number(inv.currentValue) || 0), 0);
+    return { count: mf.length, invested, current, gain: current - invested };
+  }, [filtered]);
+  const listCount = otherInvestments.length + (mfAggregate ? 1 : 0);
 
   const selectedMember = memberOptions.find((member) => member.id === activeFilterMember);
   const totalValue = useMemo(
@@ -635,13 +646,32 @@ export default function Investments() {
       ) : null}
 
       <div className="inv-count">
-        {filtered.length} investment{filtered.length !== 1 ? 's' : ''}
+        {listCount} item{listCount !== 1 ? 's' : ''}
         {selectedMember ? ` for ${selectedMember.name}` : ''}
         {filterType !== 'all' ? ` in ${getTypeInfo(filterType).label}` : ''}
       </div>
 
       <div className="inv-cards-list">
-        {filtered.map((investment) => (
+        {mfAggregate ? (
+          <button type="button" className="inv-mf-card" onClick={() => navigate('/mutual-funds')}>
+            <div className="inv-mf-icon"><Layers size={22} /></div>
+            <div className="inv-mf-main">
+              <div className="inv-mf-titlerow">
+                <strong>Mutual Funds</strong>
+                <span className="inv-mf-count">{mfAggregate.count} fund{mfAggregate.count === 1 ? '' : 's'}</span>
+              </div>
+              <div className="inv-mf-metrics">
+                <span>Current <strong>{formatCurrency(mfAggregate.current)}</strong></span>
+                <span>Invested <strong>{formatCurrency(mfAggregate.invested)}</strong></span>
+                <span className={mfAggregate.gain >= 0 ? 'pos' : 'neg'}>
+                  {mfAggregate.gain >= 0 ? '+' : ''}{calculateReturns(mfAggregate.invested, mfAggregate.current)}%
+                </span>
+              </div>
+            </div>
+            <ChevronRight size={18} className="inv-mf-chevron" />
+          </button>
+        ) : null}
+        {otherInvestments.map((investment) => (
           <InvestmentCard
             key={investment.id}
             investment={investment}

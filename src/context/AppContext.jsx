@@ -68,7 +68,7 @@ import {
 import { AppContext } from './AppContextDef';
 import { THEME_IDS, DEFAULT_THEME, getThemeInfo } from '../utils/themes';
 import { BACKUP_VERSION, BACKUP_COLLECTIONS } from '../utils/backup';
-import { fetchLatestNav } from '../utils/navService';
+import { fetchLatestNav, fetchNavOnDate } from '../utils/navService';
 import { useAuth } from './useAuth';
 import { db } from '../firebase';
 import { collection, doc, onSnapshot, orderBy, query, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
@@ -349,6 +349,7 @@ const DEFAULT_APP_SETTINGS = {
   showProjectedValue: true,
   showMotivationBanner: true,
   theme: DEFAULT_THEME,
+  mode: 'light',
   ownerName: DEFAULT_FAMILY_MEMBER.name,
 };
 
@@ -372,6 +373,7 @@ function normalizeAppSettings(appSettings) {
     showProjectedValue: appSettings?.showProjectedValue !== false,
     showMotivationBanner: appSettings?.showMotivationBanner !== false,
     theme: THEME_IDS.includes(appSettings?.theme) ? appSettings.theme : DEFAULT_THEME,
+    mode: ['light', 'dark', 'system'].includes(appSettings?.mode) ? appSettings.mode : 'light',
     ownerName:
       typeof appSettings?.ownerName === 'string' && appSettings.ownerName.trim()
         ? appSettings.ownerName.trim().slice(0, 40)
@@ -909,6 +911,24 @@ export function AppProvider({ children }) {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  // Light/dark mode: 'system' follows the OS and updates live; otherwise honour the choice.
+  const mode = ['light', 'dark', 'system'].includes(appSettings?.mode) ? appSettings.mode : 'light';
+  useEffect(() => {
+    const root = document.documentElement;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => {
+      const dark = mode === 'dark' || (mode === 'system' && media.matches);
+      if (dark) root.setAttribute('data-mode', 'dark');
+      else root.removeAttribute('data-mode');
+    };
+    apply();
+    if (mode === 'system') {
+      media.addEventListener('change', apply);
+      return () => media.removeEventListener('change', apply);
+    }
+    return undefined;
+  }, [mode]);
 
   const investmentMemberOptions = useMemo(
     () => buildInvestmentMemberOptions(familyMembers, investments),
@@ -1854,7 +1874,7 @@ export function AppProvider({ children }) {
     });
   }, [investments, updateInvestment]);
 
-  const recordRecurringEntryNow = useCallback((id, recordedDate = getTodayDateValue()) => {
+  const recordRecurringEntryNow = useCallback(async (id, recordedDate = getTodayDateValue()) => {
     if (readOnlyRef.current) return null;
     const entry = recurringEntries.find((item) => item.id === id);
     if (!entry) return null;
@@ -1866,9 +1886,31 @@ export function AppProvider({ children }) {
         : null;
 
       if (linkedInvestment) {
+        const amount = Number(entry.amount) || 0;
+        // SIP into a NAV-tracked mutual fund: buy units at that day's NAV, then
+        // re-value the holding so invested/units/current/returns all stay correct.
+        if (linkedInvestment.schemeCode) {
+          try {
+            const { nav, date } = await fetchNavOnDate(linkedInvestment.schemeCode, nextRecordedDate);
+            if (nav > 0) {
+              const newUnits = (Number(linkedInvestment.units) || 0) + amount / nav;
+              updateInvestment(linkedInvestment.id, {
+                units: newUnits,
+                investedAmount: (Number(linkedInvestment.investedAmount) || 0) + amount,
+                currentValue: Math.round(newUnits * nav),
+                navValue: nav,
+                navDate: date,
+                snapshotDate: nextRecordedDate,
+              });
+              return markRecurringEntryRecorded(id, nextRecordedDate);
+            }
+          } catch {
+            // NAV unavailable — fall through to a plain invested top-up below.
+          }
+        }
         updateInvestment(linkedInvestment.id, {
-          investedAmount: (Number(linkedInvestment.investedAmount) || 0) + entry.amount,
-          currentValue: (Number(linkedInvestment.currentValue) || 0) + entry.amount,
+          investedAmount: (Number(linkedInvestment.investedAmount) || 0) + amount,
+          currentValue: (Number(linkedInvestment.currentValue) || 0) + amount,
           snapshotDate: nextRecordedDate,
         });
       } else {

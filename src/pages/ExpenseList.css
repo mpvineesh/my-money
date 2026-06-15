@@ -25,12 +25,12 @@
 .expense-list-title {
   font-size: 1.7rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
   margin-bottom: 4px;
 }
 
 .expense-list-subtitle {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.95rem;
 }
 
@@ -48,7 +48,7 @@
   padding: 12px 16px;
   border-radius: 12px;
   border: 1px solid #dbeafe;
-  background: white;
+  background: var(--surface);
   color: #0f766e;
   font-size: 0.88rem;
   font-weight: 700;
@@ -89,8 +89,8 @@
   min-height: 44px;
   border-radius: 14px;
   border: 1px solid #dbeafe;
-  background: #fff;
-  color: #0f172a;
+  background: var(--surface);
+  color: var(--text);
   padding: 0 14px;
   font-size: 0.95rem;
 }
@@ -102,7 +102,7 @@
 }
 
 .expense-list-stat {
-  background: white;
+  background: var(--surface);
   border: 1px solid #dbeafe;
   border-radius: 20px;
   padding: 18px;
@@ -127,15 +127,15 @@
 
 .expense-list-stat-value {
   font-size: 1.5rem;
-  color: #0f172a;
+  color: var(--text);
   line-height: 1.1;
 }
 
 .expense-list-panel {
-  background: white;
+  background: var(--surface);
   border-radius: 22px;
   padding: 18px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05);
 }
 
@@ -146,7 +146,7 @@
 .expense-list-panel-title {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .expense-list-cards {
@@ -157,8 +157,8 @@
 
 .expense-list-empty {
   text-align: center;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 24px;
   padding: 56px 24px;
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05);
@@ -166,12 +166,12 @@
 
 .expense-list-empty h2 {
   font-size: 1.35rem;
-  color: #0f172a;
+  color: var(--text);
   margin-bottom: 8px;
 }
 
 .expense-list-empty p {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.95rem;
   margin-bottom: 18px;
 }

@@ -25,12 +25,12 @@
 .expense-home-title {
   font-size: 1.7rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
   margin-bottom: 4px;
 }
 
 .expense-home-subtitle {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.95rem;
 }
 
@@ -52,7 +52,7 @@
   padding: 12px 16px;
   border-radius: 12px;
   border: 1px solid #dbeafe;
-  background: white;
+  background: var(--surface);
   color: #0f766e;
   font-size: 0.88rem;
   font-weight: 700;
@@ -72,7 +72,7 @@
 }
 
 .expense-budget-subtitle {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.9rem;
   margin-top: 4px;
   max-width: 56ch;
@@ -107,8 +107,8 @@
   max-width: 100%;
   border-radius: 14px;
   border: 1px solid #dbeafe;
-  background: #fff;
-  color: #0f172a;
+  background: var(--surface);
+  color: var(--text);
   padding: 0 14px;
   font-size: 0.95rem;
   box-sizing: border-box;
@@ -140,7 +140,7 @@
   padding: 16px;
   border: 1px solid #dbeafe;
   border-radius: 18px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%);
+  background: linear-gradient(135deg, var(--surface-3) 0%, #f0fdfa 100%);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -148,13 +148,13 @@
 
 .expense-budget-stat strong {
   font-size: 1.4rem;
-  color: #0f172a;
+  color: var(--text);
   line-height: 1.1;
 }
 
 .expense-budget-stat span:last-child {
   font-size: 0.88rem;
-  color: #64748b;
+  color: var(--text-soft);
 }
 
 .expense-budget-stat.danger {
@@ -166,7 +166,7 @@
   border: 1px solid #dbeafe;
   border-radius: 20px;
   padding: 18px;
-  background: #f8fafc;
+  background: var(--surface-3);
 }
 
 .expense-budget-form-head {
@@ -179,12 +179,12 @@
 
 .expense-budget-form-head h3 {
   font-size: 1rem;
-  color: #0f172a;
+  color: var(--text);
   margin-bottom: 3px;
 }
 
 .expense-budget-form-head p {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.88rem;
 }
 
@@ -194,7 +194,7 @@
   gap: 6px;
   border: 0;
   background: transparent;
-  color: #64748b;
+  color: var(--text-soft);
   font-weight: 700;
   cursor: pointer;
 }
@@ -220,10 +220,10 @@
 }
 
 .expense-budget-item {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 18px;
   padding: 16px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .expense-budget-item-main,
@@ -236,13 +236,13 @@
 
 .expense-budget-item-main strong,
 .expense-budget-item-amounts strong {
-  color: #0f172a;
+  color: var(--text);
 }
 
 .expense-budget-item-main span,
 .expense-budget-item-amounts span,
 .expense-budget-status {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.85rem;
 }
 
@@ -263,7 +263,7 @@
   width: 100%;
   height: 10px;
   border-radius: 999px;
-  background: #e2e8f0;
+  background: var(--border);
   overflow: hidden;
   margin: 14px 0 12px;
 }
@@ -298,7 +298,7 @@
   align-items: center;
   gap: 6px;
   border: 1px solid #dbeafe;
-  background: #fff;
+  background: var(--surface);
   color: #0f766e;
   border-radius: 999px;
   padding: 8px 12px;
@@ -313,21 +313,21 @@
 }
 
 .expense-budget-empty {
-  border: 1px dashed #cbd5e1;
+  border: 1px dashed var(--border-strong);
   border-radius: 18px;
   padding: 24px;
   text-align: center;
-  background: #f8fafc;
+  background: var(--surface-3);
 }
 
 .expense-budget-empty h3 {
   font-size: 1rem;
-  color: #0f172a;
+  color: var(--text);
   margin-bottom: 6px;
 }
 
 .expense-budget-empty p {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.92rem;
 }
 
@@ -339,7 +339,7 @@
 }
 
 .expense-stat-card {
-  background: white;
+  background: var(--surface);
   border: 1px solid #dbeafe;
   border-radius: 20px;
   padding: 18px;
@@ -364,12 +364,12 @@
 
 .expense-stat-value {
   font-size: 1.5rem;
-  color: #0f172a;
+  color: var(--text);
   line-height: 1.1;
 }
 
 .expense-stat-note {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.88rem;
 }
 
@@ -417,18 +417,18 @@
   padding: 16px;
   border: 1px solid #dbeafe;
   border-radius: 18px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 100%);
+  background: linear-gradient(135deg, var(--surface-3) 0%, #f0fdfa 100%);
 }
 
 .expense-project-item strong,
 .expense-project-item-amounts strong {
-  color: #0f172a;
+  color: var(--text);
 }
 
 .expense-project-item span,
 .expense-project-item-amounts span {
   display: block;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.85rem;
   margin-top: 4px;
 }
@@ -438,10 +438,10 @@
 }
 
 .expense-panel {
-  background: white;
+  background: var(--surface);
   border-radius: 22px;
   padding: 18px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05);
 }
 
@@ -456,7 +456,7 @@
 .expense-panel-title {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .expense-chart-panel {
@@ -481,12 +481,12 @@
 
 .expense-chart-center span {
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--text-soft);
 }
 
 .expense-chart-center strong {
   font-size: 1.2rem;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .expense-chart-tooltip {
@@ -515,7 +515,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 12px 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--surface-2);
 }
 
 .expense-breakdown-item:last-child {
@@ -538,14 +538,14 @@
 
 .expense-breakdown-main strong,
 .expense-breakdown-item > strong {
-  color: #0f172a;
+  color: var(--text);
   font-size: 0.92rem;
 }
 
 .expense-breakdown-main span {
   display: block;
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--text-soft);
 }
 
 .expense-subcategory-panel {
@@ -566,9 +566,9 @@
 .expense-category-filter {
   padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #475569;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -576,8 +576,8 @@
 }
 
 .expense-category-filter:hover {
-  border-color: #cbd5e1;
-  background: #f8fafc;
+  border-color: var(--border-strong);
+  background: var(--surface-3);
 }
 
 .expense-category-filter.active {
@@ -594,8 +594,8 @@
 
 .expense-empty-state {
   text-align: center;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 24px;
   padding: 56px 24px;
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05);
@@ -603,12 +603,12 @@
 
 .expense-empty-state h2 {
   font-size: 1.35rem;
-  color: #0f172a;
+  color: var(--text);
   margin-bottom: 8px;
 }
 
 .expense-empty-state p {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.95rem;
   margin-bottom: 18px;
 }

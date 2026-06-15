@@ -20,8 +20,8 @@ html, body {
 }
 
 body {
-  background-color: #f8fafc;
-  color: #1e293b;
+  background-color: var(--bg);
+  color: var(--text);
   font-size: 16px;
   line-height: 1.5;
   overscroll-behavior-y: none;
@@ -115,7 +115,7 @@ html {
 /* Selection color */
 ::selection {
   background: rgba(var(--brand-rgb), 0.2);
-  color: #1e293b;
+  color: var(--text);
 }
 
 /* Animations */

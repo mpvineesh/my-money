@@ -2,7 +2,7 @@
   text-align: center;
   padding: 18px 8px;
   border-radius: 16px;
-  background: linear-gradient(135deg, var(--brand-50), #f8fafc);
+  background: linear-gradient(135deg, var(--brand-50), var(--surface-3));
   border: 1px solid var(--brand-100);
   margin-bottom: 16px;
 }
@@ -21,13 +21,13 @@
 
 .scan-hero h2 {
   margin: 0 0 6px;
-  color: #0f172a;
+  color: var(--text);
   font-size: 1.05rem;
 }
 
 .scan-hero p {
   margin: 0;
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.88rem;
   line-height: 1.45;
 }
@@ -56,7 +56,7 @@
 }
 
 .scan-cta-secondary {
-  background: white;
+  background: var(--surface);
   color: var(--brand-700);
   border: 1px solid var(--brand-200);
 }
@@ -66,8 +66,8 @@
   margin-bottom: 14px;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border: 1px solid var(--border);
+  background: var(--surface-3);
 }
 
 .scan-preview img {
@@ -117,13 +117,13 @@
 
 .scan-review-head h2 {
   margin: 0 0 4px;
-  color: #0f172a;
+  color: var(--text);
   font-size: 1.05rem;
 }
 
 .scan-review-head p {
   margin: 0;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.88rem;
 }
 
@@ -134,14 +134,14 @@
 }
 
 .scan-row {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 12px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .scan-row-conf-low { border-color: #fed7aa; background: #fffbeb; }
-.scan-row-conf-medium { border-color: #e2e8f0; }
+.scan-row-conf-medium { border-color: var(--border); }
 .scan-row-conf-high { border-color: #bbf7d0; }
 
 .scan-row-head {
@@ -177,7 +177,7 @@
 
 .scan-summary {
   text-align: right;
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.86rem;
   font-weight: 700;
   margin-bottom: 10px;

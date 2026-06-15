@@ -5,6 +5,7 @@ import { useApp } from '../context/useApp';
 import {
   INVESTMENT_TYPES,
   formatCurrency,
+  getTypeInfo,
   getExpenseCategoryOptions,
   getExpenseSubcategories,
 } from '../utils/constants';
@@ -81,8 +82,10 @@ export default function RecurringForm() {
   );
 
   const investmentOptions = useMemo(
-    () => [...investments].sort((left, right) => (Number(right.currentValue) || 0) - (Number(left.currentValue) || 0)),
-    [investments],
+    () => [...investments]
+      .filter((inv) => inv.type === form.investmentType)
+      .sort((left, right) => (Number(right.currentValue) || 0) - (Number(left.currentValue) || 0)),
+    [investments, form.investmentType],
   );
 
   function handleChange(field, value) {
@@ -105,6 +108,12 @@ export default function RecurringForm() {
           if (!prev.title.trim()) next.title = linked.name;
           next.investmentType = linked.type || prev.investmentType;
         }
+      }
+
+      // Changing the investment type clears a linked fund that no longer matches.
+      if (field === 'investmentType' && prev.linkedInvestmentId) {
+        const linked = investments.find((inv) => inv.id === prev.linkedInvestmentId);
+        if (!linked || linked.type !== value) next.linkedInvestmentId = '';
       }
 
       return next;
@@ -171,7 +180,7 @@ export default function RecurringForm() {
               style={form.kind === 'investment' ? { backgroundColor: 'var(--brand-50)', color: 'var(--brand-700)', borderColor: 'var(--brand-200)' } : {}}
               onClick={() => handleChange('kind', 'investment')}
             >
-              Investment
+              Investment / SIP
             </button>
           </div>
         </div>
@@ -253,13 +262,24 @@ export default function RecurringForm() {
         ) : (
           <>
             <div className="form-group">
+              <label className="form-label">Investment type</label>
+              <select className="form-input" value={form.investmentType} onChange={(event) => handleChange('investmentType', event.target.value)}>
+                {INVESTMENT_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
               <label className="form-label">Contribute to</label>
               <select
                 className="form-input"
                 value={form.linkedInvestmentId}
                 onChange={(event) => handleChange('linkedInvestmentId', event.target.value)}
               >
-                <option value="">Create a new investment each time</option>
+                <option value="">Create a new {getTypeInfo(form.investmentType).label} each time</option>
                 {investmentOptions.map((inv) => (
                   <option key={inv.id} value={inv.id}>
                     {inv.name} · {inv.memberName} ({formatCurrency(inv.currentValue)})
@@ -268,23 +288,12 @@ export default function RecurringForm() {
               </select>
               <p className="form-helper-text">
                 {form.linkedInvestmentId
-                  ? 'Each recording will add this amount to the selected investment’s invested and current value.'
-                  : 'Each recording will create a new investment entry.'}
+                  ? (investments.find((inv) => inv.id === form.linkedInvestmentId)?.schemeCode
+                      ? 'SIP: each recording buys units at that day’s NAV and updates the fund’s units, invested amount and current value automatically.'
+                      : 'Each recording will add this amount to the selected investment’s invested and current value.')
+                  : `Each recording will create a new ${getTypeInfo(form.investmentType).label} entry.`}
               </p>
             </div>
-
-            {!form.linkedInvestmentId ? (
-              <div className="form-group">
-                <label className="form-label">Investment type</label>
-                <select className="form-input" value={form.investmentType} onChange={(event) => handleChange('investmentType', event.target.value)}>
-                  {INVESTMENT_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
           </>
         )}
 

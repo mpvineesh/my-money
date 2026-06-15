@@ -180,6 +180,13 @@ export default function Settings() {
     updateAppSettings({ theme: themeId });
   }
 
+  const activeMode = appSettings?.mode || 'light';
+  const MODES = [{ id: 'light', label: 'Light' }, { id: 'dark', label: 'Dark' }, { id: 'system', label: 'System' }];
+
+  function handleModeChange(mode) {
+    updateAppSettings({ mode });
+  }
+
   return (
     <div className="settings-page">
       <header className="settings-header">
@@ -242,6 +249,20 @@ export default function Settings() {
           <div className="settings-icon-circle settings-icon-circle--sm">
             <Palette size={18} />
           </div>
+        </div>
+
+        <div className="settings-mode-toggle">
+          {MODES.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className={`settings-mode-btn ${activeMode === m.id ? 'active' : ''}`}
+              onClick={() => handleModeChange(m.id)}
+              aria-pressed={activeMode === m.id ? 'true' : 'false'}
+            >
+              {m.label}
+            </button>
+          ))}
         </div>
 
         <div className="settings-theme-grid">

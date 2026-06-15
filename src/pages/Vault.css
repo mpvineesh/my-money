@@ -16,9 +16,9 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #0f172a;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,7 +34,7 @@
   font-weight: 700;
   margin: 0 0 2px;
 }
-.vault-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
+.vault-title { font-size: 1.5rem; font-weight: 800; color: var(--text); margin: 0; }
 
 .vault-lock-btn {
   display: inline-flex;
@@ -42,17 +42,17 @@
   gap: 6px;
   padding: 8px 14px;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #334155;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
 }
 
 .vault-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 24px;
   padding: 24px;
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.05);
@@ -70,8 +70,8 @@
   align-items: center;
   justify-content: center;
 }
-.vault-gate h2 { margin: 0 0 8px; color: #0f172a; }
-.vault-gate-copy { color: #64748b; font-size: 0.92rem; margin: 0 0 18px; line-height: 1.5; }
+.vault-gate h2 { margin: 0 0 8px; color: var(--text); }
+.vault-gate-copy { color: var(--text-soft); font-size: 0.92rem; margin: 0 0 18px; line-height: 1.5; }
 
 .vault-form { display: grid; gap: 12px; text-align: left; }
 
@@ -79,10 +79,10 @@
   width: 100%;
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border-strong);
   font-size: 0.95rem;
-  color: #0f172a;
-  background: #fff;
+  color: var(--text);
+  background: var(--surface);
 }
 .vault-input:focus {
   outline: none;
@@ -117,7 +117,7 @@
   justify-content: space-between;
   margin-bottom: 14px;
 }
-.vault-count { color: #64748b; font-size: 0.88rem; font-weight: 600; }
+.vault-count { color: var(--text-soft); font-size: 0.88rem; font-weight: 600; }
 .vault-add {
   display: inline-flex;
   align-items: center;
@@ -135,7 +135,7 @@
 
 .vault-empty {
   text-align: center;
-  color: #94a3b8;
+  color: var(--text-faint);
   padding: 48px 16px;
   display: grid;
   gap: 10px;
@@ -146,23 +146,23 @@
 .vault-list { display: grid; gap: 12px; }
 
 .vault-item {
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 18px;
   padding: 16px;
 }
 .vault-item-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.vault-item-title strong { display: block; color: #0f172a; font-size: 1rem; }
-.vault-item-title span { color: #64748b; font-size: 0.85rem; }
+.vault-item-title strong { display: block; color: var(--text); font-size: 1rem; }
+.vault-item-title span { color: var(--text-soft); font-size: 0.85rem; }
 .vault-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
 .vault-icon {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-  color: #475569;
+  border: 1px solid var(--border);
+  background: var(--surface-3);
+  color: var(--text-muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -181,7 +181,7 @@
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #94a3b8;
+  color: var(--text-faint);
   font-weight: 700;
   width: 64px;
   flex-shrink: 0;
@@ -190,23 +190,23 @@
   flex: 1;
   min-width: 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: #0f172a;
-  background: #f1f5f9;
+  color: var(--text);
+  background: var(--surface-2);
   padding: 6px 10px;
   border-radius: 8px;
   font-size: 0.9rem;
   overflow-wrap: anywhere;
 }
 .vault-url { flex: 1; min-width: 0; color: var(--brand-600); font-size: 0.9rem; overflow-wrap: anywhere; }
-.vault-notes { margin: 12px 0 0; color: #475569; font-size: 0.88rem; white-space: pre-wrap; }
+.vault-notes { margin: 12px 0 0; color: var(--text-muted); font-size: 0.88rem; white-space: pre-wrap; }
 
 .vault-copy {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #475569;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -221,18 +221,18 @@
   gap: 10px;
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--surface-2);
   font-size: 0.88rem;
-  color: #475569;
+  color: var(--text-muted);
   flex-wrap: wrap;
 }
 .vault-cancel {
   margin-left: auto;
   padding: 8px 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: #fff;
-  color: #475569;
+  background: var(--surface);
+  color: var(--text-muted);
   font-weight: 600;
   cursor: pointer;
 }
@@ -257,7 +257,7 @@
   z-index: 1000;
 }
 .vault-modal {
-  background: #fff;
+  background: var(--surface);
   width: 100%;
   max-width: 520px;
   border-radius: 24px 24px 0 0;
@@ -266,7 +266,7 @@
   overflow-y: auto;
 }
 .vault-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.vault-modal-head h3 { margin: 0; color: #0f172a; }
+.vault-modal-head h3 { margin: 0; color: var(--text); }
 .vault-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
 
 @media (min-width: 640px) {
@@ -278,8 +278,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f1f5f9;
-  border: 1px dashed #cbd5e1;
+  background: var(--surface-2);
+  border: 1px dashed var(--border-strong);
   border-radius: 12px;
   padding: 14px;
   margin-bottom: 14px;
@@ -289,7 +289,7 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 1.05rem;
   letter-spacing: 0.04em;
-  color: #0f172a;
+  color: var(--text);
   overflow-wrap: anywhere;
 }
 
@@ -299,7 +299,7 @@
   gap: 8px;
   text-align: left;
   font-size: 0.88rem;
-  color: #475569;
+  color: var(--text-muted);
   margin-bottom: 14px;
   cursor: pointer;
 }
@@ -321,7 +321,7 @@
 .vault-reset {
   margin-top: 18px;
   padding-top: 14px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--surface-2);
 }
 .vault-reset-confirm p {
   display: flex;

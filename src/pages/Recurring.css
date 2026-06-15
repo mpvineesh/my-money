@@ -46,12 +46,12 @@
 .recurring-title {
   font-size: 1.7rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
   margin: 0 0 4px;
 }
 
 .recurring-subtitle {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.94rem;
   margin: 0;
 }
@@ -82,8 +82,8 @@
 }
 
 .recurring-stat {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 18px;
   display: flex;
@@ -93,7 +93,7 @@
 }
 
 .recurring-stat-highlight {
-  background: linear-gradient(135deg, var(--brand-50) 0%, #f8fafc 100%);
+  background: linear-gradient(135deg, var(--brand-50) 0%, var(--surface-3) 100%);
 }
 
 .recurring-stat-label,
@@ -108,17 +108,17 @@
 .recurring-stat strong {
   font-size: 1.4rem;
   line-height: 1.1;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .recurring-stat span:last-child {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.86rem;
 }
 
 .recurring-list-panel {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 24px;
   padding: 20px;
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05);
@@ -134,7 +134,7 @@
 
 .recurring-list-head h2 {
   margin: 0 0 4px;
-  color: #0f172a;
+  color: var(--text);
   font-size: 1.05rem;
 }
 
@@ -144,10 +144,10 @@
 }
 
 .recurring-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 12px 14px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .recurring-card-top,
@@ -166,13 +166,13 @@
 }
 
 .recurring-card strong {
-  color: #0f172a;
+  color: var(--text);
   font-size: 1rem;
 }
 
 .recurring-card p,
 .recurring-card-meta span {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.84rem;
   margin: 0;
 }
@@ -180,7 +180,7 @@
 .recurring-card-amount {
   font-size: 1rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .recurring-card-meta {
@@ -198,8 +198,8 @@
 }
 
 .recurring-status-neutral {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--surface-2);
+  color: var(--text-muted);
 }
 
 .recurring-status-warning {
@@ -237,7 +237,7 @@
 }
 
 .recurring-review-btn {
-  background: #fff;
+  background: var(--surface);
   color: var(--brand-700);
   border: 1px solid var(--brand-200);
 }
@@ -247,8 +247,8 @@
 }
 
 .recurring-icon-btn {
-  background: #f8fafc;
-  color: #475569;
+  background: var(--surface-3);
+  color: var(--text-muted);
 }
 
 .recurring-icon-btn.danger {
@@ -257,12 +257,12 @@
 }
 
 .recurring-empty {
-  border: 1px dashed #cbd5e1;
+  border: 1px dashed var(--border-strong);
   border-radius: 18px;
   padding: 28px 20px;
   text-align: center;
-  color: #64748b;
-  background: #f8fafc;
+  color: var(--text-soft);
+  background: var(--surface-3);
 }
 
 .recurring-empty svg {
@@ -271,7 +271,7 @@
 
 .recurring-empty h3 {
   margin: 0 0 6px;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .recurring-empty p {

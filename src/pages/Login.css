@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg,#f8fafc 0%, var(--brand-50) 45%, #fff7ed 100%);
+  background: linear-gradient(180deg,var(--surface-3) 0%, var(--brand-50) 45%, #fff7ed 100%);
   padding: 48px 16px;
 }
 
@@ -21,21 +21,21 @@
 
 .login-brand { display:flex; align-items:center; gap:12px; justify-content:center; }
 .login-logo { width:48px; height:48px; object-fit:contain; border-radius:12px; display:block; }
-.login-brand h1 { font-size:22px; margin:0; color:#0f172a; letter-spacing:0.2px; }
-.login-sub { color:#475569; margin:14px 0 22px; font-size:14px; }
+.login-brand h1 { font-size:22px; margin:0; color:var(--text); letter-spacing:0.2px; }
+.login-sub { color:var(--text-muted); margin:14px 0 22px; font-size:14px; }
 
 .login-actions { display:flex; flex-direction:column; gap:12px; align-items:center; }
 .btn { display:inline-flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px; font-weight:700; cursor:pointer; font-size:15px; }
-.btn-google { background:#fff; border:1px solid rgba(2,6,23,0.06); color:#0f172a; box-shadow:0 8px 28px rgba(2,6,23,0.08); transition:transform .12s ease, box-shadow .12s ease; }
+.btn-google { background:var(--surface); border:1px solid rgba(2,6,23,0.06); color:var(--text); box-shadow:0 8px 28px rgba(2,6,23,0.08); transition:transform .12s ease, box-shadow .12s ease; }
 .btn-google:hover { transform:translateY(-3px); box-shadow:0 14px 40px rgba(2,6,23,0.12); }
 .btn-google .google-icon { display:inline-flex; width:18px; height:18px; }
-.btn-ghost { background:transparent; border:1px solid rgba(2,6,23,0.06); color:#0f172a; }
+.btn-ghost { background:transparent; border:1px solid rgba(2,6,23,0.06); color:var(--text); }
 .btn[disabled] { opacity:0.7; cursor:not-allowed; }
-.muted { color:#64748b; }
+.muted { color:var(--text-soft); }
 .error { color:#b91c1c; font-size:13px; margin-top:4px }
 
 .spinner {
-  width:14px; height:14px; border-radius:50%; border:2px solid rgba(0,0,0,0.12); border-top-color:#0f172a; animation:spin 0.8s linear infinite; margin-left:6px;
+  width:14px; height:14px; border-radius:50%; border:2px solid rgba(0,0,0,0.12); border-top-color:var(--text); animation:spin 0.8s linear infinite; margin-left:6px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 

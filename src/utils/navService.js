@@ -40,6 +40,30 @@ export async function searchSchemes(query, limit = 25) {
   return out;
 }
 
+// NAV on a specific date (nearest published NAV on/before isoDate, YYYY-MM-DD).
+// Used when recording a SIP so units are bought at that day's NAV. Returns { nav, date }.
+export async function fetchNavOnDate(schemeCode, isoDate) {
+  const r = await fetch(`${BASE}/${schemeCode}`);
+  if (!r.ok) throw new Error('NAV history fetch failed');
+  const data = await r.json();
+  const rows = data?.data || []; // dd-mm-yyyy, latest first
+  const toIso = (ddmmyyyy) => {
+    const [d, m, y] = String(ddmmyyyy).split('-');
+    return `${y}-${m}-${d}`;
+  };
+  for (const row of rows) {
+    const iso = toIso(row.date);
+    if (iso <= isoDate) {
+      const nav = Number(row.nav);
+      if (Number.isFinite(nav)) return { nav, date: iso };
+    }
+  }
+  const oldest = rows[rows.length - 1];
+  const nav = Number(oldest?.nav);
+  if (oldest && Number.isFinite(nav)) return { nav, date: toIso(oldest.date) };
+  throw new Error('No NAV data');
+}
+
 // Latest NAV for a scheme: { schemeCode, schemeName, nav, date }.
 export async function fetchLatestNav(schemeCode) {
   const r = await fetch(`${BASE}/${schemeCode}/latest`);

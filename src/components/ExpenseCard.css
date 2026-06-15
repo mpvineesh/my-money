@@ -1,9 +1,9 @@
 .expense-card {
   width: 100%;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   border-radius: 18px;
   padding: 16px;
-  background: white;
+  background: var(--surface);
   text-align: left;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -26,19 +26,19 @@
 .expense-card-name {
   font-size: 1rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text);
   margin-bottom: 4px;
 }
 
 .expense-card-date {
   font-size: 0.82rem;
-  color: #64748b;
+  color: var(--text-soft);
 }
 
 .expense-card-amount {
   font-size: 1rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
   flex-shrink: 0;
 }
 
@@ -56,8 +56,8 @@
   border-radius: 999px;
   font-size: 0.76rem;
   font-weight: 700;
-  color: #475569;
-  background: #f8fafc;
+  color: var(--text-muted);
+  background: var(--surface-3);
 }
 
 .expense-chip-subtle {
@@ -66,7 +66,7 @@
 }
 
 .expense-chip-outline {
-  background: #f8fafc;
+  background: var(--surface-3);
   color: #0f766e;
   border: 1px solid #ccfbf1;
 }
@@ -79,7 +79,7 @@
 
 .expense-card-notes {
   margin-top: 12px;
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.88rem;
   line-height: 1.45;
 }

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { BellRing, Briefcase, ScanLine, Target, TrendingUp, Wallet, Repeat } from 'lucide-react';
+import { BellRing, Briefcase, Layers, ScanLine, Target, TrendingUp, Wallet, Repeat } from 'lucide-react';
 import './AddPage.css';
 
 export default function AddPage() {
@@ -22,7 +22,17 @@ export default function AddPage() {
           </div>
           <div className="add-option-text">
             <h3>New Investment</h3>
-            <p>Stocks, Mutual Funds, FD, PF, PPF, Gold, NPS, Bonds & more</p>
+            <p>Stocks, FD, PF, PPF, Gold, NPS, Bonds & more</p>
+          </div>
+        </button>
+
+        <button className="add-option-card" onClick={() => navigate('/mutual-funds')}>
+          <div className="add-option-icon" style={{ background: 'var(--brand-50)', color: 'var(--brand-500)' }}>
+            <Layers size={28} />
+          </div>
+          <div className="add-option-text">
+            <h3>Mutual Funds</h3>
+            <p>Manage funds with units & SIP — total value updates from live NAV</p>
           </div>
         </button>
 

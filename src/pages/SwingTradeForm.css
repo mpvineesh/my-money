@@ -10,7 +10,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: #e2e8f0;
+  background: var(--border);
 }
 
 .swing-form-divider span {
@@ -18,12 +18,12 @@
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: var(--text-faint);
 }
 
 .swing-charges-panel {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px;
   margin: 18px 0 8px;
@@ -32,7 +32,7 @@
 .swing-charges-panel h2 {
   margin: 0 0 12px;
   font-size: 0.95rem;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .swing-charges-row {
@@ -41,17 +41,17 @@
   align-items: center;
   padding: 7px 0;
   font-size: 0.9rem;
-  color: #334155;
+  color: var(--text-muted);
 }
 
 .swing-charges-row span:last-child {
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .swing-charges-breakdown {
-  border-top: 1px dashed #cbd5e1;
-  border-bottom: 1px dashed #cbd5e1;
+  border-top: 1px dashed var(--border-strong);
+  border-bottom: 1px dashed var(--border-strong);
   margin: 6px 0;
   padding: 4px 0;
 }
@@ -59,16 +59,16 @@
 .swing-charges-row.sub {
   padding: 5px 0;
   font-size: 0.84rem;
-  color: #64748b;
+  color: var(--text-soft);
 }
 
 .swing-charges-row.sub span:last-child {
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
 }
 
 .swing-charges-row.total {
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border);
   margin-top: 4px;
   font-weight: 800;
 }
@@ -79,7 +79,7 @@
 
 .swing-charges-row.net {
   margin-top: 6px;
-  border-top: 2px solid #e2e8f0;
+  border-top: 2px solid var(--border);
   padding-top: 12px;
   font-size: 1rem;
   font-weight: 800;
@@ -96,6 +96,6 @@
 .swing-charges-note {
   margin: 10px 0 0;
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--text-soft);
   line-height: 1.4;
 }

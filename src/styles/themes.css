@@ -63,3 +63,46 @@
   --brand-accent: #06b6d4;
   --brand-rgb: 2, 132, 199;
 }
+
+/* ---------------------------------------------------------------------------
+ * Light/dark surface system. These neutrals are independent of the accent
+ * theme above, so any accent works in either mode. Toggled via data-mode on
+ * <html>. Light is the default (:root); dark overrides below.
+ * ------------------------------------------------------------------------- */
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-3: #f8fafc;
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-soft: #64748b;
+  --text-faint: #94a3b8;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --surface-rgb: 255, 255, 255;
+}
+
+[data-mode='dark'] {
+  --bg: #0b1120;
+  --surface: #161f33;
+  --surface-2: #1e2940;
+  --surface-3: #1a2336;
+  --text: #e8edf5;
+  --text-muted: #aab6c8;
+  --text-soft: #93a1b5;
+  --text-faint: #6b7a90;
+  --border: #2a3650;
+  --border-strong: #3b496a;
+  --surface-rgb: 22, 31, 51;
+
+  /* Re-tint the (otherwise very light) accent tints into translucent accents so
+     they blend with dark surfaces while keeping each theme's hue. */
+  --brand-50: rgba(var(--brand-rgb), 0.14);
+  --brand-100: rgba(var(--brand-rgb), 0.20);
+  --brand-200: rgba(var(--brand-rgb), 0.30);
+}
+
+[data-mode='dark'] body {
+  color-scheme: dark;
+}

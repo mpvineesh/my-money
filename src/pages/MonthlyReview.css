@@ -24,13 +24,13 @@
 
 .monthly-review-header h1 {
   margin: 0 0 4px;
-  color: #0f172a;
+  color: var(--text);
   font-size: 1.7rem;
 }
 
 .monthly-review-header p {
   margin: 0;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.94rem;
 }
 
@@ -38,9 +38,9 @@
   min-width: 190px;
   min-height: 44px;
   padding: 0 14px;
-  border: 1px solid #cbd5e1;
-  background: white;
-  color: #334155;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
   border-radius: 12px;
   cursor: pointer;
   font-weight: 800;
@@ -55,8 +55,8 @@
 
 .monthly-review-stat,
 .monthly-review-panel {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 20px;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
 }
@@ -86,7 +86,7 @@
 }
 
 .monthly-review-stat span {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.74rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -94,19 +94,19 @@
 }
 
 .monthly-review-stat strong {
-  color: #0f172a;
+  color: var(--text);
   font-size: 1.35rem;
 }
 
 .monthly-review-stat p {
   margin: 0;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.82rem;
 }
 
 .monthly-review-trend {
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 20px;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
   padding: 16px;
@@ -115,7 +115,7 @@
 
 .monthly-review-trend-caption {
   margin: 0 0 8px;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.84rem;
 }
 
@@ -128,16 +128,16 @@
   flex-direction: column;
   gap: 2px;
   padding: 10px 12px;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
   font-size: 0.82rem;
-  color: #475569;
+  color: var(--text-muted);
 }
 
 .monthly-review-trend-tooltip strong {
-  color: #0f172a;
+  color: var(--text);
   font-size: 0.88rem;
 }
 
@@ -161,7 +161,7 @@
 
 .monthly-review-panel-head h2 {
   margin: 0;
-  color: #0f172a;
+  color: var(--text);
   font-size: 1rem;
 }
 
@@ -179,17 +179,17 @@
   gap: 12px;
   align-items: center;
   padding: 10px 0;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--surface-2);
 }
 
 .monthly-review-row span,
 .monthly-review-due span {
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.86rem;
 }
 
 .monthly-review-row strong {
-  color: #0f172a;
+  color: var(--text);
   font-size: 0.86rem;
   text-align: right;
 }
@@ -209,7 +209,7 @@
 
 .monthly-review-empty {
   margin: 0;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.9rem;
 }
 
@@ -225,13 +225,13 @@
 }
 
 .monthly-review-add-name {
-  color: #0f172a;
+  color: var(--text);
   font-size: 0.9rem;
   font-weight: 700;
 }
 
 .monthly-review-add-meta {
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.74rem;
 }
 
@@ -246,16 +246,16 @@
 }
 
 .monthly-review-add-total {
-  border-top: 2px solid #e2e8f0;
+  border-top: 2px solid var(--border);
 }
 
 .monthly-review-add-total span {
-  color: #0f172a;
+  color: var(--text);
   font-weight: 700;
 }
 
 .monthly-review-add-total strong {
-  color: #0f172a !important;
+  color: var(--text) !important;
 }
 
 @media (max-width: 820px) {

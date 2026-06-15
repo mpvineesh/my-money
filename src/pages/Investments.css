@@ -24,13 +24,13 @@
 .inv-page-title {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
   margin: 0;
 }
 
 .inv-page-scope {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.9rem;
 }
 
@@ -45,8 +45,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid #e2e8f0;
-  background: white;
+  border: 1px solid var(--border);
+  background: var(--surface);
   color: #0f766e;
   font-size: 0.82rem;
   font-weight: 700;
@@ -68,8 +68,8 @@
 }
 
 .inv-family-panel {
-  background: linear-gradient(135deg, #ffffff, #f8fafc);
-  border: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #ffffff, var(--surface-3));
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 18px;
   margin-bottom: 16px;
@@ -108,8 +108,8 @@
 }
 
 .inv-member-summary-card {
-  border: 1px solid #e2e8f0;
-  background: white;
+  border: 1px solid var(--border);
+  background: var(--surface);
   border-radius: 16px;
   padding: 14px;
   text-align: left;
@@ -137,18 +137,18 @@
 }
 
 .inv-member-summary-top span {
-  color: #475569;
+  color: var(--text-muted);
   font-size: 0.82rem;
   font-weight: 700;
 }
 
 .inv-member-summary-top strong {
-  color: #0f172a;
+  color: var(--text);
 }
 
 .inv-member-summary-meta {
   margin-top: 8px;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.78rem;
 }
 
@@ -163,8 +163,8 @@
 }
 
 .inv-progress-panel {
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
-  border: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #ffffff, var(--surface-3));
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 18px;
   margin-bottom: 16px;
@@ -191,7 +191,7 @@
 .inv-progress-title {
   font-size: 1.15rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .inv-progress-toggle {
@@ -205,7 +205,7 @@
 .inv-progress-toggle button {
   border: none;
   background: transparent;
-  color: #475569;
+  color: var(--text-muted);
   padding: 8px 12px;
   border-radius: 10px;
   font-size: 0.8rem;
@@ -214,7 +214,7 @@
 }
 
 .inv-progress-toggle button.active {
-  background: white;
+  background: var(--surface);
   color: var(--brand-700);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
@@ -227,7 +227,7 @@
 }
 
 .inv-progress-summary > div {
-  background: white;
+  background: var(--surface);
   border: 1px solid #edf2f7;
   border-radius: 14px;
   padding: 12px;
@@ -237,7 +237,7 @@
 
 .inv-progress-summary-label {
   font-size: 0.72rem;
-  color: #64748b;
+  color: var(--text-soft);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -245,7 +245,7 @@
 
 .inv-progress-summary strong {
   font-size: 1rem;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .inv-progress-positive {
@@ -275,13 +275,13 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 0.78rem;
 }
 
 .inv-total-label {
   font-size: 0.65rem;
-  color: #94a3b8;
+  color: var(--text-faint);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -290,17 +290,17 @@
 .inv-total-value {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .inv-search-bar {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: white;
+  background: var(--surface);
   border-radius: 12px;
   padding: 8px 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   margin-bottom: 12px;
   transition: border-color 0.2s;
 }
@@ -311,7 +311,7 @@
 }
 
 .inv-search-icon {
-  color: #94a3b8;
+  color: var(--text-faint);
   flex-shrink: 0;
 }
 
@@ -320,12 +320,12 @@
   border: none;
   outline: none;
   font-size: 0.9rem;
-  color: #1e293b;
+  color: var(--text);
   background: none;
 }
 
 .inv-search-input::placeholder {
-  color: #cbd5e1;
+  color: var(--border-strong);
 }
 
 .inv-filter-toggle {
@@ -334,7 +334,7 @@
   justify-content: center;
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--text-faint);
   cursor: pointer;
   padding: 4px;
   border-radius: 8px;
@@ -348,10 +348,10 @@
 }
 
 .inv-filters {
-  background: white;
+  background: var(--surface);
   border-radius: 12px;
   padding: 14px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--surface-2);
   margin-bottom: 12px;
   display: flex;
   flex-direction: column;
@@ -378,7 +378,7 @@
 
 .inv-filter-label {
   font-size: 0.7rem;
-  color: #94a3b8;
+  color: var(--text-faint);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -395,9 +395,9 @@
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 500;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #64748b;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-soft);
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
@@ -418,10 +418,10 @@
 .inv-sort-select {
   padding: 8px 12px;
   border-radius: 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   font-size: 0.8rem;
-  color: #1e293b;
-  background: white;
+  color: var(--text);
+  background: var(--surface);
   outline: none;
   cursor: pointer;
 }
@@ -432,7 +432,7 @@
 
 .inv-count {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-faint);
   font-weight: 500;
   margin-bottom: 12px;
 }
@@ -446,7 +446,7 @@
 .inv-empty {
   text-align: center;
   padding: 48px 24px;
-  color: #94a3b8;
+  color: var(--text-faint);
 }
 
 .inv-empty svg {
@@ -456,7 +456,7 @@
 .inv-empty p {
   margin: 0 0 16px;
   font-size: 0.9rem;
-  color: #64748b;
+  color: var(--text-soft);
 }
 
 @media (max-width: 640px) {
@@ -493,7 +493,7 @@
   max-width: 440px;
   max-height: 85vh;
   overflow-y: auto;
-  background: white;
+  background: var(--surface);
   border-radius: 20px;
   padding: 20px;
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
@@ -515,13 +515,13 @@
 .inv-contrib-title {
   margin: 2px 0 4px;
   font-size: 1.2rem;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .inv-contrib-sub {
   margin: 0;
   font-size: 0.82rem;
-  color: #64748b;
+  color: var(--text-soft);
 }
 
 .inv-contrib-form {
@@ -539,17 +539,17 @@
 .inv-contrib-field > span {
   font-size: 0.82rem;
   font-weight: 700;
-  color: #334155;
+  color: var(--text-muted);
 }
 
 .inv-contrib-field input {
   width: 100%;
   box-sizing: border-box;
   padding: 12px 14px;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--border);
   border-radius: 12px;
   font-size: 0.95rem;
-  color: #0f172a;
+  color: var(--text);
   font-family: inherit;
   outline: none;
   -webkit-appearance: none;
@@ -566,13 +566,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--border);
   border-radius: 12px;
   padding-left: 14px;
 }
 
 .inv-contrib-input-prefix span {
-  color: #64748b;
+  color: var(--text-soft);
   font-weight: 700;
 }
 
@@ -611,9 +611,9 @@
 }
 
 .inv-contrib-cancel {
-  background: #f1f5f9;
-  color: #475569;
-  border-color: #e2e8f0;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border-color: var(--border);
 }
 
 .inv-contrib-save {
@@ -647,8 +647,8 @@
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 18px;
   padding: 16px;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
@@ -666,18 +666,18 @@
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #94a3b8;
+  color: var(--text-faint);
   font-weight: 700;
 }
-.inv-returns-value { display: block; font-size: 1.25rem; color: #0f172a; margin: 2px 0; }
-.inv-returns-value em { font-size: 0.85rem; font-style: normal; color: #94a3b8; font-weight: 600; }
+.inv-returns-value { display: block; font-size: 1.25rem; color: var(--text); margin: 2px 0; }
+.inv-returns-value em { font-size: 0.85rem; font-style: normal; color: var(--text-faint); font-weight: 600; }
 .inv-returns-value.positive { color: #16a34a; }
 .inv-returns-value.negative { color: #dc2626; }
-.inv-returns-note { font-size: 0.78rem; color: #94a3b8; }
+.inv-returns-note { font-size: 0.78rem; color: var(--text-faint); }
 .inv-80c-bar {
   height: 7px;
   border-radius: 999px;
-  background: #f1f5f9;
+  background: var(--surface-2);
   overflow: hidden;
   margin: 8px 0 6px;
 }
@@ -686,3 +686,40 @@
   border-radius: 999px;
   background: linear-gradient(90deg, var(--brand-500), var(--brand-accent));
 }
+
+/* Consolidated mutual-funds card */
+.inv-mf-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.inv-mf-card:hover { border-color: var(--brand-200); transform: translateY(-2px); }
+.inv-mf-icon {
+  width: 46px; height: 46px; flex-shrink: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-accent));
+  color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.inv-mf-main { flex: 1; min-width: 0; }
+.inv-mf-titlerow { display: flex; align-items: center; gap: 8px; }
+.inv-mf-titlerow strong { color: var(--text); font-size: 1rem; }
+.inv-mf-count {
+  font-size: 0.72rem; font-weight: 700; color: var(--brand-700);
+  background: var(--brand-50); padding: 2px 8px; border-radius: 999px;
+}
+.inv-mf-metrics { display: flex; gap: 16px; margin-top: 6px; flex-wrap: wrap; }
+.inv-mf-metrics span { color: var(--text-soft); font-size: 0.82rem; }
+.inv-mf-metrics span strong { color: var(--text); font-weight: 600; }
+.inv-mf-metrics span.pos { color: #16a34a; font-weight: 700; }
+.inv-mf-metrics span.neg { color: #dc2626; font-weight: 700; }
+.inv-mf-chevron { color: var(--text-faint); flex-shrink: 0; }

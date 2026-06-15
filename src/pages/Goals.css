@@ -24,7 +24,7 @@
 .goals-title {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
   margin: 0;
 }
 
@@ -50,10 +50,10 @@
 }
 
 .goals-overview {
-  background: white;
+  background: var(--surface);
   border-radius: 16px;
   padding: 20px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--surface-2);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   margin-bottom: 16px;
   display: flex;
@@ -88,13 +88,13 @@
 .goals-circle-percent {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text);
   line-height: 1;
 }
 
 .goals-circle-label {
   font-size: 0.6rem;
-  color: #94a3b8;
+  color: var(--text-faint);
   font-weight: 500;
   margin-top: 2px;
 }
@@ -114,14 +114,14 @@
 
 .goals-info-label {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-faint);
   font-weight: 500;
 }
 
 .goals-info-value {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text);
 }
 
 .goals-info-highlight {
@@ -137,17 +137,17 @@
 
 .goals-sort-label {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-faint);
   font-weight: 500;
 }
 
 .goals-sort-select {
   padding: 6px 10px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
   font-size: 0.8rem;
-  color: #1e293b;
-  background: white;
+  color: var(--text);
+  background: var(--surface);
   cursor: pointer;
 }
 
@@ -160,7 +160,7 @@
 .goals-empty {
   text-align: center;
   padding: 48px 24px;
-  color: #94a3b8;
+  color: var(--text-faint);
 }
 
 .goals-empty svg {
@@ -169,7 +169,7 @@
 
 .goals-empty h3 {
   margin: 0 0 8px;
-  color: #64748b;
+  color: var(--text-soft);
   font-size: 1.1rem;
 }
 
