@@ -43,8 +43,10 @@ export default function InvestmentCard({ investment, onClick, onViewTransactions
           <span>{isPositive ? '+' : ''}{returns}%</span>
         </div>
       </div>
-      <h3 className="inv-card-name">{investment.name}</h3>
-      <div className="inv-card-member">{memberName}</div>
+      <div className="inv-card-titlerow">
+        <h3 className="inv-card-name">{investment.name}</h3>
+        <span className="inv-card-member">{memberName}</span>
+      </div>
       <div className="inv-card-amounts">
         <div className="inv-amount-group">
           <span className="inv-amount-label">Current Value</span>
@@ -98,7 +100,7 @@ export default function InvestmentCard({ investment, onClick, onViewTransactions
 {showProjectedValue && (
       <div className="inv-card-projection">
         <div className="projection-chart">
-          <ResponsiveContainer width="100%" height={60}>
+          <ResponsiveContainer width="100%" height={48}>
             <LineChart data={projection} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
               <XAxis dataKey="year" hide />
               <YAxis hide domain={["dataMin", "dataMax"]} />

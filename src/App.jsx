@@ -33,6 +33,7 @@ import FamilyMembers from './pages/FamilyMembers';
 import Vault from './pages/Vault';
 import Insights from './pages/Insights';
 import MutualFunds from './pages/MutualFunds';
+import Stocks from './pages/Stocks';
 import { VaultProvider } from './context/VaultContext';
 import { FEATURES } from './config';
 import './App.css';
@@ -54,6 +55,7 @@ export default function App() {
                 <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
                 <Route path="/investments" element={<RequireAuth><Investments /></RequireAuth>} />
                 <Route path="/mutual-funds" element={<RequireAuth><MutualFunds /></RequireAuth>} />
+                <Route path="/stocks" element={<RequireAuth><Stocks /></RequireAuth>} />
                 <Route path="/investments/transactions" element={<RequireAuth><InvestmentTransactions /></RequireAuth>} />
                 <Route path="/investments/new" element={<RequireAuth><InvestmentForm /></RequireAuth>} />
                 <Route path="/investments/edit/:id" element={<RequireAuth><InvestmentForm /></RequireAuth>} />

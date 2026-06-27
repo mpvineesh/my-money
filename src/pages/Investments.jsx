@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
 import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency, formatCompactCurrency, calculateReturns, isValidDateValue } from '../utils/constants';
 import InvestmentCard from '../components/InvestmentCard';
-import { Briefcase, CalendarRange, ChevronRight, Landmark, Layers, ReceiptText, RefreshCw, Search, SlidersHorizontal, TrendingUp, Users } from 'lucide-react';
+import { Briefcase, CalendarRange, CandlestickChart, ChevronRight, Landmark, Layers, ReceiptText, RefreshCw, Search, SlidersHorizontal, TrendingUp, Users } from 'lucide-react';
 import { computePortfolioXirr, compute80C } from '../utils/finance';
 import { Area, ComposedChart, LineChart, Line, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import './Investments.css';
@@ -302,16 +302,27 @@ export default function Investments() {
     return result;
   }, [filterType, memberScopedInvestments, search, sortBy]);
 
-  // Mutual funds are managed on their own screen; collapse them into one summary card here.
-  const otherInvestments = useMemo(() => filtered.filter((inv) => inv.type !== 'mutual_funds'), [filtered]);
-  const mfAggregate = useMemo(() => {
-    const mf = filtered.filter((inv) => inv.type === 'mutual_funds');
-    if (!mf.length) return null;
-    const invested = mf.reduce((s, inv) => s + (Number(inv.investedAmount) || 0), 0);
-    const current = mf.reduce((s, inv) => s + (Number(inv.currentValue) || 0), 0);
-    return { count: mf.length, invested, current, gain: current - invested };
+  // Mutual funds and stocks are managed on their own screens; collapse each into one
+  // summary card here so the main list stays readable.
+  const otherInvestments = useMemo(
+    () => filtered.filter((inv) => inv.type !== 'mutual_funds' && inv.type !== 'stocks'),
+    [filtered],
+  );
+  const aggregateByType = useMemo(() => {
+    const acc = {};
+    filtered.forEach((inv) => {
+      if (inv.type !== 'mutual_funds' && inv.type !== 'stocks') return;
+      const a = acc[inv.type] || (acc[inv.type] = { count: 0, invested: 0, current: 0 });
+      a.count += 1;
+      a.invested += Number(inv.investedAmount) || 0;
+      a.current += Number(inv.currentValue) || 0;
+    });
+    Object.values(acc).forEach((a) => { a.gain = a.current - a.invested; });
+    return acc;
   }, [filtered]);
-  const listCount = otherInvestments.length + (mfAggregate ? 1 : 0);
+  const mfAggregate = aggregateByType.mutual_funds || null;
+  const stocksAggregate = aggregateByType.stocks || null;
+  const listCount = otherInvestments.length + (mfAggregate ? 1 : 0) + (stocksAggregate ? 1 : 0);
 
   const selectedMember = memberOptions.find((member) => member.id === activeFilterMember);
   const totalValue = useMemo(
@@ -665,6 +676,25 @@ export default function Investments() {
                 <span>Invested <strong>{formatCurrency(mfAggregate.invested)}</strong></span>
                 <span className={mfAggregate.gain >= 0 ? 'pos' : 'neg'}>
                   {mfAggregate.gain >= 0 ? '+' : ''}{calculateReturns(mfAggregate.invested, mfAggregate.current)}%
+                </span>
+              </div>
+            </div>
+            <ChevronRight size={18} className="inv-mf-chevron" />
+          </button>
+        ) : null}
+        {stocksAggregate ? (
+          <button type="button" className="inv-mf-card" onClick={() => navigate('/stocks')}>
+            <div className="inv-mf-icon"><CandlestickChart size={22} /></div>
+            <div className="inv-mf-main">
+              <div className="inv-mf-titlerow">
+                <strong>Stocks</strong>
+                <span className="inv-mf-count">{stocksAggregate.count} stock{stocksAggregate.count === 1 ? '' : 's'}</span>
+              </div>
+              <div className="inv-mf-metrics">
+                <span>Current <strong>{formatCurrency(stocksAggregate.current)}</strong></span>
+                <span>Invested <strong>{formatCurrency(stocksAggregate.invested)}</strong></span>
+                <span className={stocksAggregate.gain >= 0 ? 'pos' : 'neg'}>
+                  {stocksAggregate.gain >= 0 ? '+' : ''}{calculateReturns(stocksAggregate.invested, stocksAggregate.current)}%
                 </span>
               </div>
             </div>
