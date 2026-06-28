@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { BellRing, Briefcase, CandlestickChart, Layers, ScanLine, Target, TrendingUp, Wallet, Repeat } from 'lucide-react';
+import { BellRing, Briefcase, CalendarDays, CandlestickChart, Layers, PiggyBank, ScanLine, Target, TrendingUp, Wallet, Repeat } from 'lucide-react';
 import './AddPage.css';
 
 export default function AddPage() {
@@ -93,6 +93,26 @@ export default function AddPage() {
           <div className="add-option-text">
             <h3>Reminder</h3>
             <p>Track bill payments and debt repayments before they become overdue</p>
+          </div>
+        </button>
+
+        <button className="add-option-card" onClick={() => navigate('/calendar')}>
+          <div className="add-option-icon" style={{ background: '#eff6ff', color: '#3b82f6' }}>
+            <CalendarDays size={28} />
+          </div>
+          <div className="add-option-text">
+            <h3>Money Calendar</h3>
+            <p>See SIPs, EMIs, insurance, taxes, salary, dividends & FD maturities on a timeline</p>
+          </div>
+        </button>
+
+        <button className="add-option-card" onClick={() => navigate('/retirement')}>
+          <div className="add-option-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
+            <PiggyBank size={28} />
+          </div>
+          <div className="add-option-text">
+            <h3>Retirement Planner</h3>
+            <p>Find your target corpus and the monthly SIP needed to retire comfortably</p>
           </div>
         </button>
       </div>

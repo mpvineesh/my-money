@@ -18,6 +18,8 @@ const STORAGE_KEYS = {
   APP_SETTINGS: 'myMoney_app_settings',
   AI_REPORTS: 'myMoney_ai_reports',
   SWING_TRADES: 'myMoney_swing_trades',
+  CALENDAR_EVENTS: 'myMoney_calendar_events',
+  RETIREMENT_PLAN: 'myMoney_retirement_plan',
 };
 
 export function loadInvestments() {
@@ -309,6 +311,40 @@ export function loadAppSettings() {
 export function saveAppSettings(appSettings) {
   try {
     localStorage.setItem(STORAGE_KEYS.APP_SETTINGS, JSON.stringify(appSettings));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadCalendarEvents() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.CALENDAR_EVENTS);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCalendarEvents(events) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(events));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadRetirementPlan() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.RETIREMENT_PLAN);
+    return data ? JSON.parse(data) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveRetirementPlan(plan) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.RETIREMENT_PLAN, JSON.stringify(plan));
   } catch {
     // ignore
   }

@@ -12,6 +12,8 @@ import {
   Repeat,
   BellRing,
   CalendarRange,
+  CalendarDays,
+  PiggyBank,
   CandlestickChart,
   Settings as SettingsIcon,
 } from 'lucide-react';
@@ -73,6 +75,12 @@ function MoreMenu() {
           </button>
           <button className="more-item" onClick={() => { setOpen(false); navigate('/swing-trades'); }}>
             <CandlestickChart size={16} style={{ marginRight: 8 }} /> Swing Trades
+          </button>
+          <button className="more-item" onClick={() => { setOpen(false); navigate('/calendar'); }}>
+            <CalendarDays size={16} style={{ marginRight: 8 }} /> Calendar
+          </button>
+          <button className="more-item" onClick={() => { setOpen(false); navigate('/retirement'); }}>
+            <PiggyBank size={16} style={{ marginRight: 8 }} /> Retirement
           </button>
           <button className="more-item" onClick={() => { setOpen(false); navigate('/recurring'); }}>
             <Repeat size={16} style={{ marginRight: 8 }} /> Recurring

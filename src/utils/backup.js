@@ -25,6 +25,7 @@ export const BACKUP_COLLECTIONS = [
   'cashHistory',
   'netWorthSnapshots',
   'aiReports',
+  'calendarEvents',
 ];
 
 export function buildBackup(data) {

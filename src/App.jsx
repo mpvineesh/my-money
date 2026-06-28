@@ -34,6 +34,8 @@ import Vault from './pages/Vault';
 import Insights from './pages/Insights';
 import MutualFunds from './pages/MutualFunds';
 import Stocks from './pages/Stocks';
+import Retirement from './pages/Retirement';
+import Calendar from './pages/Calendar';
 import { VaultProvider } from './context/VaultContext';
 import { FEATURES } from './config';
 import './App.css';
@@ -81,6 +83,8 @@ export default function App() {
                 <Route path="/ai-insights" element={<RequireAuth><AiInsights /></RequireAuth>} />
                 <Route path="/monthly-review" element={<RequireAuth><MonthlyReview /></RequireAuth>} />
                 <Route path="/insights" element={<RequireAuth><Insights /></RequireAuth>} />
+                <Route path="/retirement" element={<RequireAuth><Retirement /></RequireAuth>} />
+                <Route path="/calendar" element={<RequireAuth><Calendar /></RequireAuth>} />
                 <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
                 <Route path="/family-members" element={<RequireAuth><FamilyMembers /></RequireAuth>} />
                 {FEATURES.passwordVault ? (

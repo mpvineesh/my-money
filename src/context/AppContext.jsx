@@ -39,6 +39,8 @@ import {
   saveAppSettings,
   loadAiReports,
   saveAiReports,
+  loadCalendarEvents,
+  saveCalendarEvents,
 } from '../utils/storage';
 import {
   getDemoInvestments,
@@ -64,6 +66,7 @@ import {
   getPaymentMethodInfo,
   EXPENSE_PAYMENT_METHODS,
   isValidDateValue,
+  getCalendarCategoryInfo,
 } from '../utils/constants';
 import { AppContext } from './AppContextDef';
 import { THEME_IDS, DEFAULT_THEME, getThemeInfo } from '../utils/themes';
@@ -335,6 +338,28 @@ function normalizeReminders(reminders) {
       if (left.status !== right.status) return left.status === 'completed' ? 1 : -1;
       return left.nextDueDate.localeCompare(right.nextDueDate) || left.title.localeCompare(right.title);
     });
+}
+
+function normalizeCalendarEvent(event) {
+  const category = getCalendarCategoryInfo(event?.category);
+  return {
+    id: event?.id || uuidv4(),
+    title: String(event?.title || event?.name || '').trim(),
+    category: category.value,
+    amount: Number(event?.amount) || 0,
+    date: normalizeHistoryDate(event?.date || event?.dueDate, getTodayDateValue()),
+    recurrence: ['once', 'monthly', 'quarterly', 'yearly'].includes(event?.recurrence)
+      ? event.recurrence
+      : 'once',
+    notes: String(event?.notes || '').trim(),
+  };
+}
+
+function normalizeCalendarEvents(events) {
+  return (Array.isArray(events) ? events : [])
+    .map((event) => normalizeCalendarEvent(event))
+    .filter((event) => event.title && event.amount > 0)
+    .sort((left, right) => left.date.localeCompare(right.date) || left.title.localeCompare(right.title));
 }
 
 const DEFAULT_APP_SETTINGS = {
@@ -843,6 +868,10 @@ function loadPersistedAiReports() {
   return sortAiReports(loadAiReports().map(normalizeAiReport));
 }
 
+function loadPersistedCalendarEvents() {
+  return normalizeCalendarEvents(loadCalendarEvents());
+}
+
 const INITIAL_EXPENSE_CATEGORIES = loadPersistedExpenseCategories();
 const INITIAL_EXPENSE_SUBCATEGORIES = loadPersistedExpenseSubcategories();
 const INITIAL_EXPENSE_TYPES = loadPersistedExpenseTypes();
@@ -851,6 +880,7 @@ const INITIAL_RECURRING_ENTRIES = loadPersistedRecurringEntries();
 const INITIAL_REMINDERS = loadPersistedReminders();
 const INITIAL_APP_SETTINGS = loadPersistedAppSettings();
 const INITIAL_AI_REPORTS = loadPersistedAiReports();
+const INITIAL_CALENDAR_EVENTS = loadPersistedCalendarEvents();
 
 export function AppProvider({ children }) {
   const { user, household } = useAuth();
@@ -882,6 +912,7 @@ export function AppProvider({ children }) {
   const [reminders, setReminders] = useState(INITIAL_REMINDERS);
   const [appSettings, setAppSettings] = useState(INITIAL_APP_SETTINGS);
   const [aiReports, setAiReports] = useState(INITIAL_AI_REPORTS);
+  const [calendarEvents, setCalendarEvents] = useState(INITIAL_CALENDAR_EVENTS);
 
   // Snapshot callbacks for budgets/recurring read the latest categories via refs, so
   // the listener effect does NOT depend on those state values. Depending on them caused
@@ -1157,6 +1188,13 @@ export function AppProvider({ children }) {
       saveAiReports(items);
     });
 
+    const calendarEventsCol = collection(db, 'users', effectiveUid, 'calendarEvents');
+    const unsubCalendarEvents = onSnapshot(calendarEventsCol, (snap) => {
+      const items = normalizeCalendarEvents(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setCalendarEvents(items);
+      saveCalendarEvents(items);
+    });
+
     return () => {
       unsubInv();
       unsubSwingTrades();
@@ -1176,6 +1214,7 @@ export function AppProvider({ children }) {
       unsubReminders();
       unsubAppSettings();
       unsubAiReports();
+      unsubCalendarEvents();
     };
   }, [effectiveUid]);
 
@@ -2055,6 +2094,62 @@ export function AppProvider({ children }) {
     return updatedReminder;
   }, [reminders, user]);
 
+  const addCalendarEvent = useCallback((event) => {
+    if (readOnlyRef.current) return null;
+    const newEvent = normalizeCalendarEvent({ ...event, id: uuidv4() });
+    if (!newEvent.title || newEvent.amount <= 0) return null;
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'calendarEvents', newEvent.id);
+      setDoc(ref, newEvent);
+      return newEvent;
+    }
+
+    setCalendarEvents((prev) => {
+      const updated = normalizeCalendarEvents([...prev, newEvent]);
+      saveCalendarEvents(updated);
+      return updated;
+    });
+
+    return newEvent;
+  }, [user]);
+
+  const updateCalendarEvent = useCallback((id, event) => {
+    if (readOnlyRef.current) return null;
+    const currentEvent = calendarEvents.find((item) => item.id === id);
+    const normalizedEvent = normalizeCalendarEvent({ ...currentEvent, ...event, id });
+    if (!normalizedEvent.title || normalizedEvent.amount <= 0) return null;
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'calendarEvents', id);
+      updateDoc(ref, { ...normalizedEvent });
+      return normalizedEvent;
+    }
+
+    setCalendarEvents((prev) => {
+      const updated = normalizeCalendarEvents(prev.map((item) => (item.id === id ? normalizedEvent : item)));
+      saveCalendarEvents(updated);
+      return updated;
+    });
+
+    return normalizedEvent;
+  }, [calendarEvents, user]);
+
+  const deleteCalendarEvent = useCallback((id) => {
+    if (readOnlyRef.current) return null;
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'calendarEvents', id);
+      deleteDoc(ref);
+      return;
+    }
+
+    setCalendarEvents((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      saveCalendarEvents(updated);
+      return updated;
+    });
+  }, [user]);
+
   const updateAppSettings = useCallback((nextSettings) => {
     if (readOnlyRef.current) return null;
     const normalizedSettings = normalizeAppSettings({
@@ -2354,6 +2449,7 @@ export function AppProvider({ children }) {
     expenseBudgets: displayExpenseBudgets,
     recurringEntries: displayRecurringEntries,
     reminders,
+    calendarEvents,
     appSettings,
     theme,
     themePrimary,
@@ -2396,6 +2492,9 @@ export function AppProvider({ children }) {
     updateReminder,
     deleteReminder,
     markReminderDone,
+    addCalendarEvent,
+    updateCalendarEvent,
+    deleteCalendarEvent,
     updateAppSettings,
     restoreBackup,
     generateMonthlyAiReport,

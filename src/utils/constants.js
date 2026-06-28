@@ -23,6 +23,41 @@ export const RISK_LEVELS = [
   { value: 'high', label: 'High Risk', color: '#ef4444' },
 ];
 
+// Money-calendar event categories. `direction` controls whether an event is money
+// coming in (inflow) or going out (outflow), which drives the calendar's net totals.
+export const CALENDAR_CATEGORIES = [
+  { value: 'salary', label: 'Salary', color: '#16a34a', direction: 'in' },
+  { value: 'dividend', label: 'Dividend', color: '#0ea5e9', direction: 'in' },
+  { value: 'fd_maturity', label: 'FD Maturity', color: '#06b6d4', direction: 'in' },
+  { value: 'sip', label: 'SIP', color: '#8b5cf6', direction: 'out' },
+  { value: 'emi', label: 'EMI', color: '#ef4444', direction: 'out' },
+  { value: 'insurance', label: 'Insurance', color: '#a855f7', direction: 'out' },
+  { value: 'credit_card', label: 'Credit Card', color: '#f97316', direction: 'out' },
+  { value: 'tax', label: 'Tax', color: '#d97706', direction: 'out' },
+  { value: 'other', label: 'Other', color: '#64748b', direction: 'out' },
+];
+
+export function getCalendarCategoryInfo(value) {
+  return (
+    CALENDAR_CATEGORIES.find((category) => category.value === value)
+    || CALENDAR_CATEGORIES[CALENDAR_CATEGORIES.length - 1]
+  );
+}
+
+// Best-effort mapping of a free-text label/title to one of the calendar categories,
+// used to auto-classify recurring entries and reminders that have no explicit category.
+export function guessCalendarCategory(text, fallback = 'other') {
+  const value = String(text || '').toLowerCase();
+  if (/sip|mutual|fund|elss|nps|invest/.test(value)) return 'sip';
+  if (/emi|loan|repay|mortgage/.test(value)) return 'emi';
+  if (/insur|premium|lic|term plan|health|policy/.test(value)) return 'insurance';
+  if (/credit card|card bill|cc bill|visa|mastercard|amex/.test(value)) return 'credit_card';
+  if (/tax|gst|tds|advance tax|income tax/.test(value)) return 'tax';
+  if (/salary|payroll|income|stipend/.test(value)) return 'salary';
+  if (/dividend|payout|interest credit/.test(value)) return 'dividend';
+  return fallback;
+}
+
 export const EXPENSE_CATEGORIES = [
   { value: 'groceries', label: 'Groceries', color: '#22c55e' },
   { value: 'utilities', label: 'Utilities', color: '#3b82f6' },
