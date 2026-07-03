@@ -199,6 +199,9 @@ export default function Recurring() {
                     <div>
                       <div className="recurring-card-title-row">
                         <strong>{entry.title}</strong>
+                        {entry.kind === 'investment' && entry.memberName ? (
+                          <span className="recurring-member-chip">{entry.memberName}</span>
+                        ) : null}
                         <span className={`recurring-status recurring-status-${status.tone}`}>{status.label}</span>
                       </div>
                       <p>{entry.kind === 'investment' ? 'Investment' : 'Expense'} · {formatFrequencyLabel(entry.frequency)} · {scopeLabel}</p>

@@ -930,8 +930,19 @@ export function AppProvider({ children }) {
     [expenseBudgets, expenseCategories, expenseSubcategories],
   );
   const displayRecurringEntries = useMemo(
-    () => normalizeRecurringEntries(recurringEntries, expenseCategories, expenseSubcategories),
-    [recurringEntries, expenseCategories, expenseSubcategories],
+    () => normalizeRecurringEntries(recurringEntries, expenseCategories, expenseSubcategories).map((entry) => {
+      // Investment SIPs have no member field of their own; derive it from the
+      // linked investment so the UI can scope/label them by family member.
+      if (entry.kind !== 'investment' || !entry.linkedInvestmentId) return entry;
+      const linked = investments.find((investment) => investment.id === entry.linkedInvestmentId);
+      if (!linked) return entry;
+      return {
+        ...entry,
+        memberId: linked.memberId || DEFAULT_FAMILY_MEMBER.id,
+        memberName: linked.memberName || DEFAULT_FAMILY_MEMBER.name,
+      };
+    }),
+    [recurringEntries, expenseCategories, expenseSubcategories, investments],
   );
 
   const theme = THEME_IDS.includes(appSettings?.theme) ? appSettings.theme : DEFAULT_THEME;
@@ -2401,6 +2412,16 @@ export function AppProvider({ children }) {
         : []);
   const scopedLoans = memberScopeId ? [] : loans;
   const scopedCash = memberScopeId ? 0 : cash;
+  // Recurring: investment SIPs follow the active member scope (via their linked
+  // investment's member); non-investment/household entries always show for the
+  // owner, but are hidden for a signed-in family member (member mode).
+  const scopedRecurringEntries = investmentVisibilityMemberId === 'all'
+    ? displayRecurringEntries
+    : displayRecurringEntries.filter((entry) => {
+        const isInvestmentSip = entry.kind === 'investment' && entry.linkedInvestmentId;
+        if (isInvestmentSip) return (entry.memberId || DEFAULT_FAMILY_MEMBER.id) === investmentVisibilityMemberId;
+        return !memberScopeId;
+      });
   const scopedCashHistory = memberScopeId ? [] : cashHistory;
   const scopedNetWorthSnapshots = memberScopeId ? [] : derivedNetWorthSnapshots;
 
@@ -2447,7 +2468,7 @@ export function AppProvider({ children }) {
     expenseSubcategories,
     expenseTypes,
     expenseBudgets: displayExpenseBudgets,
-    recurringEntries: displayRecurringEntries,
+    recurringEntries: renameOwner(scopedRecurringEntries, 'memberId', 'memberName'),
     reminders,
     calendarEvents,
     appSettings,
