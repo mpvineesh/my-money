@@ -138,6 +138,54 @@
   font-size: 1.05rem;
 }
 
+.recurring-groups {
+  display: grid;
+  gap: 20px;
+}
+
+.recurring-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.recurring-group-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+}
+
+.recurring-group-heading h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.recurring-group-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.recurring-group-total {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--brand-700);
+}
+
 .recurring-list {
   display: grid;
   gap: 12px;

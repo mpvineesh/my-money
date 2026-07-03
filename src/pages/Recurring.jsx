@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Pencil, Plus, Repeat, Save, SkipForward, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, Repeat, Save, SkipForward, Trash2, User, Users } from 'lucide-react';
 import { useApp } from '../context/useApp';
 import {
   formatCurrency,
@@ -67,6 +67,25 @@ export default function Recurring() {
     [recurringEntries],
   );
 
+  // Group entries like the investments screen: investment SIPs are grouped by
+  // family member (derived from their linked investment); everything else falls
+  // into a "Household" group. Members first (by monthly impact), Household last.
+  const groups = useMemo(() => {
+    const map = new Map();
+    recurringEntries.forEach((entry) => {
+      const isSip = entry.kind === 'investment' && entry.memberName;
+      const key = isSip ? entry.memberName : 'Household';
+      if (!map.has(key)) map.set(key, { key, name: key, entries: [], monthly: 0, isHousehold: !isSip });
+      const group = map.get(key);
+      group.entries.push(entry);
+      group.monthly += getMonthlyEquivalent(entry);
+    });
+    return [...map.values()].sort((left, right) => {
+      if (left.isHousehold !== right.isHousehold) return left.isHousehold ? 1 : -1;
+      return right.monthly - left.monthly;
+    });
+  }, [recurringEntries]);
+
   function handleEdit(entry) {
     navigate(`/recurring/edit/${entry.id}`);
   }
@@ -126,6 +145,70 @@ export default function Recurring() {
     dueEntries.forEach((entry) => recordRecurringEntryNow(entry.id, entry.nextDueDate));
   }
 
+  function renderEntryCard(entry) {
+    const status = getDueStatus(entry.nextDueDate);
+    const category = entry.kind === 'expense'
+      ? getExpenseCategoryInfo(entry.categoryValue, expenseCategories, entry.categoryLabel)
+      : null;
+    const subcategory = entry.kind === 'expense' && entry.subcategoryValue
+      ? getExpenseSubcategoryInfo(
+          entry.categoryValue,
+          entry.subcategoryValue,
+          expenseSubcategories,
+          entry.subcategoryLabel,
+        )
+      : null;
+    const linkedInvestment = entry.kind === 'investment' && entry.linkedInvestmentId
+      ? investments.find((inv) => inv.id === entry.linkedInvestmentId)
+      : null;
+    const scopeLabel = entry.kind === 'investment'
+      ? (linkedInvestment ? `→ ${linkedInvestment.name}` : getTypeInfo(entry.investmentType).label)
+      : [category?.label, subcategory?.label].filter(Boolean).join(' / ') || 'Expense';
+
+    return (
+      <article key={entry.id} className="recurring-card">
+        <div className="recurring-card-top">
+          <div>
+            <div className="recurring-card-title-row">
+              <strong>{entry.title}</strong>
+              <span className={`recurring-status recurring-status-${status.tone}`}>{status.label}</span>
+            </div>
+            <p>{entry.kind === 'investment' ? 'Investment' : 'Expense'} · {formatFrequencyLabel(entry.frequency)} · {scopeLabel}</p>
+          </div>
+          <div className="recurring-card-amount">{formatCurrency(entry.amount)}</div>
+        </div>
+
+        <div className="recurring-card-meta">
+          <span>Next due: {formatDate(entry.nextDueDate)}</span>
+          <span>Monthly impact: {formatCurrency(getMonthlyEquivalent(entry))}</span>
+        </div>
+
+        <div className="recurring-card-actions">
+          {linkedInvestment ? null : (
+            <button type="button" className="recurring-review-btn" onClick={() => handleReview(entry)}>
+              <Eye size={16} />
+              <span>Review</span>
+            </button>
+          )}
+          <button type="button" className="recurring-primary-btn" onClick={() => handleRecord(entry)}>
+            <Save size={16} />
+            <span>Record</span>
+          </button>
+          <button type="button" className="recurring-skip-btn" onClick={() => handleSkip(entry)}>
+            <SkipForward size={16} />
+            <span>Skip</span>
+          </button>
+          <button type="button" className="recurring-icon-btn" onClick={() => handleEdit(entry)}>
+            <Pencil size={16} />
+          </button>
+          <button type="button" className="recurring-icon-btn danger" onClick={() => handleDelete(entry.id)}>
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </article>
+    );
+  }
+
   return (
     <div className="recurring-page">
       <header className="recurring-header">
@@ -178,73 +261,22 @@ export default function Recurring() {
         </div>
 
         {recurringEntries.length ? (
-          <div className="recurring-list">
-            {recurringEntries.map((entry) => {
-              const status = getDueStatus(entry.nextDueDate);
-              const category = entry.kind === 'expense'
-                ? getExpenseCategoryInfo(entry.categoryValue, expenseCategories, entry.categoryLabel)
-                : null;
-              const subcategory = entry.kind === 'expense' && entry.subcategoryValue
-                ? getExpenseSubcategoryInfo(
-                    entry.categoryValue,
-                    entry.subcategoryValue,
-                    expenseSubcategories,
-                    entry.subcategoryLabel,
-                  )
-                : null;
-              const linkedInvestment = entry.kind === 'investment' && entry.linkedInvestmentId
-                ? investments.find((inv) => inv.id === entry.linkedInvestmentId)
-                : null;
-              const scopeLabel = entry.kind === 'investment'
-                ? (linkedInvestment ? `→ ${linkedInvestment.name}` : getTypeInfo(entry.investmentType).label)
-                : [category?.label, subcategory?.label].filter(Boolean).join(' / ') || 'Expense';
-
-              return (
-                <article key={entry.id} className="recurring-card">
-                  <div className="recurring-card-top">
-                    <div>
-                      <div className="recurring-card-title-row">
-                        <strong>{entry.title}</strong>
-                        {entry.kind === 'investment' && entry.memberName ? (
-                          <span className="recurring-member-chip">{entry.memberName}</span>
-                        ) : null}
-                        <span className={`recurring-status recurring-status-${status.tone}`}>{status.label}</span>
-                      </div>
-                      <p>{entry.kind === 'investment' ? 'Investment' : 'Expense'} · {formatFrequencyLabel(entry.frequency)} · {scopeLabel}</p>
-                    </div>
-                    <div className="recurring-card-amount">{formatCurrency(entry.amount)}</div>
+          <div className="recurring-groups">
+            {groups.map((group) => (
+              <section key={group.key} className="recurring-group">
+                <div className="recurring-group-head">
+                  <div className="recurring-group-heading">
+                    {group.isHousehold ? <Users size={15} /> : <User size={15} />}
+                    <h3>{group.name}</h3>
+                    <span className="recurring-group-count">{group.entries.length}</span>
                   </div>
-
-                  <div className="recurring-card-meta">
-                    <span>Next due: {formatDate(entry.nextDueDate)}</span>
-                    <span>Monthly impact: {formatCurrency(getMonthlyEquivalent(entry))}</span>
-                  </div>
-
-                  <div className="recurring-card-actions">
-                    {linkedInvestment ? null : (
-                      <button type="button" className="recurring-review-btn" onClick={() => handleReview(entry)}>
-                        <Eye size={16} />
-                        <span>Review</span>
-                      </button>
-                    )}
-                    <button type="button" className="recurring-primary-btn" onClick={() => handleRecord(entry)}>
-                      <Save size={16} />
-                      <span>Record</span>
-                    </button>
-                    <button type="button" className="recurring-skip-btn" onClick={() => handleSkip(entry)}>
-                      <SkipForward size={16} />
-                      <span>Skip</span>
-                    </button>
-                    <button type="button" className="recurring-icon-btn" onClick={() => handleEdit(entry)}>
-                      <Pencil size={16} />
-                    </button>
-                    <button type="button" className="recurring-icon-btn danger" onClick={() => handleDelete(entry.id)}>
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
+                  <span className="recurring-group-total">{formatCurrency(group.monthly)}/mo</span>
+                </div>
+                <div className="recurring-list">
+                  {group.entries.map(renderEntryCard)}
+                </div>
+              </section>
+            ))}
           </div>
         ) : (
           <div className="recurring-empty">
