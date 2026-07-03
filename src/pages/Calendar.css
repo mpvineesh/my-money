@@ -312,7 +312,14 @@
   color: var(--text);
 }
 
-.cal-day-add {
+.cal-day-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-day-add,
+.cal-day-record {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -324,6 +331,12 @@
   padding: 5px 9px;
   border-radius: 8px;
   cursor: pointer;
+}
+
+.cal-day-record {
+  border-color: var(--brand-600);
+  background: var(--brand-600);
+  color: #fff;
 }
 
 .cal-empty {

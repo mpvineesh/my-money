@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, RefreshCw, Pencil, Trash2, Save, X, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, Plus, RefreshCw, Pencil, Trash2, Save, X, TrendingUp, TrendingDown, CirclePlus } from 'lucide-react';
 import { useApp } from '../context/useApp';
 import { formatCurrency, calculateReturns, DEFAULT_FAMILY_MEMBER } from '../utils/constants';
 import { searchSchemes, fetchLatestNav } from '../utils/navService';
@@ -14,7 +14,7 @@ function todayIso() {
 
 export default function MutualFunds() {
   const navigate = useNavigate();
-  const { visibleInvestments, ownerName, addInvestment, updateInvestment, deleteInvestment, refreshNavPrices } = useApp();
+  const { visibleInvestments, ownerName, addInvestment, updateInvestment, deleteInvestment, refreshNavPrices, addLumpsumToInvestment } = useApp();
 
   const funds = useMemo(
     () => visibleInvestments
@@ -31,6 +31,7 @@ export default function MutualFunds() {
   }, [funds]);
 
   const [editing, setEditing] = useState(null);
+  const [lumpsum, setLumpsum] = useState(null); // { fund, amount, date, busy, msg }
   const [confirmDeleteId, setConfirmDeleteId] = useState('');
   const [navBusy, setNavBusy] = useState(false);
   const [navMsg, setNavMsg] = useState('');
@@ -105,6 +106,19 @@ export default function MutualFunds() {
     setEditing(null);
   }
 
+  async function submitLumpsum(event) {
+    event.preventDefault();
+    const amount = Number(lumpsum.amount) || 0;
+    if (amount <= 0) return;
+    setLumpsum((prev) => ({ ...prev, busy: true, msg: '' }));
+    const res = await addLumpsumToInvestment(lumpsum.fund.id, { amount, date: lumpsum.date });
+    if (!res?.ok) {
+      setLumpsum((prev) => ({ ...prev, busy: false, msg: res?.error || 'Could not add lumpsum.' }));
+      return;
+    }
+    setLumpsum(null);
+  }
+
   function openEdit(fund) {
     setNavInfo(null);
     setEditing({
@@ -175,6 +189,7 @@ export default function MutualFunds() {
                     </span>
                   </div>
                   <div className="mf-card-actions">
+                    <button type="button" className="mf-icon" title="Add lumpsum" onClick={() => setLumpsum({ fund, amount: '', date: todayIso(), busy: false, msg: '' })}><CirclePlus size={14} /></button>
                     <button type="button" className="mf-icon" onClick={() => openEdit(fund)}><Pencil size={14} /></button>
                     <button type="button" className="mf-icon danger" onClick={() => setConfirmDeleteId((c) => (c === fund.id ? '' : fund.id))}><Trash2 size={14} /></button>
                   </div>
@@ -239,6 +254,42 @@ export default function MutualFunds() {
               <div className="mf-modal-actions">
                 <button type="button" className="mf-cancel" onClick={() => setEditing(null)}>Cancel</button>
                 <button type="submit" className="mf-save"><Save size={16} /> Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {lumpsum ? (
+        <div className="mf-modal-backdrop" onClick={() => setLumpsum(null)}>
+          <div className="mf-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mf-modal-head">
+              <h3>Add lumpsum</h3>
+              <button type="button" className="mf-icon" onClick={() => setLumpsum(null)}><X size={18} /></button>
+            </div>
+            <form onSubmit={submitLumpsum} className="mf-form">
+              <div className="mf-linked">
+                <div>
+                  <strong>{lumpsum.fund.name}</strong>
+                  <span>
+                    {lumpsum.fund.schemeCode ? `Buys units at that day's NAV` : 'One-time top-up'}
+                    {lumpsum.fund.navValue ? ` · NAV ₹${lumpsum.fund.navValue}` : ''}
+                  </span>
+                </div>
+              </div>
+              <input className="mf-input" type="number" min="0" step="0.01" placeholder="Lumpsum amount (₹)" autoFocus
+                value={lumpsum.amount} onChange={(e) => setLumpsum({ ...lumpsum, amount: e.target.value })} />
+              <input className="mf-input" type="date" value={lumpsum.date}
+                onChange={(e) => setLumpsum({ ...lumpsum, date: e.target.value })} />
+              {lumpsum.fund.navValue && Number(lumpsum.amount) ? (
+                <p className="mf-hint">≈ {(Number(lumpsum.amount) / Number(lumpsum.fund.navValue)).toFixed(3)} units at ₹{lumpsum.fund.navValue}</p>
+              ) : null}
+              {lumpsum.msg ? <p className="mf-navmsg">{lumpsum.msg}</p> : null}
+              <div className="mf-modal-actions">
+                <button type="button" className="mf-cancel" onClick={() => setLumpsum(null)}>Cancel</button>
+                <button type="submit" className="mf-save" disabled={lumpsum.busy || !(Number(lumpsum.amount) > 0)}>
+                  <CirclePlus size={16} /> {lumpsum.busy ? 'Adding…' : 'Add lumpsum'}
+                </button>
               </div>
             </form>
           </div>

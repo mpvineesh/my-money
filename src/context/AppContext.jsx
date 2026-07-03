@@ -1869,6 +1869,34 @@ export function AppProvider({ children }) {
     return updatedEntry;
   }, [expenseCategories, expenseSubcategories, recurringEntries, user]);
 
+  // Skip a due occurrence: advance nextDueDate by one cycle without recording any
+  // money or touching lastRecordedDate (the contribution simply didn't happen).
+  const skipRecurringEntryNow = useCallback((id) => {
+    if (readOnlyRef.current) return null;
+    const entry = recurringEntries.find((item) => item.id === id);
+    if (!entry) return null;
+
+    const updatedEntry = { ...entry, nextDueDate: addFrequencyToDate(entry.nextDueDate, entry.frequency) };
+
+    if (user) {
+      const ref = doc(db, 'users', user.uid, 'recurringEntries', id);
+      updateDoc(ref, { nextDueDate: updatedEntry.nextDueDate });
+      return updatedEntry;
+    }
+
+    setRecurringEntries((prev) => {
+      const updated = normalizeRecurringEntries(
+        prev.map((item) => (item.id === id ? updatedEntry : item)),
+        expenseCategories,
+        expenseSubcategories,
+      );
+      saveRecurringEntries(updated);
+      return updated;
+    });
+
+    return updatedEntry;
+  }, [expenseCategories, expenseSubcategories, recurringEntries, user]);
+
   const updateInvestment = useCallback((id, investment) => {
     if (readOnlyRef.current) return null;
     const previousInvestment = investments.find((item) => item.id === id);
@@ -1922,6 +1950,44 @@ export function AppProvider({ children }) {
       currentValue: (Number(previousInvestment.currentValue) || 0) + contribution,
       snapshotDate: normalizeHistoryDate(date, getTodayDateValue()),
     });
+  }, [investments, updateInvestment]);
+
+  // One-time lumpsum into any fund. For a NAV-tracked mutual fund, buy units at that
+  // day's NAV and re-value (invested/units/current all stay correct); otherwise a plain
+  // invested + current top-up. Mirrors how a linked SIP is recorded.
+  const addLumpsumToInvestment = useCallback(async (id, { amount, date } = {}) => {
+    if (readOnlyRef.current) return { ok: false, error: 'Read-only access.' };
+    const contribution = Number(amount) || 0;
+    if (contribution <= 0) return { ok: false, error: 'Enter an amount greater than 0.' };
+    const investment = investments.find((item) => item.id === id);
+    if (!investment) return { ok: false, error: 'Investment not found.' };
+
+    const when = normalizeHistoryDate(date, getTodayDateValue());
+    if (investment.schemeCode) {
+      try {
+        const { nav, date: navDate } = await fetchNavOnDate(investment.schemeCode, when);
+        if (nav > 0) {
+          const newUnits = (Number(investment.units) || 0) + contribution / nav;
+          updateInvestment(id, {
+            units: newUnits,
+            investedAmount: (Number(investment.investedAmount) || 0) + contribution,
+            currentValue: Math.round(newUnits * nav),
+            navValue: nav,
+            navDate,
+            snapshotDate: when,
+          });
+          return { ok: true, nav, navDate, units: contribution / nav };
+        }
+      } catch {
+        // NAV unavailable — fall through to a plain invested top-up below.
+      }
+    }
+    updateInvestment(id, {
+      investedAmount: (Number(investment.investedAmount) || 0) + contribution,
+      currentValue: (Number(investment.currentValue) || 0) + contribution,
+      snapshotDate: when,
+    });
+    return { ok: true };
   }, [investments, updateInvestment]);
 
   const recordRecurringEntryNow = useCallback(async (id, recordedDate = getTodayDateValue()) => {
@@ -2479,6 +2545,7 @@ export function AppProvider({ children }) {
     updateInvestment,
     deleteInvestment,
     contributeToInvestment,
+    addLumpsumToInvestment,
     refreshNavPrices,
     addSwingTrade,
     updateSwingTrade,
@@ -2509,6 +2576,7 @@ export function AppProvider({ children }) {
     deleteRecurringEntry,
     markRecurringEntryRecorded,
     recordRecurringEntryNow,
+    skipRecurringEntryNow,
     addReminder,
     updateReminder,
     deleteReminder,

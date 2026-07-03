@@ -229,6 +229,7 @@
 
 .recurring-primary-btn,
 .recurring-review-btn,
+.recurring-skip-btn,
 .recurring-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -240,6 +241,16 @@
   font-weight: 700;
   border: none;
   cursor: pointer;
+}
+
+.recurring-skip-btn {
+  background: var(--surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+}
+
+.recurring-skip-btn:hover {
+  background: var(--surface-3);
 }
 
 .recurring-primary-btn {

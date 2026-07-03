@@ -10,7 +10,7 @@ import {
 } from '../utils/constants';
 import {
   Banknote, Coins, Landmark, Repeat, ShieldCheck, CreditCard, FileText, Wallet, CircleDollarSign,
-  ChevronLeft, ChevronRight, Plus, X, Pencil, Trash2, ArrowDownRight, ArrowUpRight,
+  ChevronLeft, ChevronRight, Plus, X, Pencil, Trash2, ArrowDownRight, ArrowUpRight, CheckCheck,
 } from 'lucide-react';
 import './Calendar.css';
 
@@ -92,7 +92,7 @@ const EMPTY_FORM = { id: '', title: '', category: 'salary', amount: '', date: ''
 export default function Calendar() {
   const {
     investments, loans, recurringEntries, reminders, calendarEvents,
-    addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, isReadOnly,
+    addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, recordRecurringEntryNow, isReadOnly,
   } = useApp();
 
   const today = todayStr();
@@ -120,10 +120,10 @@ export default function Calendar() {
     recurringEntries.forEach((entry) => {
       const isInvestment = entry.kind === 'investment';
       list.push({
-        key: `rec-${entry.id}`, title: entry.title,
+        key: `rec-${entry.id}`, refId: entry.id, title: entry.title,
         category: isInvestment ? 'sip' : guessCalendarCategory(entry.categoryLabel || entry.title, 'other'),
         amount: entry.amount, anchor: entry.nextDueDate, recurrence: entry.frequency,
-        editable: false, origin: 'Recurring',
+        editable: false, origin: 'Recurring', recordable: true,
       });
     });
 
@@ -211,6 +211,16 @@ export default function Calendar() {
   }, [eventsOnDate]);
 
   const selectedEvents = useMemo(() => eventsOnDate(selectedDate), [eventsOnDate, selectedDate]);
+  const recordableOnDate = useMemo(
+    () => selectedEvents.filter((event) => event.recordable && event.refId),
+    [selectedEvents],
+  );
+
+  function handleRecordAll() {
+    const total = recordableOnDate.reduce((sum, event) => sum + (Number(event.amount) || 0), 0);
+    if (!window.confirm(`Record all ${recordableOnDate.length} recurring entr${recordableOnDate.length === 1 ? 'y' : 'ies'} (${formatCurrency(total)}) due on ${fmtDay(selectedDate)}?`)) return;
+    recordableOnDate.forEach((event) => recordRecurringEntryNow(event.refId, selectedDate));
+  }
 
   const monthLabel = new Date(view.year, view.month, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
   const net = month.inflow - month.outflow;
@@ -374,7 +384,14 @@ export default function Calendar() {
             <div className="cal-day-head">
               <h2>{fmtDay(selectedDate)}</h2>
               {!isReadOnly ? (
-                <button type="button" className="cal-day-add" onClick={() => openAdd(selectedDate)}><Plus size={14} /> Add</button>
+                <div className="cal-day-head-actions">
+                  {recordableOnDate.length ? (
+                    <button type="button" className="cal-day-record" onClick={handleRecordAll}>
+                      <CheckCheck size={14} /> Record all ({recordableOnDate.length})
+                    </button>
+                  ) : null}
+                  <button type="button" className="cal-day-add" onClick={() => openAdd(selectedDate)}><Plus size={14} /> Add</button>
+                </div>
               ) : null}
             </div>
             {selectedEvents.length === 0 ? (

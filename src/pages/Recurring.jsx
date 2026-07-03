@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Pencil, Plus, Repeat, Save, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, Repeat, Save, SkipForward, Trash2 } from 'lucide-react';
 import { useApp } from '../context/useApp';
 import {
   formatCurrency,
@@ -48,6 +48,7 @@ export default function Recurring() {
     investments,
     deleteRecurringEntry,
     recordRecurringEntryNow,
+    skipRecurringEntryNow,
   } = useApp();
 
   const summary = useMemo(() => {
@@ -77,6 +78,11 @@ export default function Recurring() {
 
   function handleRecord(entry) {
     recordRecurringEntryNow(entry.id, entry.nextDueDate);
+  }
+
+  function handleSkip(entry) {
+    if (!window.confirm(`Skip this ${formatDate(entry.nextDueDate)} occurrence of "${entry.title}"? It won't be recorded and the next due date moves forward.`)) return;
+    skipRecurringEntryNow(entry.id);
   }
 
   function handleReview(entry) {
@@ -224,6 +230,10 @@ export default function Recurring() {
                     <button type="button" className="recurring-primary-btn" onClick={() => handleRecord(entry)}>
                       <Save size={16} />
                       <span>Record</span>
+                    </button>
+                    <button type="button" className="recurring-skip-btn" onClick={() => handleSkip(entry)}>
+                      <SkipForward size={16} />
+                      <span>Skip</span>
                     </button>
                     <button type="button" className="recurring-icon-btn" onClick={() => handleEdit(entry)}>
                       <Pencil size={16} />
