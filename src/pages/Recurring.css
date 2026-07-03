@@ -273,6 +273,7 @@
 
 .recurring-card-actions {
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .recurring-primary-btn,
@@ -359,5 +360,22 @@
   .recurring-list-head {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  /* Actions can be up to 5 buttons — wrap them and let the labelled ones share
+     the row width so nothing spills past the card on narrow screens. */
+  .recurring-card-actions {
+    gap: 8px;
+  }
+
+  .recurring-primary-btn,
+  .recurring-review-btn,
+  .recurring-skip-btn {
+    flex: 1 1 auto;
+    padding: 8px 10px;
+  }
+
+  .recurring-card-meta {
+    gap: 4px 12px;
   }
 }
