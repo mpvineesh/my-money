@@ -400,7 +400,7 @@ export default function Dashboard() {
             <div key={i} className="legend-item">
               <span className="legend-dot" style={{ backgroundColor: item.color }} />
               <span className="legend-label">{item.name}</span>
-              <span className="legend-value">{formatCurrency(item.value)}</span>
+              <span className="legend-value">{formatCompactCurrency(item.value)}</span>
             </div>
           ))}
         </div>
@@ -472,7 +472,7 @@ export default function Dashboard() {
           <section className="dash-hero-widget">
             <div className="dash-hero-main">
               <h2 className="dash-hero-title">Net worth</h2>
-              <strong className="dash-hero-value">{formatCurrency(stats.netWorth)}</strong>
+              <strong className="dash-hero-value">{formatCompactCurrency(stats.netWorth)}</strong>
               <p className="dash-hero-copy">
                 {stats.netWorth >= 0 ? 'Assets minus liabilities' : 'Liabilities currently exceed liquid assets'}
               </p>
@@ -482,16 +482,16 @@ export default function Dashboard() {
               <article className="dash-hero-chip">
                 <span>{netWorthRange === 'month' ? 'Month-on-month' : 'Year-on-year'}</span>
                 <strong className={netWorthChange >= 0 ? 'dash-positive' : 'dash-negative'}>
-                  {netWorthChange >= 0 ? '+' : ''}{formatCurrency(netWorthChange)}
+                  {netWorthChange >= 0 ? '+' : ''}{formatCompactCurrency(netWorthChange)}
                 </strong>
               </article>
               <article className="dash-hero-chip">
                 <span>Liquid assets</span>
-                <strong>{formatCurrency(stats.liquidAssets)}</strong>
+                <strong>{formatCompactCurrency(stats.liquidAssets)}</strong>
               </article>
               <article className="dash-hero-chip">
                 <span>Loan liability</span>
-                <strong>{formatCurrency(stats.totalLoanPrincipal)}</strong>
+                <strong>{formatCompactCurrency(stats.totalLoanPrincipal)}</strong>
               </article>
             </div>
           </section>
@@ -525,23 +525,23 @@ export default function Dashboard() {
             <div className="dash-networth-summary">
               <article className="dash-networth-stat dash-networth-primary">
                 <span className="dash-networth-stat-label">Net worth</span>
-                <strong>{formatCurrency(stats.netWorth)}</strong>
+                <strong>{formatCompactCurrency(stats.netWorth)}</strong>
                 <span>{stats.netWorth >= 0 ? 'Assets minus liabilities' : 'Liabilities exceed current assets'}</span>
               </article>
               <article className="dash-networth-stat">
                 <span className="dash-networth-stat-label">Liquid assets</span>
-                <strong>{formatCurrency(stats.liquidAssets)}</strong>
+                <strong>{formatCompactCurrency(stats.liquidAssets)}</strong>
                 <span>Cash + portfolio value</span>
               </article>
               <article className="dash-networth-stat">
                 <span className="dash-networth-stat-label">Loan liability</span>
-                <strong>{formatCurrency(stats.totalLoanPrincipal)}</strong>
-                <span>{stats.totalMonthlyEmi ? `EMI outflow ${formatCurrency(stats.totalMonthlyEmi)}/mo` : 'No EMI tracked'}</span>
+                <strong>{formatCompactCurrency(stats.totalLoanPrincipal)}</strong>
+                <span>{stats.totalMonthlyEmi ? `EMI outflow ${formatCompactCurrency(stats.totalMonthlyEmi)}/mo` : 'No EMI tracked'}</span>
               </article>
               <article className="dash-networth-stat">
                 <span className="dash-networth-stat-label">Goal funding</span>
-                <strong>{formatCurrency(stats.totalGoalCurrent)}</strong>
-                <span>{stats.totalGoalTarget ? `${Math.round(stats.goalCoverage)}% of ${formatCurrency(stats.totalGoalTarget)}` : 'No goal target set yet'}</span>
+                <strong>{formatCompactCurrency(stats.totalGoalCurrent)}</strong>
+                <span>{stats.totalGoalTarget ? `${Math.round(stats.goalCoverage)}% of ${formatCompactCurrency(stats.totalGoalTarget)}` : 'No goal target set yet'}</span>
               </article>
             </div>
 
@@ -549,12 +549,12 @@ export default function Dashboard() {
               <div className="dash-networth-chart-summary">
                 <div>
                   <span className="dash-networth-chart-label">Current net worth</span>
-                  <strong>{formatCurrency(latestNetWorth?.netWorth ?? stats.netWorth)}</strong>
+                  <strong>{formatCompactCurrency(latestNetWorth?.netWorth ?? stats.netWorth)}</strong>
                 </div>
                 <div>
                   <span className="dash-networth-chart-label">{netWorthRange === 'month' ? 'Month-on-month' : 'Year-on-year'}</span>
                   <strong className={netWorthChange >= 0 ? 'dash-positive' : 'dash-negative'}>
-                    {netWorthChange >= 0 ? '+' : ''}{formatCurrency(netWorthChange)}
+                    {netWorthChange >= 0 ? '+' : ''}{formatCompactCurrency(netWorthChange)}
                   </strong>
                 </div>
               </div>
@@ -588,15 +588,15 @@ export default function Dashboard() {
             <Wallet size={20} />
           </div>
           <span className="stat-label">Portfolio value</span>
-          <span className="stat-value">{formatCurrency(stats.totalCurrent)}</span>
-          <span className="stat-sub">Invested: {formatCurrency(stats.totalInvested)}</span>
+          <span className="stat-value">{formatCompactCurrency(stats.totalCurrent)}</span>
+          <span className="stat-sub">Invested: {formatCompactCurrency(stats.totalInvested)}</span>
         </div>
         <div className={`stat-card ${isPositive ? 'stat-card-success' : 'stat-card-danger'}`}>
           <div className="stat-card-icon">
             {isPositive ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
           </div>
           <span className="stat-label">Portfolio returns</span>
-          <span className="stat-value">{isPositive ? '+' : ''}{formatCurrency(stats.totalGain)}</span>
+          <span className="stat-value">{isPositive ? '+' : ''}{formatCompactCurrency(stats.totalGain)}</span>
           <span className="stat-sub">{isPositive ? '+' : ''}{stats.overallReturn}% overall</span>
         </div>
         <div className="stat-card">
@@ -604,7 +604,7 @@ export default function Dashboard() {
             <Landmark size={20} />
           </div>
           <span className="stat-label">Cash reserve</span>
-          <span className="stat-value">{formatCurrency(cash)}</span>
+          <span className="stat-value">{formatCompactCurrency(cash)}</span>
           <span className="stat-sub">Liquid cash available</span>
         </div>
         <div className="stat-card">
@@ -612,8 +612,8 @@ export default function Dashboard() {
             <CreditCard size={20} />
           </div>
           <span className="stat-label">Loan exposure</span>
-          <span className="stat-value">{formatCurrency(stats.totalLoanPrincipal)}</span>
-          <span className="stat-sub">{stats.totalMonthlyEmi ? `EMI ${formatCurrency(stats.totalMonthlyEmi)}/mo` : 'No monthly EMI recorded'}</span>
+          <span className="stat-value">{formatCompactCurrency(stats.totalLoanPrincipal)}</span>
+          <span className="stat-sub">{stats.totalMonthlyEmi ? `EMI ${formatCompactCurrency(stats.totalMonthlyEmi)}/mo` : 'No monthly EMI recorded'}</span>
         </div>
       </div>
       ) : null}
@@ -640,8 +640,8 @@ export default function Dashboard() {
               />
             </div>
             <div className="goal-summary-text">
-              <span>{formatCurrency(stats.totalGoalCurrent)} saved</span>
-              <span>of {formatCurrency(stats.totalGoalTarget)}</span>
+              <span>{formatCompactCurrency(stats.totalGoalCurrent)} saved</span>
+              <span>of {formatCompactCurrency(stats.totalGoalTarget)}</span>
             </div>
           </div>
           <div className="dash-cards-list">
