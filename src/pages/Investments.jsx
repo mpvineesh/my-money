@@ -148,20 +148,18 @@ function ProgressTooltip({ active, payload, label }) {
   );
 }
 
-// Project each holding's current value forward, compounding annually at its own interest rate.
-// Holdings without a rate stay flat. The baseline (today's value held constant) is kept alongside
-// so the chart can show projected growth above the current level.
+// Project the portfolio's current value forward, compounding annually at the adjustable growth
+// assumption. The baseline (today's value held constant) is kept alongside so the chart can show
+// projected growth above the current level.
 const PROJECTION_YEARS = 10;
+const DEFAULT_GROWTH_RATE = 8;
 
-function buildProjectionSeries(investments, years = PROJECTION_YEARS) {
+function buildProjectionSeries(investments, growthRate = DEFAULT_GROWTH_RATE, years = PROJECTION_YEARS) {
   const startYear = new Date().getFullYear();
   const baseline = investments.reduce((sum, investment) => sum + (Number(investment.currentValue) || 0), 0);
 
   return Array.from({ length: years + 1 }, (_, offset) => {
-    const projected = investments.reduce((sum, investment) => {
-      const rate = parseFloat(investment.interestRate) || 0;
-      return sum + (Number(investment.currentValue) || 0) * Math.pow(1 + rate / 100, offset);
-    }, 0);
+    const projected = baseline * Math.pow(1 + growthRate / 100, offset);
 
     return {
       year: startYear + offset,
@@ -212,6 +210,7 @@ export default function Investments() {
   const [sortBy, setSortBy] = useState('value');
   const [showFilters, setShowFilters] = useState(false);
   const [progressRange, setProgressRange] = useState('month');
+  const [growthRateInput, setGrowthRateInput] = useState(String(DEFAULT_GROWTH_RATE));
   const [contributionTarget, setContributionTarget] = useState(null);
   const [contributionAmount, setContributionAmount] = useState('');
   const [contributionDate, setContributionDate] = useState('');
@@ -335,10 +334,11 @@ export default function Investments() {
   const previousProgress = progressSeries[progressSeries.length - 2];
   const periodGainChange = latestProgress && previousProgress ? latestProgress.gain - previousProgress.gain : 0;
 
-  const projectionSeries = useMemo(() => buildProjectionSeries(filtered), [filtered]);
+  const parsedGrowthRate = Number.parseFloat(growthRateInput);
+  const growthRate = Number.isFinite(parsedGrowthRate) ? parsedGrowthRate : DEFAULT_GROWTH_RATE;
+  const projectionSeries = useMemo(() => buildProjectionSeries(filtered, growthRate), [filtered, growthRate]);
   const projectedFuture = projectionSeries[projectionSeries.length - 1];
   const projectedGrowth = projectedFuture ? projectedFuture.projected - projectedFuture.baseline : 0;
-  const hasProjectionRates = filtered.some((investment) => (parseFloat(investment.interestRate) || 0) > 0);
   const totalLabel = search || filterType !== 'all' || activeFilterMember !== 'all' ? 'Showing' : 'Total';
 
   return (
@@ -363,7 +363,7 @@ export default function Investments() {
           </button>
           <div className="inv-page-total">
             <span className="inv-total-label">{totalLabel}</span>
-            <span className="inv-total-value">{formatCurrency(totalValue)}</span>
+            <span className="inv-total-value">{formatCompactCurrency(totalValue)}</span>
           </div>
         </div>
       </header>
@@ -388,10 +388,10 @@ export default function Investments() {
               <div className="inv-returns-grow">
                 <span className="inv-returns-label">80C used · {tax80c.fyLabel}</span>
                 <strong className="inv-returns-value">
-                  {formatCurrency(tax80c.used)} <em>/ {formatCurrency(tax80c.limit)}</em>
+                  {formatCompactCurrency(tax80c.used)} <em>/ {formatCompactCurrency(tax80c.limit)}</em>
                 </strong>
                 <div className="inv-80c-bar"><div style={{ width: `${tax80c.percent}%` }} /></div>
-                <span className="inv-returns-note">{formatCurrency(tax80c.remaining)} of headroom left</span>
+                <span className="inv-returns-note">{formatCompactCurrency(tax80c.remaining)} of headroom left</span>
               </div>
             </div>
           ) : null}
@@ -421,12 +421,12 @@ export default function Investments() {
               >
                 <div className="inv-member-summary-top">
                   <span>{member.name}</span>
-                  <strong>{formatCurrency(member.currentValue)}</strong>
+                  <strong>{formatCompactCurrency(member.currentValue)}</strong>
                 </div>
                 <div className="inv-member-summary-meta">
                   <span>{member.count} holding{member.count === 1 ? '' : 's'}</span>
                   <span className={member.gain >= 0 ? 'positive' : 'negative'}>
-                    {member.gain >= 0 ? '+' : ''}{formatCurrency(member.gain)}
+                    {member.gain >= 0 ? '+' : ''}{formatCompactCurrency(member.gain)}
                   </span>
                 </div>
               </button>
@@ -467,18 +467,18 @@ export default function Investments() {
           <div className="inv-progress-summary">
             <div>
               <span className="inv-progress-summary-label">Current value</span>
-              <strong>{formatCurrency(latestProgress?.currentValue || totalValue)}</strong>
+              <strong>{formatCompactCurrency(latestProgress?.currentValue || totalValue)}</strong>
             </div>
             <div>
               <span className="inv-progress-summary-label">Tracked gain</span>
-              <strong>{formatCurrency(latestProgress?.gain || 0)}</strong>
+              <strong>{formatCompactCurrency(latestProgress?.gain || 0)}</strong>
             </div>
             <div>
               <span className="inv-progress-summary-label">
                 {progressRange === 'month' ? 'Month-on-month' : 'Year-on-year'}
               </span>
               <strong className={periodGainChange >= 0 ? 'inv-progress-positive' : 'inv-progress-negative'}>
-                {periodGainChange >= 0 ? '+' : ''}{formatCurrency(periodGainChange)}
+                {periodGainChange >= 0 ? '+' : ''}{formatCompactCurrency(periodGainChange)}
               </strong>
             </div>
           </div>
@@ -518,21 +518,37 @@ export default function Investments() {
                 Projected value · next {PROJECTION_YEARS} years{selectedMember ? ` · ${selectedMember.name}` : ''}
               </h2>
             </div>
+            <div className="inv-progress-actions">
+              <label className="inv-growth-rate">
+                <span className="inv-growth-rate-label">Growth</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  max="50"
+                  step="0.5"
+                  value={growthRateInput}
+                  onChange={(event) => setGrowthRateInput(event.target.value)}
+                  aria-label="Assumed annual growth rate percent"
+                />
+                <span className="inv-growth-rate-suffix">%</span>
+              </label>
+            </div>
           </div>
 
           <div className="inv-progress-summary">
             <div>
               <span className="inv-progress-summary-label">Current value</span>
-              <strong>{formatCurrency(projectionSeries[0]?.baseline || totalValue)}</strong>
+              <strong>{formatCompactCurrency(projectionSeries[0]?.baseline || totalValue)}</strong>
             </div>
             <div>
               <span className="inv-progress-summary-label">In {PROJECTION_YEARS} years</span>
-              <strong>{formatCurrency(projectedFuture?.projected || 0)}</strong>
+              <strong>{formatCompactCurrency(projectedFuture?.projected || 0)}</strong>
             </div>
             <div>
               <span className="inv-progress-summary-label">Projected growth</span>
               <strong className={projectedGrowth >= 0 ? 'inv-progress-positive' : 'inv-progress-negative'}>
-                {projectedGrowth >= 0 ? '+' : ''}{formatCurrency(projectedGrowth)}
+                {projectedGrowth >= 0 ? '+' : ''}{formatCompactCurrency(projectedGrowth)}
               </strong>
             </div>
           </div>
@@ -565,9 +581,7 @@ export default function Investments() {
           <div className="inv-progress-footnote">
             <TrendingUp size={14} />
             <span>
-              {hasProjectionRates
-                ? "Compounds each holding's current value at its own interest rate. Holdings without a rate stay flat — this is an estimate, not a guarantee."
-                : 'Set an interest rate on each holding to project its growth. Without a rate, the value is held flat.'}
+              Compounds today&apos;s portfolio value at {growthRate}% a year. Adjust the rate above to explore other scenarios — this is an estimate, not a guarantee.
             </span>
           </div>
         </section>
@@ -672,8 +686,8 @@ export default function Investments() {
                 <span className="inv-mf-count">{mfAggregate.count} fund{mfAggregate.count === 1 ? '' : 's'}</span>
               </div>
               <div className="inv-mf-metrics">
-                <span>Current <strong>{formatCurrency(mfAggregate.current)}</strong></span>
-                <span>Invested <strong>{formatCurrency(mfAggregate.invested)}</strong></span>
+                <span>Current <strong>{formatCompactCurrency(mfAggregate.current)}</strong></span>
+                <span>Invested <strong>{formatCompactCurrency(mfAggregate.invested)}</strong></span>
                 <span className={mfAggregate.gain >= 0 ? 'pos' : 'neg'}>
                   {mfAggregate.gain >= 0 ? '+' : ''}{calculateReturns(mfAggregate.invested, mfAggregate.current)}%
                 </span>
@@ -691,8 +705,8 @@ export default function Investments() {
                 <span className="inv-mf-count">{stocksAggregate.count} stock{stocksAggregate.count === 1 ? '' : 's'}</span>
               </div>
               <div className="inv-mf-metrics">
-                <span>Current <strong>{formatCurrency(stocksAggregate.current)}</strong></span>
-                <span>Invested <strong>{formatCurrency(stocksAggregate.invested)}</strong></span>
+                <span>Current <strong>{formatCompactCurrency(stocksAggregate.current)}</strong></span>
+                <span>Invested <strong>{formatCompactCurrency(stocksAggregate.invested)}</strong></span>
                 <span className={stocksAggregate.gain >= 0 ? 'pos' : 'neg'}>
                   {stocksAggregate.gain >= 0 ? '+' : ''}{calculateReturns(stocksAggregate.invested, stocksAggregate.current)}%
                 </span>
