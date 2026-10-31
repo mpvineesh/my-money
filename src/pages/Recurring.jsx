@@ -29,13 +29,35 @@ function formatFrequencyLabel(frequency) {
   return 'Monthly';
 }
 
-function getDueStatus(nextDueDate) {
+function getFrequencyMonths(frequency) {
+  if (frequency === 'quarterly') return 3;
+  if (frequency === 'yearly') return 12;
+  return 1;
+}
+
+// True when the most recent "Record" covered the cycle that leads up to nextDueDate.
+// Recording sets nextDueDate = lastRecordedDate + one cycle, so the two sit one cycle
+// apart; a Skip pushes nextDueDate a further cycle out, which no longer counts.
+function isRecordedForCurrentCycle(entry) {
+  if (!entry.lastRecordedDate || !entry.nextDueDate) return false;
+  const [lastYear, lastMonth] = entry.lastRecordedDate.split('-').map(Number);
+  const [nextYear, nextMonth] = entry.nextDueDate.split('-').map(Number);
+  const monthsApart = (nextYear - lastYear) * 12 + (nextMonth - lastMonth);
+  return monthsApart >= 0 && monthsApart <= getFrequencyMonths(entry.frequency);
+}
+
+function isDue(status) {
+  return status.tone === 'danger' || status.tone === 'warning';
+}
+
+function getDueStatus(entry) {
   const today = new Date(`${getTodayDateValue()}T00:00:00`);
-  const dueDate = new Date(`${nextDueDate}T00:00:00`);
+  const dueDate = new Date(`${entry.nextDueDate}T00:00:00`);
   const diffDays = Math.round((dueDate.getTime() - today.getTime()) / 86400000);
 
   if (diffDays < 0) return { label: 'Overdue', tone: 'danger' };
   if (diffDays <= 7) return { label: 'Due Soon', tone: 'warning' };
+  if (isRecordedForCurrentCycle(entry)) return { label: 'Recorded', tone: 'success' };
   return { label: 'Upcoming', tone: 'neutral' };
 }
 
@@ -52,8 +74,8 @@ export default function Recurring() {
   } = useApp();
 
   const summary = useMemo(() => {
-    const overdueCount = recurringEntries.filter((entry) => getDueStatus(entry.nextDueDate).tone === 'danger').length;
-    const dueSoonCount = recurringEntries.filter((entry) => getDueStatus(entry.nextDueDate).tone !== 'neutral').length;
+    const overdueCount = recurringEntries.filter((entry) => getDueStatus(entry).tone === 'danger').length;
+    const dueSoonCount = recurringEntries.filter((entry) => isDue(getDueStatus(entry))).length;
     const estimatedMonthly = recurringEntries.reduce((sum, entry) => sum + getMonthlyEquivalent(entry), 0);
 
     return {
@@ -63,7 +85,7 @@ export default function Recurring() {
     };
   }, [recurringEntries]);
   const dueEntries = useMemo(
-    () => recurringEntries.filter((entry) => getDueStatus(entry.nextDueDate).tone !== 'neutral'),
+    () => recurringEntries.filter((entry) => isDue(getDueStatus(entry))),
     [recurringEntries],
   );
 
@@ -146,7 +168,7 @@ export default function Recurring() {
   }
 
   function renderEntryCard(entry) {
-    const status = getDueStatus(entry.nextDueDate);
+    const status = getDueStatus(entry);
     const category = entry.kind === 'expense'
       ? getExpenseCategoryInfo(entry.categoryValue, expenseCategories, entry.categoryLabel)
       : null;
@@ -179,6 +201,9 @@ export default function Recurring() {
         </div>
 
         <div className="recurring-card-meta">
+          {status.tone === 'success' ? (
+            <span className="recurring-recorded-note">Recorded on {formatDate(entry.lastRecordedDate)}</span>
+          ) : null}
           <span>Next due: {formatDate(entry.nextDueDate)}</span>
           <span>Monthly impact: {formatCurrency(getMonthlyEquivalent(entry))}</span>
         </div>

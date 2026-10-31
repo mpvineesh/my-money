@@ -271,6 +271,16 @@
   color: #dc2626;
 }
 
+.recurring-status-success {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.recurring-recorded-note {
+  color: #15803d;
+  font-weight: 600;
+}
+
 .recurring-card-actions {
   justify-content: flex-end;
   flex-wrap: wrap;
