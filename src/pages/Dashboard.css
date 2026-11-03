@@ -347,6 +347,15 @@
   margin-bottom: 12px;
 }
 
+.dash-networth-period {
+  margin-left: auto;
+}
+
+.dash-networth-period button {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+}
+
 .dash-networth-chart-label {
   display: block;
   font-size: 0.74rem;
@@ -689,6 +698,11 @@
   .dash-networth-chart-summary {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .dash-networth-period {
+    margin-left: 0;
+    align-self: flex-start;
   }
 
   .dash-hero-widget {

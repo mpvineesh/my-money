@@ -133,3 +133,12 @@ html {
 .add-page {
   animation: fadeIn 0.3s ease;
 }
+
+/* Shared keyboard and request feedback. */
+:focus-visible { outline: 3px solid var(--brand-500); outline-offset: 3px; }
+.app-loading { padding: 48px 24px; text-align: center; color: var(--text-soft); }
+.form-feedback { padding: 12px 16px; border-radius: 12px; background: var(--surface-2); margin-bottom: 16px; }
+.form-feedback[role="alert"] { color: #b91c1c; border: 1px solid currentColor; }
+.form-details { border: 1px solid var(--border); padding: 16px; border-radius: 16px; margin-bottom: 20px; }
+.form-details summary { cursor: pointer; font-weight: 600; padding: 4px 0 12px; }
+.form-details .form-group:last-child { margin-bottom: 0; }

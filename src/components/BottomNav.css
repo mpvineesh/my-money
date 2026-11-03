@@ -93,3 +93,18 @@
   background: transparent;
 }
 .nav-more .nav-item:focus { outline: none; }
+
+.more-menu { display: none; max-height: min(70dvh, 540px); overflow-y: auto; min-width: 210px; }
+.more-menu.is-open { display: flex; }
+.more-item { display: flex; align-items: center; gap: 10px; text-decoration: none; min-height: 44px; }
+.more-item.active { color: var(--brand-500); background: var(--surface-2); }
+.nav-more .nav-item:focus-visible { outline: 3px solid var(--brand-500); outline-offset: 3px; }
+.nav-item { min-height: 48px; }
+@media (min-width: 1100px) {
+  .bottom-nav { left: 0; top: 72px; bottom: 0; width: 220px; max-width: none; transform: none; border-radius: 0; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 16px 12px; overflow-y: auto; border-right: 1px solid var(--border); box-shadow: none; }
+  .bottom-nav .nav-item { flex-direction: row; gap: 12px; font-size: .9rem; padding: 12px; }
+  .nav-more > .nav-item { display: none; }
+  .more-menu { position: static; display: flex; max-height: none; min-width: 0; border: 0; box-shadow: none; background: transparent; overflow: visible; margin-top: 12px; }
+  .more-item { border-radius: 10px; font-size: .85rem; }
+  .app-container:has(.bottom-nav) .app-main { margin-left: 220px; }
+}

@@ -6,7 +6,7 @@ export default function RequireAuth({ children }) {
   const { user, initializing } = useAuth();
   const location = useLocation();
 
-  if (initializing) return null;
+  if (initializing) return <div className="app-loading" role="status">Loading your money overview…</div>;
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   return children;
 }

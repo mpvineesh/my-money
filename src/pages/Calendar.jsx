@@ -95,6 +95,8 @@ export default function Calendar() {
     addCalendarEvent, updateCalendarEvent, deleteCalendarEvent, recordRecurringEntryNow, isReadOnly,
   } = useApp();
 
+  const [recording, setRecording] = useState(false);
+  const [recordMessage, setRecordMessage] = useState('');
   const today = todayStr();
   const [view, setView] = useState(() => {
     const now = new Date();
@@ -212,14 +214,19 @@ export default function Calendar() {
 
   const selectedEvents = useMemo(() => eventsOnDate(selectedDate), [eventsOnDate, selectedDate]);
   const recordableOnDate = useMemo(
-    () => selectedEvents.filter((event) => event.recordable && event.refId),
-    [selectedEvents],
+    () => selectedEvents.filter((event) => event.recordable && event.refId && recurringEntries.some((entry) => entry.id === event.refId && entry.nextDueDate === selectedDate)),
+    [selectedEvents, recurringEntries, selectedDate],
   );
 
-  function handleRecordAll() {
+  async function handleRecordAll() {
+    if (recording) return;
     const total = recordableOnDate.reduce((sum, event) => sum + (Number(event.amount) || 0), 0);
     if (!window.confirm(`Record all ${recordableOnDate.length} recurring entr${recordableOnDate.length === 1 ? 'y' : 'ies'} (${formatCurrency(total)}) due on ${fmtDay(selectedDate)}?`)) return;
-    recordableOnDate.forEach((event) => recordRecurringEntryNow(event.refId, selectedDate));
+    setRecording(true);
+    const results = await Promise.allSettled(recordableOnDate.map((event) => recordRecurringEntryNow(event.refId, selectedDate)));
+    const failed = results.filter((result) => result.status === 'rejected').length;
+    setRecordMessage(failed ? `${failed} entries could not be recorded. Please review and retry.` : 'Payments recorded.');
+    setRecording(false);
   }
 
   const monthLabel = new Date(view.year, view.month, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
@@ -285,6 +292,7 @@ export default function Calendar() {
 
   return (
     <div className="cal-page">
+      {recordMessage && <p className="form-feedback" role="status">{recordMessage}</p>}
       <header className="cal-header">
         <div>
           <p className="cal-label">Money Calendar</p>
@@ -386,7 +394,7 @@ export default function Calendar() {
               {!isReadOnly ? (
                 <div className="cal-day-head-actions">
                   {recordableOnDate.length ? (
-                    <button type="button" className="cal-day-record" onClick={handleRecordAll}>
+                    <button type="button" className="cal-day-record" disabled={recording} onClick={handleRecordAll}>
                       <CheckCheck size={14} /> Record all ({recordableOnDate.length})
                     </button>
                   ) : null}

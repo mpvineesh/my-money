@@ -71,10 +71,11 @@ import {
 import { AppContext } from './AppContextDef';
 import { THEME_IDS, DEFAULT_THEME, getThemeInfo } from '../utils/themes';
 import { BACKUP_VERSION, BACKUP_COLLECTIONS } from '../utils/backup';
+import { recurringInvestmentChanges } from '../utils/recurringInvestment';
 import { fetchLatestNav, fetchNavOnDate } from '../utils/navService';
 import { useAuth } from './useAuth';
 import { db } from '../firebase';
-import { collection, doc, onSnapshot, orderBy, query, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, orderBy, query, setDoc, updateDoc, deleteDoc, writeBatch, runTransaction } from 'firebase/firestore';
 import { requestAiAsk, requestMonthlyAiReport, requestReceiptParse } from '../utils/aiServer';
 
 function formatStoredExpenseDateTime(value) {
@@ -1490,14 +1491,25 @@ export function AppProvider({ children }) {
     });
   }, [user]);
 
-  const addExpense = useCallback((expense) => {
-    if (readOnlyRef.current) return null;
+  const addExpense = useCallback((expense, recurringId = '', expectedDueDate = '') => {
+    if (readOnlyRef.current) throw new Error('This account has view-only access.');
     const newItem = normalizeExpense({ ...expense, id: uuidv4() }, expenseCategories, expenseSubcategories, expenseTypes);
     if (newItem.project) addExpenseProject(newItem.project);
+    if (user && recurringId) {
+      return runTransaction(db, async (transaction) => {
+        const entryRef = doc(db, 'users', user.uid, 'recurringEntries', recurringId);
+        const snapshot = await transaction.get(entryRef);
+        if (!snapshot.exists()) throw new Error('This recurring entry no longer exists.');
+        const entry = snapshot.data();
+        if (entry.nextDueDate !== expectedDueDate) throw new Error('This occurrence was already recorded or rescheduled. Return to Recurring to review it.');
+        const occurrenceId = `recurring_${recurringId}_${entry.nextDueDate}`;
+        transaction.set(doc(db, 'users', user.uid, 'expenses', occurrenceId), { ...newItem, id: occurrenceId });
+        transaction.update(entryRef, { lastRecordedDate: newItem.date, nextDueDate: addFrequencyToDate(entry.nextDueDate, entry.frequency) });
+      });
+    }
     if (user) {
       const ref = doc(db, 'users', user.uid, 'expenses', newItem.id);
-      setDoc(ref, newItem);
-      return;
+      return setDoc(ref, newItem);
     }
     setExpenses((prev) => {
       const updated = [...prev, newItem];
@@ -1506,14 +1518,30 @@ export function AppProvider({ children }) {
     });
   }, [addExpenseProject, expenseCategories, expenseSubcategories, expenseTypes, user]);
 
+  const addExpenses = useCallback(async (rows) => {
+    if (readOnlyRef.current) throw new Error('This account has view-only access.');
+    if (rows.length > 450) throw new Error('Please save fewer than 450 expenses at a time.');
+    const items = rows.map((row) => normalizeExpense({ ...row, id: uuidv4() }, expenseCategories, expenseSubcategories, expenseTypes));
+    if (user) {
+      const batch = writeBatch(db);
+      items.forEach((item) => batch.set(doc(db, 'users', user.uid, 'expenses', item.id), item));
+      await batch.commit();
+    } else {
+      setExpenses((previous) => {
+        const updated = [...previous, ...items];
+        saveExpenses(updated);
+        return updated;
+      });
+    }
+  }, [expenseCategories, expenseSubcategories, expenseTypes, user]);
+
   const updateExpense = useCallback((id, expense) => {
-    if (readOnlyRef.current) return null;
+    if (readOnlyRef.current) throw new Error('This account has view-only access.');
     const normalizedExpense = normalizeExpense(expense, expenseCategories, expenseSubcategories, expenseTypes);
     if (normalizedExpense.project) addExpenseProject(normalizedExpense.project);
     if (user) {
       const ref = doc(db, 'users', user.uid, 'expenses', id);
-      updateDoc(ref, { ...normalizedExpense });
-      return;
+      return updateDoc(ref, { ...normalizedExpense });
     }
     setExpenses((prev) => {
       const updated = prev.map((e) => (e.id === id ? { ...e, ...normalizedExpense } : e));
@@ -1523,11 +1551,10 @@ export function AppProvider({ children }) {
   }, [addExpenseProject, expenseCategories, expenseSubcategories, expenseTypes, user]);
 
   const deleteExpense = useCallback((id) => {
-    if (readOnlyRef.current) return null;
+    if (readOnlyRef.current) throw new Error('This account has view-only access.');
     if (user) {
       const ref = doc(db, 'users', user.uid, 'expenses', id);
-      deleteDoc(ref);
-      return;
+      return deleteDoc(ref);
     }
     setExpenses((prev) => {
       const updated = prev.filter((e) => e.id !== id);
@@ -1996,6 +2023,48 @@ export function AppProvider({ children }) {
     if (!entry) return null;
 
     const nextRecordedDate = normalizeHistoryDate(recordedDate, getTodayDateValue());
+    if (user) {
+      // Read and advance the persisted occurrence in the same transaction as its
+      // financial record. A second tab/retry sees the advanced date and is a no-op.
+      const candidate = investments.find((item) => item.id === entry.linkedInvestmentId);
+      let navInfo = null;
+      if (entry.kind === 'investment' && candidate?.schemeCode) {
+        navInfo = await fetchNavOnDate(candidate.schemeCode, nextRecordedDate);
+        if (!(navInfo?.nav > 0)) throw new Error('NAV is unavailable. Please retry this SIP later.');
+      }
+      return runTransaction(db, async (transaction) => {
+        const entryRef = doc(db, 'users', user.uid, 'recurringEntries', id);
+        const entrySnap = await transaction.get(entryRef);
+        if (!entrySnap.exists()) throw new Error('This recurring entry no longer exists.');
+        const fresh = entrySnap.data();
+        if (fresh.nextDueDate !== entry.nextDueDate) return null;
+        const occurrenceId = `recurring_${id}_${fresh.nextDueDate}`;
+        const next = {
+          lastRecordedDate: nextRecordedDate,
+          nextDueDate: addFrequencyToDate(fresh.nextDueDate, fresh.frequency),
+        };
+        if (fresh.kind === 'investment') {
+          if (fresh.linkedInvestmentId) {
+            const investmentRef = doc(db, 'users', user.uid, 'investments', fresh.linkedInvestmentId);
+            const investmentSnap = await transaction.get(investmentRef);
+            if (!investmentSnap.exists()) throw new Error('The linked investment was removed. Update this recurring entry first.');
+            const previous = normalizeInvestment({ ...investmentSnap.data(), id: investmentSnap.id });
+            if (previous.schemeCode && previous.schemeCode !== candidate?.schemeCode) throw new Error('The fund changed. Please retry with its latest details.');
+            const changes = recurringInvestmentChanges(previous, fresh.amount, nextRecordedDate, navInfo);
+            transaction.set(investmentRef, buildInvestmentForSave(changes, previous));
+          } else {
+            const investment = buildInvestmentForSave({ id: occurrenceId, name: fresh.title, type: fresh.investmentType, investedAmount: fresh.amount, currentValue: fresh.amount, snapshotDate: nextRecordedDate, notes: fresh.notes || '', memberId: fresh.memberId, memberName: fresh.memberName });
+            transaction.set(doc(db, 'users', user.uid, 'investments', occurrenceId), investment);
+          }
+        } else {
+          const expense = normalizeExpense({ id: occurrenceId, name: fresh.title, amount: fresh.amount, dateTime: `${nextRecordedDate}T09:00`, category: fresh.categoryValue, categoryLabel: fresh.categoryLabel, subcategory: fresh.subcategoryValue, subcategoryLabel: fresh.subcategoryLabel, notes: fresh.notes || '' }, expenseCategories, expenseSubcategories, expenseTypes);
+          transaction.set(doc(db, 'users', user.uid, 'expenses', occurrenceId), expense);
+        }
+        transaction.update(entryRef, next);
+        return { ...fresh, ...next, id };
+      });
+    }
+
     if (entry.kind === 'investment') {
       const linkedInvestment = entry.linkedInvestmentId
         ? investments.find((item) => item.id === entry.linkedInvestmentId)
@@ -2053,13 +2122,14 @@ export function AppProvider({ children }) {
     }
 
     return markRecurringEntryRecorded(id, nextRecordedDate);
-  }, [addExpense, addInvestment, investments, markRecurringEntryRecorded, recurringEntries, updateInvestment]);
+  }, [addExpense, addInvestment, investments, markRecurringEntryRecorded, recurringEntries, updateInvestment, user, expenseCategories, expenseSubcategories, expenseTypes]);
 
   // Guard against re-recording the same due entry while its advanced nextDueDate is still in flight
   // to Firestore. Recording triggers async writes (the new investment and the advanced nextDueDate)
   // that round-trip through listeners; until they return, the entry still looks due and the effect
   // can re-fire, which previously created dozens of duplicate records. Keying by id + due date means
   // each occurrence is recorded once, while genuine future occurrences (a new nextDueDate) still run.
+  const [recurringError, setRecurringError] = useState('');
   const autoRecordedRef = useRef(new Set());
   useEffect(() => {
     recurringEntries
@@ -2068,7 +2138,9 @@ export function AppProvider({ children }) {
         const occurrenceKey = `${entry.id}:${entry.nextDueDate}`;
         if (autoRecordedRef.current.has(occurrenceKey)) return;
         autoRecordedRef.current.add(occurrenceKey);
-        recordRecurringEntryNow(entry.id, entry.nextDueDate);
+        recordRecurringEntryNow(entry.id, entry.nextDueDate).catch(() => {
+          setRecurringError(`Could not automatically record ${entry.title}. Open Recurring to retry.`);
+        });
       });
   }, [recordRecurringEntryNow, recurringEntries]);
 
@@ -2514,6 +2586,7 @@ export function AppProvider({ children }) {
   const value = {
     household,
     isReadOnly,
+    recurringError,
     ownerName,
     investments: renameOwner(scopedInvestments, 'memberId', 'memberName'),
     familyMembers,
@@ -2561,6 +2634,7 @@ export function AppProvider({ children }) {
     deleteLoan,
     setCash,
     addExpense,
+    addExpenses,
     updateExpense,
     deleteExpense,
     addExpensePayer,

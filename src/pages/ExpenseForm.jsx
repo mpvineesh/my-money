@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, Save, Trash2, X } from 'lucide-react';
 import NativePickerField from '../components/NativePickerField';
@@ -159,6 +159,7 @@ export default function ExpenseForm() {
   const sourceRecurringId = location.state?.sourceRecurringId || '';
   const {
     expenses,
+    isReadOnly,
     expensePayers,
     expenseProjects,
     expenseCategories,
@@ -170,13 +171,21 @@ export default function ExpenseForm() {
     addExpenseProject,
     addExpenseCategory,
     addExpenseSubcategory,
-    markRecurringEntryRecorded,
   } = useApp();
 
   const [form, setForm] = useState(() =>
     getInitialForm(expenses, id, expenseCategories, expenseSubcategories, prefill),
   );
   const [showDelete, setShowDelete] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [pendingSync, setPendingSync] = useState(false);
+  const savingRef = useRef(false);
+  useEffect(() => {
+    if (!saving) return;
+    const timer = setTimeout(() => setPendingSync(true), 5000);
+    return () => clearTimeout(timer);
+  }, [saving]);
   const [modalType, setModalType] = useState(null);
   const [modalName, setModalName] = useState('');
   const returnTo = location.state?.returnTo || '/expenses';
@@ -392,8 +401,14 @@ export default function ExpenseForm() {
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    if (savingRef.current || isReadOnly) return;
+    if (!(Number(form.amount) > 0)) { setSaveError('Enter an amount greater than zero.'); return; }
+    savingRef.current = true;
+    setSaving(true);
+    setPendingSync(false);
+    setSaveError('');
 
     const category = getExpenseCategoryInfo(form.category, expenseCategories, form.categoryLabel);
     const subcategory = getExpenseSubcategoryInfo(
@@ -418,24 +433,42 @@ export default function ExpenseForm() {
       notes: form.notes.trim(),
     };
 
-    if (isEdit) {
-      updateExpense(id, payload);
-    } else {
-      addExpense(payload);
-      if (sourceRecurringId) markRecurringEntryRecorded(sourceRecurringId, payload.date);
+    try {
+      if (isEdit) {
+        await updateExpense(id, payload);
+      } else {
+        await addExpense(payload, sourceRecurringId, String(prefill?.dateTime || prefill?.date || '').slice(0, 10));
+      }
+      navigate(returnTo, { state: { notice: 'Expense saved.' } });
+    } catch (error) {
+      setSaveError(error.message || 'Could not save. Your changes are still here; please retry.');
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+      setPendingSync(false);
     }
-
-    navigate(returnTo);
   };
 
-  const handleDelete = () => {
-    deleteExpense(id);
-    navigate(returnTo);
+  const handleDelete = async () => {
+    if (savingRef.current || isReadOnly) return;
+    savingRef.current = true;
+    setSaving(true);
+    setSaveError('');
+    try {
+      await deleteExpense(id);
+      navigate(returnTo, { state: { notice: 'Expense deleted.' } });
+    } catch (error) {
+      setSaveError(error.message || 'Could not delete this expense. Please retry.');
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+      setPendingSync(false);
+    }
   };
 
   const isValid =
     form.name.trim() &&
-    form.amount &&
+    Number(form.amount) > 0 &&
     form.category &&
     form.dateTime &&
     form.paidByName.trim() &&
@@ -444,21 +477,25 @@ export default function ExpenseForm() {
   return (
     <div className="form-page">
       <header className="form-header">
-        <button type="button" className="form-back-btn" onClick={() => navigate(-1)}>
+        <button type="button" className="form-back-btn" aria-label="Go back" disabled={saving} onClick={() => navigate(-1)}>
           <ArrowLeft size={20} />
         </button>
         <h1 className="form-title">{isEdit ? 'Edit Expense' : 'Add Expense'}</h1>
         <div style={{ width: 36 }} />
       </header>
 
-      <form onSubmit={handleSubmit} className="form-body">
+      {isReadOnly && <p className="form-feedback" role="status">You have view-only access to this household.</p>}
+      {saveError && <p className="form-feedback" role="alert">{saveError}</p>}
+      {saving && <p className="form-feedback" role="status">{pendingSync ? 'Waiting for cloud sync. Keep this page open; your entry is pending and will sync when connected.' : 'Saving…'}</p>}
+      <form onSubmit={handleSubmit} className="form-body" aria-busy={saving}>
+      <fieldset disabled={saving || isReadOnly} style={{ border: 0, minWidth: 0 }}>
         <div className="form-group">
-          <label className="form-label">Expense Name *</label>
+          <label className="form-label" htmlFor="expense-name">Expense Name *</label>
           <input
             type="text"
             className="form-input"
             placeholder="e.g., Grocery shopping"
-            value={form.name}
+            id="expense-name" value={form.name}
             onChange={(event) => handleChange('name', event.target.value)}
             required
           />
@@ -466,15 +503,15 @@ export default function ExpenseForm() {
 
         <div className="form-row expense-form-primary-row">
           <div className="form-group">
-            <label className="form-label">Amount (₹) *</label>
+            <label className="form-label" htmlFor="expense-amount">Amount (₹) *</label>
             <input
               type="number"
               className="form-input"
               placeholder="0"
-              value={form.amount}
+              id="expense-amount" value={form.amount}
               onChange={(event) => handleChange('amount', event.target.value)}
               required
-              min="0"
+              min="0.01"
               step="0.01"
             />
           </div>
@@ -493,85 +530,6 @@ export default function ExpenseForm() {
             />
           </div>
         </div>
-
-        <div className="form-group">
-          <label className="form-label">Project</label>
-          <div className="form-inline-select">
-            <select
-              className="form-input"
-              value={form.project}
-              onChange={(event) => handleProjectSelection(event.target.value)}
-            >
-              <option value="">No project</option>
-              {projectOptions.map((project) => (
-                <option key={project} value={project}>
-                  {project}
-                </option>
-              ))}
-              <option value={ADD_PROJECT_VALUE}>Add new project...</option>
-            </select>
-            <button type="button" className="form-inline-btn" onClick={() => openModal('project')}>
-              <Plus size={16} />
-            </button>
-          </div>
-          <datalist id="expense-project-options">
-            {projectOptions.map((project) => (
-              <option key={project} value={project} />
-            ))}
-          </datalist>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Paid By *</label>
-            <div className="form-inline-select">
-              <select
-                className="form-input"
-                value={form.paidById}
-                onChange={(event) => handlePayerSelection(event.target.value)}
-              >
-                {payerOptions.map((payer) => (
-                  <option key={payer.id} value={payer.id}>
-                    {payer.name}
-                  </option>
-                ))}
-                <option value={ADD_OTHER_PAYER_VALUE}>Add other payer...</option>
-              </select>
-              <button type="button" className="form-inline-btn" onClick={() => openModal('payer')}>
-                <Plus size={16} />
-              </button>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Payment Method *</label>
-            <select
-              className="form-input"
-              value={form.paymentMethod}
-              onChange={(event) => handleChange('paymentMethod', event.target.value)}
-            >
-              {EXPENSE_PAYMENT_METHODS.map((method) => (
-                <option key={method.value} value={method.value}>
-                  {method.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {form.paymentMethod === 'other' ? (
-          <div className="form-group">
-            <label className="form-label">Payment Method Name *</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="e.g., Wallet, cheque"
-              value={form.paymentMethodOther}
-              onChange={(event) => handleChange('paymentMethodOther', event.target.value)}
-              required
-            />
-          </div>
-        ) : null}
 
         <div className="form-group">
           <div className="form-label-row">
@@ -600,9 +558,89 @@ export default function ExpenseForm() {
           </div>
         </div>
 
+        <details className="form-details" open={isEdit || Boolean(prefill) || form.paymentMethod === 'other' ? true : undefined}><summary>More details · payer, payment method, project, notes</summary>
+        <div className="form-group">
+          <label className="form-label" htmlFor="expense-project">Project</label>
+          <div className="form-inline-select">
+            <select
+              className="form-input"
+              id="expense-project" value={form.project}
+              onChange={(event) => handleProjectSelection(event.target.value)}
+            >
+              <option value="">No project</option>
+              {projectOptions.map((project) => (
+                <option key={project} value={project}>
+                  {project}
+                </option>
+              ))}
+              <option value={ADD_PROJECT_VALUE}>Add new project...</option>
+            </select>
+            <button type="button" className="form-inline-btn" aria-label="Add project" onClick={() => openModal('project')}>
+              <Plus size={16} />
+            </button>
+          </div>
+          <datalist id="expense-project-options">
+            {projectOptions.map((project) => (
+              <option key={project} value={project} />
+            ))}
+          </datalist>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label" htmlFor="expense-paidById">Paid By *</label>
+            <div className="form-inline-select">
+              <select
+                className="form-input"
+                id="expense-paidById" value={form.paidById}
+                onChange={(event) => handlePayerSelection(event.target.value)}
+              >
+                {payerOptions.map((payer) => (
+                  <option key={payer.id} value={payer.id}>
+                    {payer.name}
+                  </option>
+                ))}
+                <option value={ADD_OTHER_PAYER_VALUE}>Add other payer...</option>
+              </select>
+              <button type="button" className="form-inline-btn" aria-label="Add payer" onClick={() => openModal('payer')}>
+                <Plus size={16} />
+              </button>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="expense-paymentMethod">Payment Method *</label>
+            <select
+              className="form-input"
+              id="expense-paymentMethod" value={form.paymentMethod}
+              onChange={(event) => handleChange('paymentMethod', event.target.value)}
+            >
+              {EXPENSE_PAYMENT_METHODS.map((method) => (
+                <option key={method.value} value={method.value}>
+                  {method.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {form.paymentMethod === 'other' ? (
+          <div className="form-group">
+            <label className="form-label" htmlFor="expense-paymentMethodOther">Payment Method Name *</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="e.g., Wallet, cheque"
+              id="expense-paymentMethodOther" value={form.paymentMethodOther}
+              onChange={(event) => handleChange('paymentMethodOther', event.target.value)}
+              required
+            />
+          </div>
+        ) : null}
+
         <div className="form-group">
           <div className="form-label-row">
-            <label className="form-label">Subcategory</label>
+            <label className="form-label" htmlFor="expense-subcategory">Subcategory</label>
             <button
               type="button"
               className="form-label-action"
@@ -616,7 +654,7 @@ export default function ExpenseForm() {
           <div className="form-inline-select">
             <select
               className="form-input"
-              value={form.subcategory}
+              id="expense-subcategory" value={form.subcategory}
               onChange={(event) => handleSubcategorySelection(event.target.value)}
               disabled={!selectedCategory.value}
             >
@@ -640,20 +678,22 @@ export default function ExpenseForm() {
         </div>
 
         <div className="form-group">
-          <label className="form-label">Notes</label>
+          <label className="form-label" htmlFor="expense-notes">Notes</label>
           <textarea
             className="form-input form-textarea"
             placeholder="Any notes..."
-            value={form.notes}
+            id="expense-notes" value={form.notes}
             onChange={(event) => handleChange('notes', event.target.value)}
             rows={3}
           />
         </div>
 
+        </details>
+
         <div className="form-actions">
-          <button type="submit" className="btn-primary form-submit-btn" disabled={!isValid}>
+          <button type="submit" className="btn-primary form-submit-btn" disabled={!isValid || saving || isReadOnly}>
             <Save size={18} />
-            {isEdit ? 'Update Expense' : 'Add Expense'}
+            {saving ? 'Saving…' : isEdit ? 'Update Expense' : 'Add Expense'}
           </button>
 
           {isEdit ? (
@@ -679,6 +719,7 @@ export default function ExpenseForm() {
             </>
           ) : null}
         </div>
+      </fieldset>
       </form>
 
       {modalMeta ? (

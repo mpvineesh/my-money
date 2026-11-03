@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Pencil, Plus, Repeat, Save, SkipForward, Trash2, User, Users } from 'lucide-react';
 import { useApp } from '../context/useApp';
@@ -46,10 +46,6 @@ function isRecordedForCurrentCycle(entry) {
   return monthsApart >= 0 && monthsApart <= getFrequencyMonths(entry.frequency);
 }
 
-function isDue(status) {
-  return status.tone === 'danger' || status.tone === 'warning';
-}
-
 function getDueStatus(entry) {
   const today = new Date(`${getTodayDateValue()}T00:00:00`);
   const dueDate = new Date(`${entry.nextDueDate}T00:00:00`);
@@ -63,6 +59,8 @@ function getDueStatus(entry) {
 
 export default function Recurring() {
   const navigate = useNavigate();
+  const [recording, setRecording] = useState(false);
+  const [recordMessage, setRecordMessage] = useState('');
   const {
     recurringEntries,
     expenseCategories,
@@ -75,7 +73,7 @@ export default function Recurring() {
 
   const summary = useMemo(() => {
     const overdueCount = recurringEntries.filter((entry) => getDueStatus(entry).tone === 'danger').length;
-    const dueSoonCount = recurringEntries.filter((entry) => isDue(getDueStatus(entry))).length;
+    const dueSoonCount = recurringEntries.filter((entry) => entry.nextDueDate <= getTodayDateValue()).length;
     const estimatedMonthly = recurringEntries.reduce((sum, entry) => sum + getMonthlyEquivalent(entry), 0);
 
     return {
@@ -85,7 +83,7 @@ export default function Recurring() {
     };
   }, [recurringEntries]);
   const dueEntries = useMemo(
-    () => recurringEntries.filter((entry) => isDue(getDueStatus(entry))),
+    () => recurringEntries.filter((entry) => entry.nextDueDate <= getTodayDateValue()),
     [recurringEntries],
   );
 
@@ -117,8 +115,16 @@ export default function Recurring() {
     deleteRecurringEntry(id);
   }
 
-  function handleRecord(entry) {
-    recordRecurringEntryNow(entry.id, entry.nextDueDate);
+  async function handleRecord(entry) {
+    if (recording) return;
+    setRecording(true);
+    setRecordMessage('');
+    try {
+      await recordRecurringEntryNow(entry.id, entry.nextDueDate);
+      setRecordMessage('Entry recorded.');
+    } catch (error) {
+      setRecordMessage(error.message || 'Could not record this entry. Please retry.');
+    } finally { setRecording(false); }
   }
 
   function handleSkip(entry) {
@@ -163,8 +169,15 @@ export default function Recurring() {
     });
   }
 
-  function handleRecordAllDue() {
-    dueEntries.forEach((entry) => recordRecurringEntryNow(entry.id, entry.nextDueDate));
+  async function handleRecordAllDue() {
+    if (recording) return;
+    const due = dueEntries.filter((entry) => entry.nextDueDate <= getTodayDateValue());
+    if (!window.confirm(`Record ${due.length} due payments totalling ${formatCurrency(due.reduce((sum, entry) => sum + Number(entry.amount || 0), 0))}?`)) return;
+    setRecording(true);
+    const results = await Promise.allSettled(due.map((entry) => recordRecurringEntryNow(entry.id, entry.nextDueDate)));
+    const failures = results.filter((result) => result.status === 'rejected').length;
+    setRecordMessage(failures ? `${failures} entries could not be recorded. Review the remaining due entries and retry.` : 'All due entries recorded.');
+    setRecording(false);
   }
 
   function renderEntryCard(entry) {
@@ -215,7 +228,7 @@ export default function Recurring() {
               <span>Review</span>
             </button>
           )}
-          <button type="button" className="recurring-primary-btn" onClick={() => handleRecord(entry)}>
+          <button type="button" className="recurring-primary-btn" disabled={recording} onClick={() => handleRecord(entry)}>
             <Save size={16} />
             <span>Record</span>
           </button>
@@ -265,13 +278,15 @@ export default function Recurring() {
         </article>
       </section>
 
+      {recordMessage && <p className="form-feedback" role="status">{recordMessage}</p>}
+      {recording && <p role="status">Recording payments…</p>}
       {dueEntries.length ? (
         <section className="recurring-due-panel">
           <div>
             <p className="recurring-list-label">Due Queue</p>
             <h2>{dueEntries.length} recurring entr{dueEntries.length === 1 ? 'y' : 'ies'} need recording</h2>
           </div>
-          <button type="button" className="btn-primary" onClick={handleRecordAllDue}>
+          <button type="button" className="btn-primary" disabled={recording} onClick={handleRecordAllDue}>
             Record all due
           </button>
         </section>

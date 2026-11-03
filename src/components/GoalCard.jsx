@@ -8,7 +8,7 @@ export default function GoalCard({ goal, onClick }) {
 
   const remaining = goal.targetAmount - goal.currentAmount;
   const daysLeft = goal.targetDate
-    ? Math.max(0, Math.ceil((new Date(goal.targetDate) - new Date()) / (1000 * 60 * 60 * 24)))
+    ? Math.round((new Date(`${goal.targetDate}T00:00:00`) - new Date(new Date().setHours(0, 0, 0, 0))) / 86400000)
     : null;
 
   const priorityColors = {
@@ -22,10 +22,10 @@ export default function GoalCard({ goal, onClick }) {
   const hasAllocations = Array.isArray(goal.allocations) && goal.allocations.length > 0;
 
   return (
-    <div className="goal-card" onClick={onClick}>
+    <article className="goal-card">
       <div className="goal-card-header">
         <div>
-          <h3 className="goal-card-name">{goal.name}</h3>
+          <h3 className="goal-card-name">{onClick ? <button type="button" className="goal-open" onClick={onClick}>{goal.name}</button> : goal.name}</h3>
           <span className="goal-member-name">{memberName}</span>
         </div>
         {goal.priority && (
@@ -52,7 +52,7 @@ export default function GoalCard({ goal, onClick }) {
           <span className="goal-progress-percent" style={{ color: progressColor }}>{progress}%</span>
           {daysLeft !== null && (
             <span className="goal-days-left">
-              {daysLeft === 0 ? 'Due today' : `${daysLeft} days left`}
+              {progress >= 100 ? 'Completed' : daysLeft < 0 ? `${Math.abs(daysLeft)} days overdue` : daysLeft === 0 ? 'Due today' : `${daysLeft} days left`}
             </span>
           )}
         </div>
@@ -74,6 +74,6 @@ export default function GoalCard({ goal, onClick }) {
           {formatCurrency(remaining)} more to go
         </div>
       )}
-    </div>
+    </article>
   );
 }

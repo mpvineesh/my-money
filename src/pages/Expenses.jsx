@@ -45,7 +45,7 @@ function ExpenseChartTooltip({ active, payload }) {
 
 export default function Expenses() {
   const {
-    expenses,
+    expenses: allExpenses,
     expenseCategories,
     expenseSubcategories,
     expenseBudgets,
@@ -57,6 +57,7 @@ export default function Expenses() {
   const [selectedCategoryValue, setSelectedCategoryValue] = useState('');
   const [selectedProjectCategoryValue, setSelectedProjectCategoryValue] = useState('');
   const [budgetMonth, setBudgetMonth] = useState(getCurrentMonthValue());
+  const expenses = useMemo(() => allExpenses.filter((expense) => getExpensePeriodKey(expense) === budgetMonth), [allExpenses, budgetMonth]);
   const [budgetForm, setBudgetForm] = useState({
     id: '',
     categoryValue: '',
@@ -280,7 +281,7 @@ export default function Expenses() {
   }, [budgetMonth, expenseBudgets, expenseCategories, expenseSubcategories, monthlyExpenses]);
 
   const totalBudget = useMemo(
-    () => budgetItems.reduce((sum, budget) => sum + budget.amount, 0),
+    () => budgetItems.filter((budget) => !budget.subcategoryValue || !budgetItems.some((parent) => parent.categoryValue === budget.categoryValue && !parent.subcategoryValue)).reduce((sum, budget) => sum + budget.amount, 0),
     [budgetItems],
   );
 
@@ -374,7 +375,7 @@ export default function Expenses() {
               type="month"
               className="expense-budget-picker"
               value={budgetMonth}
-              onChange={(event) => setBudgetMonth(event.target.value)}
+              onChange={(event) => { if (event.target.value) setBudgetMonth(event.target.value); }}
               displayValue={formatMonthLabel(budgetMonth)}
               placeholder="Select month"
               ariaLabel="Month"
@@ -394,10 +395,10 @@ export default function Expenses() {
               <strong>{formatCurrency(monthlySpent)}</strong>
               <span>{monthlyExpenses.length ? `${monthlyExpenses.length} expense${monthlyExpenses.length === 1 ? '' : 's'} in ${formatMonthLabel(budgetMonth)}` : 'No expenses recorded for this month'}</span>
             </article>
-            <article className={`expense-budget-stat ${totalBudgetRemaining < 0 ? 'danger' : ''}`}>
-              <span className="expense-budget-stat-label">{totalBudgetRemaining < 0 ? 'Over budget' : 'Remaining'}</span>
-              <strong>{formatCurrency(Math.abs(totalBudgetRemaining))}</strong>
-              <span>{totalBudget ? `${Math.max(totalBudgetRemaining, 0) >= 0 ? 'Left from plan' : 'Above your plan'}` : 'Add a budget target to compare'}</span>
+            <article className={`expense-budget-stat ${totalBudget > 0 && totalBudgetRemaining < 0 ? 'danger' : ''}`}>
+              <span className="expense-budget-stat-label">{totalBudget > 0 && totalBudgetRemaining < 0 ? 'Over budget' : 'Remaining'}</span>
+              <strong>{totalBudget ? formatCurrency(Math.abs(totalBudgetRemaining)) : 'Not set'}</strong>
+              <span>{totalBudget ? `${totalBudgetRemaining >= 0 ? 'Left from plan' : 'Above your plan'}` : 'Add a budget target to compare'}</span>
             </article>
             <article className={`expense-budget-stat ${overBudgetCount ? 'danger' : ''}`}>
               <span className="expense-budget-stat-label">Alerts</span>
@@ -406,6 +407,7 @@ export default function Expenses() {
             </article>
           </div>
 
+          <details className="form-details" open={budgetForm.id ? true : undefined}><summary>{budgetForm.id ? 'Edit budget' : 'Add a budget target'}</summary>
           <form className="expense-budget-form" onSubmit={handleBudgetSubmit}>
             <div className="expense-budget-form-head">
               <div>
@@ -473,6 +475,7 @@ export default function Expenses() {
               </button>
             </div>
           </form>
+          </details>
         </div>
 
         <div className="expense-budget-list">
@@ -526,11 +529,19 @@ export default function Expenses() {
         </div>
       </section>
 
+      {expenses.length > 0 && <section className="expense-panel">
+        <h2 className="expense-panel-title">Recent expenses · {formatMonthLabel(budgetMonth)}</h2>
+        {[...expenses].sort((a, b) => String(b.dateTime || b.date).localeCompare(String(a.dateTime || a.date))).slice(0, 5).map((expense) => (
+          <Link key={expense.id} to={`/expenses/edit/${expense.id}`} className="expense-breakdown-item" style={{ color: 'inherit', textDecoration: 'none' }}><span>{expense.name}</span><strong>{formatCurrency(expense.amount)}</strong></Link>
+        ))}
+        <Link to={`/expenses/list?from=${budgetMonth}-01&to=${budgetMonth}-${new Date(Number(budgetMonth.slice(0, 4)), Number(budgetMonth.slice(5, 7)), 0).getDate()}`}>View this month’s transactions</Link>
+      </section>}
+
       {expenses.length > 0 ? (
         <>
           <section className="expense-home-summary">
             <article className="expense-stat-card expense-stat-highlight">
-              <span className="expense-stat-label">Total spent</span>
+              <span className="expense-stat-label">Spent in selected month</span>
               <strong className="expense-stat-value">{formatCurrency(totalSpent)}</strong>
               <span className="expense-stat-note">Across {expenses.length} recorded expenses</span>
             </article>
@@ -560,11 +571,13 @@ export default function Expenses() {
             </article>
           </section>
 
+          <details className="form-details">
+            <summary>Explore category and project analysis</summary>
           <section className="expense-panel expense-allocation-panel">
             <div className="expense-panel-header">
               <div>
-                <p className="expense-panel-label">Whole Expense Allocation</p>
-                <h2 className="expense-panel-title">How all expenses are distributed</h2>
+                <p className="expense-panel-label">Monthly Expense Allocation</p>
+                <h2 className="expense-panel-title">How this month’s expenses are distributed</h2>
               </div>
             </div>
 
@@ -894,11 +907,12 @@ export default function Expenses() {
               ) : null}
             </section>
           ) : null}
+          </details>
 
         </>
       ) : (
         <div className="expense-empty-state">
-          <h2>No expenses yet</h2>
+          <h2>No expenses this month</h2>
           <p>Add your first expense to unlock project, category, subcategory, and budget tracking insights.</p>
           <Link to="/expenses/new" className="btn-primary">Add Expense</Link>
         </div>

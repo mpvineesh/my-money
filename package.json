@@ -9,6 +9,7 @@
     "deploy:hosting": "vite build && firebase deploy --only hosting",
     "build": "vite build",
     "lint": "eslint .",
+    "test": "node --test tests/*.test.js",
     "preview": "vite preview",
     "deploy": "vite build && npx firebase deploy"
   },

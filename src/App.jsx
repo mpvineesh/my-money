@@ -1,49 +1,52 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { AuthProvider } from './context/AuthContext';
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import ScrollToTop from './components/ScrollToTop';
-import Dashboard from './pages/Dashboard';
-import Investments from './pages/Investments';
-import InvestmentForm from './pages/InvestmentForm';
-import InvestmentTransactions from './pages/InvestmentTransactions';
-import SwingTrades from './pages/SwingTrades';
-import SwingTradeForm from './pages/SwingTradeForm';
-import Goals from './pages/Goals';
-import GoalForm from './pages/GoalForm';
-import Loans from './pages/Loans';
-import LoanForm from './pages/LoanForm';
-import AddPage from './pages/AddPage';
-import Login from './pages/Login';
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Investments = lazy(() => import('./pages/Investments'));
+const InvestmentForm = lazy(() => import('./pages/InvestmentForm'));
+const InvestmentTransactions = lazy(() => import('./pages/InvestmentTransactions'));
+const SwingTrades = lazy(() => import('./pages/SwingTrades'));
+const SwingTradeForm = lazy(() => import('./pages/SwingTradeForm'));
+const Goals = lazy(() => import('./pages/Goals'));
+const GoalForm = lazy(() => import('./pages/GoalForm'));
+const Loans = lazy(() => import('./pages/Loans'));
+const LoanForm = lazy(() => import('./pages/LoanForm'));
+const AddPage = lazy(() => import('./pages/AddPage'));
+const Login = lazy(() => import('./pages/Login'));
 import RequireAuth from './components/RequireAuth';
-import SplashScreen from './components/SplashScreen';
 import LockGate from './components/LockGate';
-import Expenses from './pages/Expenses';
-import ExpenseList from './pages/ExpenseList';
-import ExpenseForm from './pages/ExpenseForm';
-import ExpenseScan from './pages/ExpenseScan';
-import AiInsights from './pages/AiInsights';
-import MonthlyReview from './pages/MonthlyReview';
-import Recurring from './pages/Recurring';
-import RecurringForm from './pages/RecurringForm';
-import Reminders from './pages/Reminders';
-import Settings from './pages/Settings';
-import FamilyMembers from './pages/FamilyMembers';
-import Vault from './pages/Vault';
-import Insights from './pages/Insights';
-import MutualFunds from './pages/MutualFunds';
-import Stocks from './pages/Stocks';
-import Retirement from './pages/Retirement';
-import Calendar from './pages/Calendar';
+const Expenses = lazy(() => import('./pages/Expenses'));
+const ExpenseList = lazy(() => import('./pages/ExpenseList'));
+const ExpenseForm = lazy(() => import('./pages/ExpenseForm'));
+const ExpenseScan = lazy(() => import('./pages/ExpenseScan'));
+const AiInsights = lazy(() => import('./pages/AiInsights'));
+const MonthlyReview = lazy(() => import('./pages/MonthlyReview'));
+const Recurring = lazy(() => import('./pages/Recurring'));
+const RecurringForm = lazy(() => import('./pages/RecurringForm'));
+const Reminders = lazy(() => import('./pages/Reminders'));
+const Settings = lazy(() => import('./pages/Settings'));
+const FamilyMembers = lazy(() => import('./pages/FamilyMembers'));
+const Vault = lazy(() => import('./pages/Vault'));
+const Insights = lazy(() => import('./pages/Insights'));
+const MutualFunds = lazy(() => import('./pages/MutualFunds'));
+const Stocks = lazy(() => import('./pages/Stocks'));
+const Retirement = lazy(() => import('./pages/Retirement'));
+const Calendar = lazy(() => import('./pages/Calendar'));
 import { VaultProvider } from './context/VaultContext';
 import { FEATURES } from './config';
 import './App.css';
+// Shared button, tooltip, and form styles are also used on directly opened routes.
+import './pages/Dashboard.css';
+import './pages/InvestmentForm.css';
+const GoalDetail = lazy(() => import('./pages/GoalDetail'));
 
 export default function App() {
   return (
     <BrowserRouter>
-      <SplashScreen />
       <AuthProvider>
         <LockGate>
         <AppProvider>
@@ -52,6 +55,7 @@ export default function App() {
           <div className="app-container">
             <Header />
             <main className="app-main">
+              <Suspense fallback={<div className="app-loading" role="status">Loading…</div>}>
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
@@ -69,6 +73,7 @@ export default function App() {
                 <Route path="/loans/new" element={<RequireAuth><LoanForm /></RequireAuth>} />
                 <Route path="/loans/edit/:id" element={<RequireAuth><LoanForm /></RequireAuth>} />
                 <Route path="/goals" element={<RequireAuth><Goals /></RequireAuth>} />
+                <Route path="/goals/:id" element={<RequireAuth><GoalDetail /></RequireAuth>} />
                 <Route path="/goals/add" element={<RequireAuth><GoalForm /></RequireAuth>} />
                 <Route path="/goals/edit/:id" element={<RequireAuth><GoalForm /></RequireAuth>} />
                 <Route path="/expenses" element={<RequireAuth><Expenses /></RequireAuth>} />
@@ -90,7 +95,9 @@ export default function App() {
                 {FEATURES.passwordVault ? (
                   <Route path="/vault" element={<RequireAuth><Vault /></RequireAuth>} />
                 ) : null}
+                <Route path="*" element={<div className="app-loading"><h1>Page not found</h1><a href="/">Return home</a></div>} />
               </Routes>
+              </Suspense>
             </main>
             <BottomNav />
           </div>

@@ -76,7 +76,7 @@ export default function ExpenseScan() {
     expenseCategories,
     expenseSubcategories,
     parseReceipt,
-    addExpense,
+    addExpenses,
   } = useApp();
 
   const [stage, setStage] = useState('capture'); // capture | parsing | review-list | error
@@ -191,10 +191,11 @@ export default function ExpenseScan() {
 
   const handleAddAll = async () => {
     if (!validRows.length) return;
+    if (submitting) return;
+    setErrorMessage('');
     setSubmitting(true);
     try {
-      validRows.forEach((row) => {
-        addExpense({
+      await addExpenses(validRows.map((row) => ({
           name: row.name.trim(),
           amount: Number(row.amount) || 0,
           dateTime: `${row.date}T09:00`,
@@ -206,9 +207,10 @@ export default function ExpenseScan() {
           notes: row.notes,
           paidById: DEFAULT_EXPENSE_PAYER.id,
           paidByName: DEFAULT_EXPENSE_PAYER.name,
-        });
-      });
-      navigate('/expenses');
+      })));
+      navigate('/expenses/list');
+    } catch (error) {
+      setErrorMessage(error.message || 'Could not save these expenses. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -284,6 +286,7 @@ export default function ExpenseScan() {
         </div>
       ) : null}
 
+      {stage === 'review-list' && errorMessage ? <p className="form-feedback" role="alert">{errorMessage}</p> : null}
       {stage === 'review-list' ? (
         <div className="form-body">
           <div className="scan-review-head">

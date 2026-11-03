@@ -374,11 +374,11 @@ export default function Investments() {
             <div className="inv-returns-stat">
               <div className="inv-returns-icon"><TrendingUp size={18} /></div>
               <div>
-                <span className="inv-returns-label">True return (XIRR)</span>
+                <span className="inv-returns-label">Estimated return (XIRR)</span>
                 <strong className={`inv-returns-value ${portfolioXirr >= 0 ? 'positive' : 'negative'}`}>
                   {portfolioXirr >= 0 ? '+' : ''}{(portfolioXirr * 100).toFixed(1)}%
                 </strong>
-                <span className="inv-returns-note">annualised across holdings</span>
+                <span className="inv-returns-note">Assumes each holding was invested on its start date</span>
               </div>
             </div>
           ) : null}

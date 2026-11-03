@@ -120,3 +120,10 @@
   border-top: 1px solid var(--surface-2);
   text-align: center;
 }
+
+.goal-card { width: 100%; text-align: left; color: inherit; font: inherit; }
+
+.goal-card { position: relative; }
+.goal-open { border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.goal-open::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }
+.goal-open:focus-visible::after { outline: 3px solid var(--brand-500); }

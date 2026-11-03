@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import GlobalSearch from './GlobalSearch';
 import './Header.css';
 
 export default function Header() {
   const { user, signOutUser } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef();
 
@@ -23,6 +25,7 @@ export default function Header() {
 
   return (
     <header className="app-header">
+      {location.state?.notice && <div className="form-feedback" role="status">{location.state.notice} <button type="button" onClick={() => navigate(location.pathname + location.search, { replace: true, state: { ...location.state, notice: undefined } })}>Dismiss</button></div>}
       <div className="header-inner">
         <div className="brand"><Link to="/" className="brand-link">
           <span className="logo" aria-hidden>

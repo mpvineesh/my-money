@@ -17,7 +17,7 @@ export default function Goals() {
 
     switch (sortBy) {
       case 'priority':
-        result.sort((a, b) => (priorityOrder[a.priority] || 9) - (priorityOrder[b.priority] || 9));
+        result.sort((a, b) => (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9));
         break;
       case 'progress':
         result.sort((a, b) => {
@@ -116,7 +116,7 @@ export default function Goals() {
 
       <div className="goals-list">
         {sorted.map((goal) => (
-          <GoalCard key={goal.id} goal={goal} onClick={() => navigate(`/goals/edit/${goal.id}`)} />
+          <GoalCard key={goal.id} goal={goal} onClick={() => navigate(`/goals/${goal.id}`)} />
         ))}
       </div>
 
