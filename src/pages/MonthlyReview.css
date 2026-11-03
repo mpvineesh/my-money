@@ -270,3 +270,5 @@
     grid-template-columns: 1fr;
   }
 }
+
+.monthly-review-trend .monthly-review-panel-head { flex-wrap: wrap; gap: 12px; }

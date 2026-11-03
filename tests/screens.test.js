@@ -33,6 +33,12 @@ test('updated expense and goal screens render with synthetic household data', as
           createElement(AppContext.Provider, { value: ctx },
             createElement(Routes, null, createElement(Route, { path: route, element: createElement(Screen) }))))));
       assert.ok(html.includes(expected), `${module} should render its main workflow`);
+      if (module === 'pages/Expenses') {
+        assert.match(html, /aria-label="Expense analysis chart duration"/);
+        assert.match(html, /aria-pressed="true" class="active">6M/);
+        assert.match(html, />1Y<\/button>/);
+        assert.match(html, />All<\/button>/);
+      }
     }
   } finally { await server.close(); }
 });

@@ -1,75 +1,14 @@
+import ChartDurationFilter from '../components/ChartDurationFilter';
+import { buildNetWorthSeries } from '../utils/netWorthHistory';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
-import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency, formatCompactCurrency, calculateReturns, isValidDateValue } from '../utils/constants';
+import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, getTypeInfo, formatCurrency, formatCompactCurrency, calculateReturns } from '../utils/constants';
 import InvestmentCard from '../components/InvestmentCard';
 import { Briefcase, CalendarRange, CandlestickChart, ChevronRight, Landmark, Layers, ReceiptText, RefreshCw, Search, SlidersHorizontal, TrendingUp, Users } from 'lucide-react';
 import { computePortfolioXirr, compute80C } from '../utils/finance';
 import { Area, ComposedChart, LineChart, Line, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import './Investments.css';
-
-function getPeriodKey(dateValue, range) {
-  const value = String(dateValue || '');
-  if (!isValidDateValue(value)) return '';
-  return range === 'year' ? value.slice(0, 4) : value.slice(0, 7);
-}
-
-function formatPeriodLabel(periodKey, range) {
-  if (!periodKey) return '';
-  if (range === 'year') return periodKey;
-
-  const [year, month] = periodKey.split('-').map(Number);
-  const date = new Date(year, (month || 1) - 1, 1);
-  return date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
-}
-
-function buildProgressSeries(investments, range) {
-  const sortedInvestments = investments.map((investment) => {
-    const periodSnapshots = new Map();
-
-    (investment.history || []).forEach((entry) => {
-      const periodKey = getPeriodKey(entry.date, range);
-      if (!periodKey) return;
-      periodSnapshots.set(periodKey, {
-        investedAmount: Number(entry.investedAmount) || 0,
-        currentValue: Number(entry.currentValue) || 0,
-      });
-    });
-
-    return {
-      id: investment.id,
-      periodSnapshots,
-    };
-  });
-
-  const allPeriodKeys = [...new Set(sortedInvestments.flatMap((investment) => [...investment.periodSnapshots.keys()]))].sort();
-  const visiblePeriodKeys = allPeriodKeys.slice(range === 'year' ? -6 : -12);
-  const latestByInvestment = new Map();
-
-  return visiblePeriodKeys.map((periodKey) => {
-    let investedAmount = 0;
-    let currentValue = 0;
-
-    sortedInvestments.forEach((investment) => {
-      const nextSnapshot = investment.periodSnapshots.get(periodKey);
-      if (nextSnapshot) latestByInvestment.set(investment.id, nextSnapshot);
-
-      const activeSnapshot = latestByInvestment.get(investment.id);
-      if (!activeSnapshot) return;
-
-      investedAmount += activeSnapshot.investedAmount;
-      currentValue += activeSnapshot.currentValue;
-    });
-
-    return {
-      key: periodKey,
-      label: formatPeriodLabel(periodKey, range),
-      investedAmount,
-      currentValue,
-      gain: currentValue - investedAmount,
-    };
-  });
-}
 
 function buildMemberOptions(familyMembers, investments, ownerName = DEFAULT_FAMILY_MEMBER.name) {
   const options = new Map([[DEFAULT_FAMILY_MEMBER.id, { id: DEFAULT_FAMILY_MEMBER.id, name: ownerName }]]);
@@ -210,6 +149,7 @@ export default function Investments() {
   const [sortBy, setSortBy] = useState('value');
   const [showFilters, setShowFilters] = useState(false);
   const [progressRange, setProgressRange] = useState('month');
+  const [progressDuration, setProgressDuration] = useState('6m');
   const [growthRateInput, setGrowthRateInput] = useState(String(DEFAULT_GROWTH_RATE));
   const [contributionTarget, setContributionTarget] = useState(null);
   const [contributionAmount, setContributionAmount] = useState('');
@@ -329,7 +269,7 @@ export default function Investments() {
     [filtered],
   );
 
-  const progressSeries = useMemo(() => buildProgressSeries(filtered, progressRange), [filtered, progressRange]);
+  const progressSeries = useMemo(() => buildNetWorthSeries(filtered, progressRange, progressDuration, [], [], [], [], { cashReserve: 0 }).map((point) => ({ ...point, currentValue: point.portfolioValue, gain: point.portfolioValue - point.investedAmount })), [filtered, progressRange, progressDuration]);
   const latestProgress = progressSeries[progressSeries.length - 1];
   const previousProgress = progressSeries[progressSeries.length - 2];
   const periodGainChange = latestProgress && previousProgress ? latestProgress.gain - previousProgress.gain : 0;
@@ -445,6 +385,7 @@ export default function Investments() {
               </h2>
             </div>
             <div className="inv-progress-actions">
+              <ChartDurationFilter value={progressDuration} onChange={setProgressDuration} label="Portfolio trend duration" />
               <div className="inv-progress-toggle">
                 <button
                   type="button"

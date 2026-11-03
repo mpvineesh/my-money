@@ -1,3 +1,5 @@
+import ChartDurationFilter from '../components/ChartDurationFilter';
+import { filterByDuration } from '../utils/chartDuration';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -57,7 +59,8 @@ export default function Expenses() {
   const [selectedCategoryValue, setSelectedCategoryValue] = useState('');
   const [selectedProjectCategoryValue, setSelectedProjectCategoryValue] = useState('');
   const [budgetMonth, setBudgetMonth] = useState(getCurrentMonthValue());
-  const expenses = useMemo(() => allExpenses.filter((expense) => getExpensePeriodKey(expense) === budgetMonth), [allExpenses, budgetMonth]);
+  const [chartDuration, setChartDuration] = useState('6m');
+  const expenses = useMemo(() => filterByDuration(allExpenses, chartDuration, (expense) => expense.dateTime || expense.date, budgetMonth), [allExpenses, chartDuration, budgetMonth]);
   const [budgetForm, setBudgetForm] = useState({
     id: '',
     categoryValue: '',
@@ -219,8 +222,8 @@ export default function Expenses() {
   }, [activeProjectCategoryValue, activeProjectValue, expenseCategories, expenseSubcategories, expenses]);
 
   const monthlyExpenses = useMemo(
-    () => expenses.filter((expense) => getExpensePeriodKey(expense) === budgetMonth),
-    [budgetMonth, expenses],
+    () => allExpenses.filter((expense) => getExpensePeriodKey(expense) === budgetMonth),
+    [budgetMonth, allExpenses],
   );
 
   const monthlySpent = useMemo(
@@ -529,19 +532,24 @@ export default function Expenses() {
         </div>
       </section>
 
-      {expenses.length > 0 && <section className="expense-panel">
+      {monthlyExpenses.length > 0 && <section className="expense-panel">
         <h2 className="expense-panel-title">Recent expenses · {formatMonthLabel(budgetMonth)}</h2>
-        {[...expenses].sort((a, b) => String(b.dateTime || b.date).localeCompare(String(a.dateTime || a.date))).slice(0, 5).map((expense) => (
+        {[...monthlyExpenses].sort((a, b) => String(b.dateTime || b.date).localeCompare(String(a.dateTime || a.date))).slice(0, 5).map((expense) => (
           <Link key={expense.id} to={`/expenses/edit/${expense.id}`} className="expense-breakdown-item" style={{ color: 'inherit', textDecoration: 'none' }}><span>{expense.name}</span><strong>{formatCurrency(expense.amount)}</strong></Link>
         ))}
         <Link to={`/expenses/list?from=${budgetMonth}-01&to=${budgetMonth}-${new Date(Number(budgetMonth.slice(0, 4)), Number(budgetMonth.slice(5, 7)), 0).getDate()}`}>View this month’s transactions</Link>
       </section>}
 
+      <div className="chart-duration-heading">
+        <h2 className="expense-panel-title">Expense analysis</h2>
+        <ChartDurationFilter value={chartDuration} onChange={setChartDuration} label="Expense analysis chart duration" />
+      </div>
+      <p className="chart-duration-caption">{chartDuration === 'all' ? 'All recorded expenses' : chartDuration === '1y' ? '12 months of expenses' : '6 months of expenses'}, ending {formatMonthLabel(budgetMonth)}. Applies to all category and project charts below.</p>
       {expenses.length > 0 ? (
         <>
           <section className="expense-home-summary">
             <article className="expense-stat-card expense-stat-highlight">
-              <span className="expense-stat-label">Spent in selected month</span>
+              <span className="expense-stat-label">Spent in selected duration</span>
               <strong className="expense-stat-value">{formatCurrency(totalSpent)}</strong>
               <span className="expense-stat-note">Across {expenses.length} recorded expenses</span>
             </article>
@@ -576,8 +584,8 @@ export default function Expenses() {
           <section className="expense-panel expense-allocation-panel">
             <div className="expense-panel-header">
               <div>
-                <p className="expense-panel-label">Monthly Expense Allocation</p>
-                <h2 className="expense-panel-title">How this month’s expenses are distributed</h2>
+                <p className="expense-panel-label">Expense Allocation</p>
+                <h2 className="expense-panel-title">How expenses in this duration are distributed</h2>
               </div>
             </div>
 
@@ -912,8 +920,8 @@ export default function Expenses() {
         </>
       ) : (
         <div className="expense-empty-state">
-          <h2>No expenses this month</h2>
-          <p>Add your first expense to unlock project, category, subcategory, and budget tracking insights.</p>
+          <h2>No expenses in this duration</h2>
+          <p>Choose a longer duration or another ending month, or add an expense to see your breakdown.</p>
           <Link to="/expenses/new" className="btn-primary">Add Expense</Link>
         </div>
       )}

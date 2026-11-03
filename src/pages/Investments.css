@@ -758,3 +758,5 @@
 .inv-mf-metrics span.pos { color: #16a34a; font-weight: 700; }
 .inv-mf-metrics span.neg { color: #dc2626; font-weight: 700; }
 .inv-mf-chevron { color: var(--text-faint); flex-shrink: 0; }
+
+.inv-progress-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }

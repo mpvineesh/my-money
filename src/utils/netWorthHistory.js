@@ -1,3 +1,4 @@
+import { durationMonths, groupBalanceSeries } from './chartDuration.js';
 import { isValidDateValue } from './constants.js';
 
 function getPeriodKey(dateValue, range) {
@@ -51,24 +52,6 @@ export function getExpensePeriodKey(expense) {
   return /^\d{4}-\d{2}/.test(value) ? value.slice(0, 7) : '';
 }
 
-export const NET_WORTH_PERIOD_OPTIONS = [
-  { value: '6m', label: '6M', months: 6 },
-  { value: '1y', label: '1Y', months: 12 },
-  { value: 'all', label: 'All', months: null },
-];
-
-// Number of trailing data points to keep for the chart. Monthly buckets follow the selected
-// period window; yearly buckets keep the last six years; "All" keeps every period on record.
-function getVisiblePeriodLimit(range, period) {
-  const option = NET_WORTH_PERIOD_OPTIONS.find((item) => item.value === period) || NET_WORTH_PERIOD_OPTIONS[0];
-  if (option.months === null) return null;
-  return range === 'year' ? 6 : option.months;
-}
-
-function takeLastPeriods(periodKeys, limit) {
-  return limit ? periodKeys.slice(-limit) : periodKeys;
-}
-
 function buildAmountSeries(history, range) {
   const periodSnapshots = new Map();
   (history || []).forEach((entry) => {
@@ -79,7 +62,8 @@ function buildAmountSeries(history, range) {
   return periodSnapshots;
 }
 
-export function buildNetWorthSeries(investments, range, period, cashHistory, loans, goals, netWorthSnapshots, currentTotals) {
+export function buildNetWorthSeries(investments, grouping, period, cashHistory, loans, goals, netWorthSnapshots, currentTotals) {
+  const range = 'month';
   const investmentSnapshots = investments.map((investment) => {
     const periodSnapshots = new Map();
 
@@ -124,17 +108,9 @@ export function buildNetWorthSeries(investments, range, period, cashHistory, loa
   const latestByLoan = new Map();
   const latestByGoal = new Map();
   let latestCash = Number(currentTotals.cashReserve) || 0;
-  const visibleLimit = getVisiblePeriodLimit(range, period);
-  let visiblePeriodKeys = takeLastPeriods(allPeriodKeys, visibleLimit);
+  const visiblePeriodKeys = durationMonths(period, getCurrentPeriodKey('month'), allPeriodKeys);
 
-  if (!visiblePeriodKeys.length) visiblePeriodKeys = [getCurrentPeriodKey(range)];
-
-  const currentPeriodKey = getCurrentPeriodKey(range);
-  if (!visiblePeriodKeys.includes(currentPeriodKey)) {
-    visiblePeriodKeys = takeLastPeriods([...visiblePeriodKeys, currentPeriodKey], visibleLimit);
-  }
-
-  return [...new Set([...allPeriodKeys, ...visiblePeriodKeys])].sort().map((periodKey) => {
+  const monthlySeries = [...new Set([...allPeriodKeys, ...visiblePeriodKeys])].sort().map((periodKey) => {
     let investedAmount = 0;
     let portfolioValue = 0;
 
@@ -178,5 +154,6 @@ export function buildNetWorthSeries(investments, range, period, cashHistory, loa
       netWorth: savedSnapshot?.netWorth ?? (portfolioValue + latestCash - loanPrincipal),
     };
   }).filter((point) => visiblePeriodKeys.includes(point.key));
+  return groupBalanceSeries(monthlySeries, grouping);
 }
 

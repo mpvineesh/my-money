@@ -1,3 +1,4 @@
+import ChartDurationFilter from '../components/ChartDurationFilter';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
@@ -7,7 +8,7 @@ import GoalCard from '../components/GoalCard';
 import MotivationBanner from '../components/MotivationBanner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { TrendingUp, TrendingDown, Wallet, Target, ChevronRight, Landmark, CreditCard, CalendarRange, BellRing, Repeat, AlertTriangle } from 'lucide-react';
-import { buildNetWorthSeries, getCurrentMonthValue, getDaysUntil, getExpensePeriodKey, NET_WORTH_PERIOD_OPTIONS } from '../utils/netWorthHistory';
+import { buildNetWorthSeries, getCurrentMonthValue, getDaysUntil, getExpensePeriodKey } from '../utils/netWorthHistory';
 import './Dashboard.css';
 
 function ChartTooltip({ active, payload }) {
@@ -399,21 +400,7 @@ export default function Dashboard() {
                     {netWorthChange >= 0 ? '+' : ''}{formatCompactCurrency(netWorthChange)}
                   </strong>
                 </div>
-                {netWorthRange === 'month' ? (
-                  <div className="dash-networth-toggle dash-networth-period" role="group" aria-label="Chart period">
-                    {NET_WORTH_PERIOD_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        className={netWorthPeriod === option.value ? 'active' : ''}
-                        aria-pressed={netWorthPeriod === option.value}
-                        onClick={() => setNetWorthPeriod(option.value)}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
+                <ChartDurationFilter value={netWorthPeriod} onChange={setNetWorthPeriod} label="Net worth chart duration" />
               </div>
 
               <div className="dash-networth-chart">

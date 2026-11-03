@@ -1,3 +1,5 @@
+import ChartDurationFilter from '../components/ChartDurationFilter';
+import { durationMonths } from '../utils/chartDuration';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, BellRing, Briefcase, CalendarRange, Repeat, Target, Wallet } from 'lucide-react';
@@ -15,7 +17,6 @@ import {
 } from '../utils/constants';
 import './MonthlyReview.css';
 
-const TREND_MONTHS = 12;
 
 function formatMonthShort(periodKey) {
   if (!/^\d{4}-\d{2}$/.test(periodKey)) return periodKey;
@@ -119,6 +120,7 @@ export default function MonthlyReview() {
     themePrimary,
   } = useApp();
   const [periodKey, setPeriodKey] = useState(getCurrentMonthValue);
+  const [trendDuration, setTrendDuration] = useState('6m');
 
   const review = useMemo(() => {
     const monthlyExpenses = expenses.filter((expense) => getPeriodKey(expense.dateTime || expense.date) === periodKey);
@@ -192,7 +194,7 @@ export default function MonthlyReview() {
     );
     const totalGoalTarget = goals.reduce((sum, goal) => sum + (Number(goal.targetAmount) || 0), 0);
     const totalGoalCurrent = goals.reduce((sum, goal) => sum + (Number(goal.currentAmount) || 0), 0);
-    const investmentTrend = buildMonthlyInvestmentSeries(investments, periodKey, TREND_MONTHS);
+    const investmentTrend = buildMonthlyInvestmentSeries(investments, periodKey, durationMonths(trendDuration, periodKey, investments.flatMap((investment) => (investment.history || []).map((entry) => String(entry.date || '').slice(0, 7)))).length);
 
     return {
       monthlyExpenses,
@@ -209,7 +211,7 @@ export default function MonthlyReview() {
       totalGoalTarget,
       totalGoalCurrent,
     };
-  }, [expenseBudgets, expenseCategories, expenseSubcategories, expenses, goals, investments, periodKey, recurringEntries, reminders]);
+  }, [expenseBudgets, expenseCategories, expenseSubcategories, expenses, goals, investments, periodKey, recurringEntries, reminders, trendDuration]);
 
   const goalProgress = review.totalGoalTarget > 0 ? Math.min(100, Math.round((review.totalGoalCurrent / review.totalGoalTarget) * 100)) : 0;
 
@@ -226,7 +228,7 @@ export default function MonthlyReview() {
           className="monthly-review-picker"
           value={periodKey}
           max={getCurrentMonthValue()}
-          onChange={(event) => setPeriodKey(event.target.value)}
+          onChange={(event) => { if (event.target.value) setPeriodKey(event.target.value); }}
           displayValue={formatMonthLabel(periodKey)}
           ariaLabel="Review month"
           leading={<CalendarRange size={18} />}
@@ -263,10 +265,11 @@ export default function MonthlyReview() {
       <section className="monthly-review-trend">
         <div className="monthly-review-panel-head">
           <h2>Monthly investment</h2>
+          <ChartDurationFilter value={trendDuration} onChange={setTrendDuration} label="Monthly investment chart duration" />
           <Link to="/investments">Open investments</Link>
         </div>
         <p className="monthly-review-trend-caption">
-          New money invested each month over the last {TREND_MONTHS} months, ending {formatMonthLabel(periodKey)}.
+          New money invested each month · {trendDuration === 'all' ? 'all recorded history' : trendDuration === '1y' ? '12 months' : '6 months'}, ending {formatMonthLabel(periodKey)}.
         </p>
         {review.investmentTrend.some((point) => point.invested !== 0) ? (
           <div className="monthly-review-trend-chart">

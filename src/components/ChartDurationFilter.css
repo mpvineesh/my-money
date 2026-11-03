@@ -1,0 +1,6 @@
+.chart-duration { display: inline-flex; align-items: center; gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); flex-shrink: 0; }
+.chart-duration button { min-width: 48px; min-height: 40px; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--text-soft); font: inherit; font-size: .85rem; cursor: pointer; }
+.chart-duration button.active { background: var(--brand-500); color: white; font-weight: 700; }
+.chart-duration button:focus-visible { outline: 3px solid var(--brand-500); outline-offset: 3px; }
+.chart-duration-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+.chart-duration-caption { color: var(--text-soft); font-size: .85rem; margin: 8px 0 16px; }
