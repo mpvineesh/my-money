@@ -84,3 +84,25 @@ src/
 ## License
 
 MIT
+
+## Releases and rollback
+
+Every production deploy is a tagged version so any earlier build can be restored.
+
+```bash
+npm run release          # patch bump: 0.1.0 -> 0.1.1, tag, build, deploy, push
+npm run release:minor    # 0.1.0 -> 0.2.0
+npm run release:major    # 0.1.0 -> 1.0.0
+npm run releases         # list release tags
+npm run rollback -- v0.1.0   # rebuild that tag and redeploy it to hosting
+```
+
+`release` refuses to run unless you are on `main` with a clean tree that matches `origin/main`.
+It bumps `package.json`, commits `Release vX.Y.Z`, tags it, builds, deploys to Firebase Hosting
+and pushes the commit and tag to GitHub.
+
+`rollback` checks the tag out into a temporary git worktree, builds it there and deploys it.
+Your working tree is untouched. The version currently live is shown at the bottom of Settings.
+
+Firebase Hosting also keeps its own release history: in the Firebase console under
+Hosting > Release history you can roll back to any previous deploy with one click, with no rebuild.

@@ -1,9 +1,23 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
+import pkg from './package.json' with { type: 'json' }
+
+function gitShortSha() {
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+  } catch {
+    return 'unknown'
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    'import.meta.env.APP_VERSION': JSON.stringify(pkg.version),
+    'import.meta.env.APP_COMMIT': JSON.stringify(gitShortSha()),
+  },
   plugins: [
     react(),
     VitePWA({

@@ -403,3 +403,15 @@
   color: var(--brand-700);
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
+
+.settings-version {
+  margin-top: 8px;
+  padding: 12px 0 4px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
+.settings-version span {
+  opacity: 0.8;
+}

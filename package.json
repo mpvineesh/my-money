@@ -11,7 +11,12 @@
     "lint": "eslint .",
     "test": "node --test tests/*.test.js",
     "preview": "vite preview",
-    "deploy": "vite build && npx firebase deploy"
+    "deploy": "vite build && npx firebase deploy",
+    "release": "bash scripts/release.sh patch",
+    "release:minor": "bash scripts/release.sh minor",
+    "release:major": "bash scripts/release.sh major",
+    "rollback": "bash scripts/rollback.sh",
+    "releases": "bash scripts/rollback.sh --list"
   },
   "dependencies": {
     "firebase": "^10.0.0",

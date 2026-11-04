@@ -508,6 +508,11 @@ export default function Settings() {
           </button>
         </section>
       ) : null}
+
+      <footer className="settings-version">
+        My Money v{import.meta.env.APP_VERSION}
+        {import.meta.env.APP_COMMIT ? <span> · build {import.meta.env.APP_COMMIT}</span> : null}
+      </footer>
     </div>
   );
 }
