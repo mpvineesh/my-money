@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/useApp';
 import { formatCurrency } from '../utils/constants';
+import { sumGoalSavings } from '../utils/finance';
 import GoalCard from '../components/GoalCard';
 import { Target, Plus } from 'lucide-react';
 import './Goals.css';
@@ -39,7 +40,7 @@ export default function Goals() {
   }, [goals, sortBy]);
 
   const totalTarget = goals.reduce((sum, g) => sum + (Number(g.targetAmount) || 0), 0);
-  const totalSaved = goals.reduce((sum, g) => sum + (Number(g.currentAmount) || 0), 0);
+  const totalSaved = sumGoalSavings(goals);
   const overallProgress = totalTarget > 0 ? Math.min(100, Math.round((totalSaved / totalTarget) * 100)) : 0;
 
   return (

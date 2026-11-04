@@ -3,6 +3,7 @@ import { auth, googleProvider, db } from '../firebase';
 import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { AuthContext } from './AuthContextDef';
+import { clearPersistedHouseholdData } from '../utils/storage';
 
 const HH_CACHE_PREFIX = 'household:';
 
@@ -89,7 +90,11 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signOutUser = useCallback(async () => {
+    // Wipe the local mirror before and after sign-out so a listener firing mid-way
+    // cannot repopulate it, and the next account starts clean.
+    clearPersistedHouseholdData();
     await signOut(auth);
+    clearPersistedHouseholdData();
   }, []);
 
   const value = {

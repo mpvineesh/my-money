@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../context/useApp';
 import { DEFAULT_FAMILY_MEMBER, INVESTMENT_TYPES, RISK_LEVELS } from '../utils/constants';
+import { getTodayDateValue } from '../utils/netWorthHistory';
 import { searchSchemes, fetchLatestNav } from '../utils/navService';
 import { ArrowLeft, Plus, Save, Trash2, Users, X } from 'lucide-react';
 import './InvestmentForm.css';
@@ -9,7 +10,7 @@ import './InvestmentForm.css';
 const ADD_MEMBER_VALUE = '__add_member__';
 
 function getInitialForm(investments, id, prefill = null, ownerName = DEFAULT_FAMILY_MEMBER.name) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayDateValue();
   if (id) {
     const inv = investments.find((i) => i.id === id);
     if (inv) {
@@ -24,7 +25,9 @@ function getInitialForm(investments, id, prefill = null, ownerName = DEFAULT_FAM
         startDate: inv.startDate || '',
         maturityDate: inv.maturityDate || '',
         interestRate: inv.interestRate || '',
-        snapshotDate: inv.lastUpdated || today,
+        // A new value entered today is a new snapshot; defaulting to the last update date
+        // would overwrite that older history point and freeze the trend chart.
+        snapshotDate: today,
         notes: inv.notes || '',
         schemeCode: inv.schemeCode || '',
         schemeName: inv.schemeName || '',

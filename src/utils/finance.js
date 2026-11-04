@@ -1,5 +1,5 @@
 // Returns & tax helpers: XIRR (true annualised return) and an India 80C tracker.
-import { isValidDateValue } from './constants';
+import { FAMILY_GOAL_SCOPE, isValidDateValue } from './constants.js';
 
 const MS_PER_YEAR = 365 * 24 * 60 * 60 * 1000;
 
@@ -9,6 +9,26 @@ function todayIso() {
 
 function clampRate(rate) {
   return Number.isFinite(rate) && rate > -0.9999 && rate < 100 ? rate : null;
+}
+
+// Total saved toward goals without double counting. Goals with no explicit allocations all
+// draw on the same pool (the whole family's assets, or one member's), so adding up
+// goal.currentAmount counts that pool once per goal. A family-scoped pool already includes
+// every member's assets and any allocated slices, so when one exists it is the whole answer.
+export function sumGoalSavings(goals = []) {
+  let allocated = 0;
+  const pools = new Map();
+  goals.forEach((goal) => {
+    const amount = Number(goal?.currentAmount) || 0;
+    if (Array.isArray(goal?.allocations) && goal.allocations.length) {
+      allocated += amount;
+      return;
+    }
+    const scope = goal?.memberId || FAMILY_GOAL_SCOPE.id;
+    pools.set(scope, Math.max(pools.get(scope) || 0, amount));
+  });
+  if (pools.has(FAMILY_GOAL_SCOPE.id)) return pools.get(FAMILY_GOAL_SCOPE.id);
+  return allocated + [...pools.values()].reduce((sum, value) => sum + value, 0);
 }
 
 // XIRR via Newton's method with a bisection fallback. flows: [{ amount, date }],

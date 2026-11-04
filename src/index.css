@@ -7,6 +7,8 @@
 }
 
 :root {
+  /* One content width for every screen so desktop pages line up. */
+  --page-max-width: 880px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -132,6 +134,34 @@ html {
 .form-page,
 .add-page {
   animation: fadeIn 0.3s ease;
+}
+
+/* Every page root shares the same centred content column. Per-page CSS sets padding only. */
+.dashboard,
+.investments-page,
+.expenses-page,
+.expense-list-page,
+.ai-insights-page,
+.goals-page,
+.form-page,
+.add-page,
+.cal-page,
+.family-page,
+.insights-page,
+.txn-page,
+.monthly-review-page,
+.mf-page,
+.recurring-page,
+.reminders-page,
+.ret-page,
+.settings-page,
+.swing-page,
+.vault-page {
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
 }
 
 /* Shared keyboard and request feedback. */

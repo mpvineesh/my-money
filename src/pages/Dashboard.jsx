@@ -9,6 +9,7 @@ import MotivationBanner from '../components/MotivationBanner';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { TrendingUp, TrendingDown, Wallet, Target, ChevronRight, Landmark, CreditCard, CalendarRange, BellRing, Repeat, AlertTriangle } from 'lucide-react';
 import { buildNetWorthSeries, getCurrentMonthValue, getDaysUntil, getExpensePeriodKey } from '../utils/netWorthHistory';
+import { sumGoalSavings } from '../utils/finance';
 import './Dashboard.css';
 
 function ChartTooltip({ active, payload }) {
@@ -86,7 +87,7 @@ export default function Dashboard() {
       .sort((a, b) => b.value - a.value);
 
     const totalGoalTarget = goals.reduce((sum, g) => sum + (Number(g.targetAmount) || 0), 0);
-    const totalGoalCurrent = goals.reduce((sum, g) => sum + (Number(g.currentAmount) || 0), 0);
+    const totalGoalCurrent = sumGoalSavings(goals);
     const totalLoanPrincipal = loans.reduce((sum, loan) => sum + (Number(loan.outstandingBalance ?? loan.loanAmount ?? loan.principalAmount ?? loan.principal) || 0), 0);
     const totalMonthlyEmi = loans.reduce((sum, loan) => sum + (Number(loan.monthlyEmi || loan.monthlyEMI) || 0), 0);
     const liquidAssets = totalCurrent + (Number(cash) || 0);

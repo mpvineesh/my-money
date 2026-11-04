@@ -38,18 +38,28 @@ const Retirement = lazy(() => import('./pages/Retirement'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 import { VaultProvider } from './context/VaultContext';
 import { FEATURES } from './config';
+import { useAuth } from './context/useAuth';
 import './App.css';
 // Shared button, tooltip, and form styles are also used on directly opened routes.
 import './pages/Dashboard.css';
 import './pages/InvestmentForm.css';
 const GoalDetail = lazy(() => import('./pages/GoalDetail'));
 
+// Remount the data provider whenever the active household changes (sign-in, sign-out,
+// or a member resolving to their owner's household) so no in-memory state from the
+// previous account survives into the next one.
+function HouseholdScopedAppProvider({ children }) {
+  const { user, household } = useAuth();
+  const scopeKey = household?.mode === 'member' ? household.ownerUid : user?.uid;
+  return <AppProvider key={scopeKey || 'signed-out'}>{children}</AppProvider>;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <LockGate>
-        <AppProvider>
+        <HouseholdScopedAppProvider>
           <VaultProvider>
           <ScrollToTop />
           <div className="app-container">
@@ -102,7 +112,7 @@ export default function App() {
             <BottomNav />
           </div>
           </VaultProvider>
-        </AppProvider>
+        </HouseholdScopedAppProvider>
         </LockGate>
       </AuthProvider>
     </BrowserRouter>

@@ -22,6 +22,23 @@ const STORAGE_KEYS = {
   RETIREMENT_PLAN: 'myMoney_retirement_plan',
 };
 
+// Keys that hold household data mirrored from Firestore. Cleared on sign-out so the next
+// account on a shared device never starts from the previous household's data. The
+// retirement plan is excluded because it exists only in localStorage today.
+const HOUSEHOLD_STORAGE_KEYS = Object.entries(STORAGE_KEYS)
+  .filter(([name]) => name !== 'RETIREMENT_PLAN')
+  .map(([, key]) => key);
+
+export function clearPersistedHouseholdData() {
+  HOUSEHOLD_STORAGE_KEYS.forEach((key) => {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Storage unavailable; nothing to clear.
+    }
+  });
+}
+
 export function loadInvestments() {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.INVESTMENTS);

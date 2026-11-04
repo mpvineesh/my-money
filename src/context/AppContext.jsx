@@ -270,6 +270,19 @@ function addFrequencyToDate(dateValue, frequency) {
   }
 }
 
+// Advance from the scheduled due date, not the day it was paid, so paying early or late
+// never drifts the schedule. Skips any cycles already in the past when several were missed.
+function getNextDueDateAfterCompletion(reminder, doneDate) {
+  const scheduledDate = isValidDateValue(reminder?.nextDueDate) ? reminder.nextDueDate : doneDate;
+  let nextDueDate = addFrequencyToDate(scheduledDate, reminder?.frequency);
+  let guard = 0;
+  while (nextDueDate <= doneDate && guard < 240) {
+    nextDueDate = addFrequencyToDate(nextDueDate, reminder?.frequency);
+    guard += 1;
+  }
+  return nextDueDate;
+}
+
 function normalizeRecurringEntry(entry, customCategories = [], customSubcategories = []) {
   const kind = entry?.kind === 'investment' ? 'investment' : 'expense';
   const category = kind === 'expense'
@@ -914,6 +927,10 @@ export function AppProvider({ children }) {
   const [appSettings, setAppSettings] = useState(INITIAL_APP_SETTINGS);
   const [aiReports, setAiReports] = useState(INITIAL_AI_REPORTS);
   const [calendarEvents, setCalendarEvents] = useState(INITIAL_CALENDAR_EVENTS);
+  // True once the investments listener has delivered for the active household. Derived
+  // writes (net-worth snapshots) wait for this so cached or empty state is never persisted
+  // under a freshly signed-in account.
+  const [liveDataReady, setLiveDataReady] = useState(false);
 
   // Snapshot callbacks for budgets/recurring read the latest categories via refs, so
   // the listener effect does NOT depend on those state values. Depending on them caused
@@ -1043,17 +1060,19 @@ export function AppProvider({ children }) {
 
     if (isSameSnapshot) return;
     if (isReadOnly) return;
+    if (!liveDataReady) return;
 
     saveNetWorthSnapshots(derivedNetWorthSnapshots);
     if (user) {
       const ref = doc(db, 'users', user.uid, 'netWorthSnapshots', currentNetWorthSnapshot.periodKey);
       setDoc(ref, currentNetWorthSnapshot);
     }
-  }, [currentNetWorthSnapshot, derivedNetWorthSnapshots, isReadOnly, netWorthSnapshots, user]);
+  }, [currentNetWorthSnapshot, derivedNetWorthSnapshots, isReadOnly, liveDataReady, netWorthSnapshots, user]);
 
   useEffect(() => {
     // Listen to the active household's Firestore collections (owner OR member view).
     if (!effectiveUid) return undefined;
+    // liveDataReady needs no reset here: the provider is remounted per household (App.jsx).
 
     const invCol = collection(db, 'users', effectiveUid, 'investments');
     const familyMembersCol = collection(db, 'users', effectiveUid, 'familyMembers');
@@ -1067,6 +1086,7 @@ export function AppProvider({ children }) {
       setInvestments(items);
       // also persist locally for offline fallback
       saveInvestments(items);
+      setLiveDataReady(true);
     });
 
     const swingTradesCol = collection(db, 'users', effectiveUid, 'swingTrades');
@@ -2219,7 +2239,7 @@ export function AppProvider({ children }) {
           ...reminder,
           status: 'active',
           lastCompletedDate: doneDate,
-          nextDueDate: addFrequencyToDate(doneDate, reminder.frequency),
+          nextDueDate: getNextDueDateAfterCompletion(reminder, doneDate),
         };
 
     if (user) {

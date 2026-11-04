@@ -31,7 +31,7 @@ function getCurrentPeriodKey(range) {
     : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function getTodayDateValue() {
+export function getTodayDateValue() {
   const now = new Date();
   const timezoneAdjusted = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
   return timezoneAdjusted.toISOString().slice(0, 10);

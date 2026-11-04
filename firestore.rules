@@ -47,7 +47,13 @@ service cloud.firestore {
     // The doc id is the lower-cased email of the family member.
     match /memberAccess/{email} {
       allow read: if isSignedIn() && callerEmail() == email;
-      allow create, update: if isSignedIn()
+      allow create: if isSignedIn()
+        && request.resource.data.ownerUid == request.auth.uid;
+      // Only the household that owns a mapping may change it. Checking just the
+      // incoming ownerUid would let any signed-in user re-point someone else's email
+      // at their own household.
+      allow update: if isSignedIn()
+        && resource.data.ownerUid == request.auth.uid
         && request.resource.data.ownerUid == request.auth.uid;
       allow delete: if isSignedIn()
         && resource.data.ownerUid == request.auth.uid;
