@@ -39,6 +39,7 @@ const Calendar = lazy(() => import('./pages/Calendar'));
 import { VaultProvider } from './context/VaultContext';
 import { FEATURES } from './config';
 import { useAuth } from './context/useAuth';
+import SplashScreen from './components/SplashScreen';
 import './App.css';
 // Shared button, tooltip, and form styles are also used on directly opened routes.
 import './pages/Dashboard.css';
@@ -57,6 +58,7 @@ function HouseholdScopedAppProvider({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <SplashScreen />
       <AuthProvider>
         <LockGate>
         <HouseholdScopedAppProvider>

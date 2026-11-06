@@ -1,25 +1,45 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Delete, LockKeyhole } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
-import { isAppLockEnabled, verifyAppPin, disableAppLock } from '../utils/appLock';
+import { isAppLockEnabled, verifyAppPin, disableAppLock, recordAppHidden, clearAppHidden, isWithinLockGrace } from '../utils/appLock';
 import './LockGate.css';
 
 const PIN_LENGTH = 4;
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
 
 // Wraps the app. When app lock is enabled and the user is signed in, it requires the
-// PIN on load and again whenever the app returns from the background.
+// PIN on load and again when the app returns after more than the grace period in the
+// background. A quick switch away (a notification, another app) does not re-lock.
 export default function LockGate({ children }) {
   const { user, signOutUser } = useAuth();
-  const [locked, setLocked] = useState(() => isAppLockEnabled());
+  const [locked, setLocked] = useState(() => isAppLockEnabled() && !isWithinLockGrace());
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
 
-  // Re-lock when the tab is hidden, so returning to the app requires the PIN again.
   useEffect(() => {
-    const onHide = () => { if (document.visibilityState === 'hidden' && isAppLockEnabled()) setLocked(true); };
-    document.addEventListener('visibilitychange', onHide);
-    return () => document.removeEventListener('visibilitychange', onHide);
+    // Stamp the time we went to the background (only while unlocked, so a locked app
+    // can never be unlocked by reopening it quickly). pagehide covers iOS PWA closes.
+    const onHidden = () => {
+      if (!isAppLockEnabled()) return;
+      setLocked((current) => {
+        if (!current) recordAppHidden();
+        return current;
+      });
+    };
+    const onVisible = () => {
+      if (!isAppLockEnabled()) return;
+      if (!isWithinLockGrace()) setLocked(true);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') onHidden();
+      else onVisible();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', onHidden);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', onHidden);
+    };
   }, []);
 
   useEffect(() => {
@@ -27,7 +47,7 @@ export default function LockGate({ children }) {
     let active = true;
     verifyAppPin(pin).then((ok) => {
       if (!active) return;
-      if (ok) { setLocked(false); setPin(''); setError(''); }
+      if (ok) { setLocked(false); setPin(''); setError(''); clearAppHidden(); }
       else { setError('Incorrect PIN'); setPin(''); }
     });
     return () => { active = false; };
@@ -43,6 +63,7 @@ export default function LockGate({ children }) {
   const forgot = useCallback(() => {
     // No PIN recovery (it's a local hash). Escape hatch: clear the lock and sign out.
     disableAppLock();
+    clearAppHidden();
     setLocked(false);
     signOutUser();
   }, [signOutUser]);

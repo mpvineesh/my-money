@@ -20,6 +20,37 @@ export function isAppLockEnabled() {
   return !!localStorage.getItem(LOCK_KEY);
 }
 
+// How long the app may sit in the background before the PIN is required again. Without
+// this, every notification glance or app switch re-locked the app immediately.
+export const APP_LOCK_GRACE_MS = 2 * 60 * 1000;
+const LAST_HIDDEN_KEY = 'app-lock-last-hidden-v1';
+
+export function recordAppHidden() {
+  try {
+    localStorage.setItem(LAST_HIDDEN_KEY, String(Date.now()));
+  } catch {
+    // Storage unavailable; the next return will simply require the PIN.
+  }
+}
+
+export function clearAppHidden() {
+  try {
+    localStorage.removeItem(LAST_HIDDEN_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+// True when the app was backgrounded recently enough that the PIN can be skipped.
+export function isWithinLockGrace() {
+  try {
+    const hiddenAt = Number(localStorage.getItem(LAST_HIDDEN_KEY));
+    return Number.isFinite(hiddenAt) && hiddenAt > 0 && Date.now() - hiddenAt < APP_LOCK_GRACE_MS;
+  } catch {
+    return false;
+  }
+}
+
 export async function setAppPin(pin) {
   const salt = randomBytes(16);
   const hash = await deriveHash(pin, salt, ITERATIONS);
